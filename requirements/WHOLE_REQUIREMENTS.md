@@ -30,7 +30,8 @@ Dieses Dokument referenziert alle Requirements, Konzepte und Ideen für das CSC-
 - [14-ui-wireframes.md](./14-ui-wireframes.md) - Grobe UI-Ideen
 - [15-workflows.md](./15-workflows.md) - Wichtige Arbeitsabläufe
 
-### 6. Recherche & Ideen
+### 6. Markt & Recherche
+- [98-software-marktuebersicht.md](./98-software-marktuebersicht.md) - Existierende CSC-Software im Markt
 - [99-recherche-ideen.md](./99-recherche-ideen.md) - Brainstorming, zukünftige Features
 
 ---

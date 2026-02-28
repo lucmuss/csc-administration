@@ -29,6 +29,7 @@ Dieses Dokument referenziert alle Requirements, Konzepte und Ideen für das CSC-
 ### 5. UI/UX Konzepte
 - [14-ui-wireframes.md](./14-ui-wireframes.md) - Grobe UI-Ideen
 - [15-workflows.md](./15-workflows.md) - Wichtige Arbeitsabläufe
+- [16-mitgliedschafts-workflow.md](./16-mitgliedschafts-workflow.md) - Anmelde-Prozess, E-Mails, 500-Mitglieder-Limit
 
 ### 6. Rechtliche Anforderungen (KCanG)
 - [96-gesetzliche-pflicht-features.md](./96-gesetzliche-pflicht-features.md) - Gesetzliche Pflicht-Features aus KCanG

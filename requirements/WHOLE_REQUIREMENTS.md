@@ -31,6 +31,7 @@ Dieses Dokument referenziert alle Requirements, Konzepte und Ideen für das CSC-
 - [15-workflows.md](./15-workflows.md) - Wichtige Arbeitsabläufe
 - [16-mitgliedschafts-workflow.md](./16-mitgliedschafts-workflow.md) - Anmelde-Prozess, E-Mails, 500-Mitglieder-Limit
 - [17-admin-dashboard.md](./17-admin-dashboard.md) - Admin-Dashboard, Newsletter, Mitgliedsversammlungen
+- [18-zahlungs-system.md](./18-zahlungs-system.md) - Stripe-Integration, Produkt-Katalog, Checkout
 
 ### 6. Rechtliche Anforderungen (KCanG)
 - [96-gesetzliche-pflicht-features.md](./96-gesetzliche-pflicht-features.md) - Gesetzliche Pflicht-Features aus KCanG

@@ -36,6 +36,7 @@ Dieses Dokument referenziert alle Requirements, Konzepte und Ideen für das CSC-
 - [20-pdf-dokumente.md](./20-pdf-dokumente.md) - PDF-Generierung, Mitgliedsausweis
 - [21-authentifizierung.md](./21-authentifizierung.md) - Login, Passwort-Stärke, Auth
 - [22-arbeitsstunden-zahlungen.md](./22-arbeitsstunden-zahlungen.md) - Arbeitsstunden, automatische Beiträge, Stripe-Abgleich
+- [23-shop-guthaben.md](./23-shop-guthaben.md) - Shop-System, Guthaben, Limits, SEPA
 
 ### 6. Rechtliche Anforderungen (KCanG)
 - [96-gesetzliche-pflicht-features.md](./96-gesetzliche-pflicht-features.md) - Gesetzliche Pflicht-Features aus KCanG

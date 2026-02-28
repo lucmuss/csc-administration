@@ -35,6 +35,7 @@ Dieses Dokument referenziert alle Requirements, Konzepte und Ideen für das CSC-
 - [19-warenwirtschaft.md](./19-warenwirtschaft.md) - Sorten-Datenbank, Chargen, Inventur
 - [20-pdf-dokumente.md](./20-pdf-dokumente.md) - PDF-Generierung, Mitgliedsausweis
 - [21-authentifizierung.md](./21-authentifizierung.md) - Login, Passwort-Stärke, Auth
+- [22-arbeitsstunden-zahlungen.md](./22-arbeitsstunden-zahlungen.md) - Arbeitsstunden, automatische Beiträge, Stripe-Abgleich
 
 ### 6. Rechtliche Anforderungen (KCanG)
 - [96-gesetzliche-pflicht-features.md](./96-gesetzliche-pflicht-features.md) - Gesetzliche Pflicht-Features aus KCanG

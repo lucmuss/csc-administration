@@ -31,6 +31,7 @@ Dieses Dokument referenziert alle Requirements, Konzepte und Ideen für das CSC-
 - [15-workflows.md](./15-workflows.md) - Wichtige Arbeitsabläufe
 
 ### 6. Markt & Recherche
+- [97-feature-analyse-konkurrenz.md](./97-feature-analyse-konkurrenz.md) - Detaillierte Feature-Analyse der Konkurrenz
 - [98-software-marktuebersicht.md](./98-software-marktuebersicht.md) - Existierende CSC-Software im Markt
 - [99-recherche-ideen.md](./99-recherche-ideen.md) - Brainstorming, zukünftige Features
 

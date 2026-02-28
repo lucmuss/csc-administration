@@ -33,6 +33,8 @@ Dieses Dokument referenziert alle Requirements, Konzepte und Ideen für das CSC-
 - [17-admin-dashboard.md](./17-admin-dashboard.md) - Admin-Dashboard, Newsletter, Mitgliedsversammlungen
 - [18-zahlungs-system.md](./18-zahlungs-system.md) - Stripe-Integration, Produkt-Katalog, Checkout
 - [19-warenwirtschaft.md](./19-warenwirtschaft.md) - Sorten-Datenbank, Chargen, Inventur
+- [20-pdf-dokumente.md](./20-pdf-dokumente.md) - PDF-Generierung, Mitgliedsausweis
+- [21-authentifizierung.md](./21-authentifizierung.md) - Login, Passwort-Stärke, Auth
 
 ### 6. Rechtliche Anforderungen (KCanG)
 - [96-gesetzliche-pflicht-features.md](./96-gesetzliche-pflicht-features.md) - Gesetzliche Pflicht-Features aus KCanG

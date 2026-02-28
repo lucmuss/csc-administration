@@ -37,6 +37,7 @@ Dieses Dokument referenziert alle Requirements, Konzepte und Ideen für das CSC-
 - [21-authentifizierung.md](./21-authentifizierung.md) - Login, Passwort-Stärke, Auth
 - [22-arbeitsstunden-zahlungen.md](./22-arbeitsstunden-zahlungen.md) - Arbeitsstunden, automatische Beiträge, Stripe-Abgleich
 - [23-shop-guthaben.md](./23-shop-guthaben.md) - Shop-System, Guthaben, Limits, SEPA
+- [24-ui-design-system.md](./24-ui-design-system.md) - UI Design (RedFlag Analyzer Style)
 
 ### 6. Rechtliche Anforderungen (KCanG)
 - [96-gesetzliche-pflicht-features.md](./96-gesetzliche-pflicht-features.md) - Gesetzliche Pflicht-Features aus KCanG
@@ -53,7 +54,8 @@ Dieses Dokument referenziert alle Requirements, Konzepte und Ideen für das CSC-
 1. **Neu hier?** Starte mit: [01-vision-konzept.md](./01-vision-konzept.md)
 2. **Legal Compliance?** Siehe: [03-deutsches-csc-recht.md](./03-deutsches-csc-recht.md)
 3. **Feature-Übersicht?** Siehe: [05-user-stories.md](./05-user-stories.md)
-4. **Technik?** Siehe: [11-tech-stack.md](./11-tech-stack.md)
+4. **UI/UX?** Siehe: [24-ui-design-system.md](./24-ui-design-system.md)
+5. **Technik?** Siehe: [11-tech-stack.md](./11-tech-stack.md)
 
 ---
 

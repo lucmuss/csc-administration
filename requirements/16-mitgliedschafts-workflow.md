@@ -6,14 +6,100 @@
 
 ## Anmelde-Prozess (Step-by-Step)
 
-### Schritt 1: Online-Anmeldung (Mitglied)
-- • Online-Formular ausfüllen
-- • Persönliche Daten eingeben (Name, Adresse, Geburtsdatum)
-- • Ausweis hochladen (Altersverifikation 18+)
-- • Kontaktdaten (E-Mail, Telefon)
+### Schritt 1: Online-Anmeldung (Mehrseitiges Formular)
+
+**Wichtig:** Formular hat mehrere Schritte mit Zwischenspeicherung (Session/Draft)
+
+#### Seite 1: Anmeldedaten (Login-Info)
+- • E-Mail-Adresse
+- • Handynummer (für SMS-Benachrichtigungen)
+- • Passwort (mit Stärke-Prüfung)
+- • Passwort bestätigen
+
+*[Zwischenspeichern - Fortsetzen später möglich]*
+
+#### Seite 2: Persönliche Daten
+- • Vorname
+- • Nachname
+- • Geburtsdatum (DD.MM.YYYY)
+- • Geburtsort
+- • Staatsangehörigkeit
+- • Ausweisnummer (Personalausweis/Reisepass)
+- • Ausweis hochladen (Vorder- und Rückseite)
+
+*[Zwischenspeichern - Fortsetzen später möglich]*
+
+#### Seite 3: Adresse & Kontakt
+- • Straße und Hausnummer
+- • PLZ
+- • Ort
+- • Bundesland
+- • Telefon (festnetz, optional)
 - • Wohnort bestätigen (muss in Deutschland sein)
-- • Einverständniserklärung akzeptieren (DSGVO)
-- • Regeln/Satzung akzeptieren
+- • Wohnsitz seit (Datum)
+
+*[Zwischenspeichern - Fortsetzen später möglich]*
+
+#### Seite 4: Vereinsbezogene Daten
+- • Wie hast du von uns erfahren? (Dropdown: Freunde, Internet, Flyer, etc.)
+- • Warum möchtest du Mitglied werden? (Textfeld)
+- • Hast du Erfahrung mit Cannabis? (Ja/Nein/Optional)
+- • Bist du bereit, Arbeitsstunden zu leisten? (Ja/Nein)
+- • Gewünschte Arbeitsbereiche (Gießen, Ernte, Putzen, Verwaltung)
+- • Notfallkontakt (Name, Telefon, Beziehung)
+
+*[Zwischenspeichern - Fortsetzen später möglich]*
+
+#### Seite 5: Einverständniserklärungen
+- • [ ] Ich habe die Satzung gelesen und akzeptiere sie
+- • [ ] Ich habe die Beitragsordnung gelesen und akzeptiere sie
+- • [ ] Ich habe die Datenschutzerklärung gelesen und akzeptiere sie (DSGVO)
+- • [ ] Ich bin mit der Verarbeitung meiner Daten einverstanden
+- • [ ] Ich bin mit der Speicherung meines Ausweises einverstanden
+- • [ ] Ich bestätige, dass ich keinen gewerblichen Weiterverkauf betreibe
+- • [ ] Ich bin bereit, im Bedarfsfall eine strafregisterliche Auskunft vorzulegen
+- • [ ] Ich bin über die 6-Monats-Probezeit informiert
+
+**[Antrag absenden]**
+
+### Zwischenspeicherung (Draft-System)
+```python
+class MembershipApplicationDraft(models.Model):
+    """Zwischengespeicherter Antrag"""
+    
+    # Session-ID oder temporäre User-ID
+    session_key = models.CharField(max_length=255)
+    
+    # Aktueller Schritt (1-5)
+    current_step = models.IntegerField(default=1)
+    
+    # Formulardaten als JSON
+    form_data = models.JSONField(default=dict)
+    
+    # Uploads temporär speichern
+    id_front_temp = models.FileField(upload_to='temp/id_front/')
+    id_back_temp = models.FileField(upload_to='temp/id_back/')
+    
+    created_at = models.DateTimeField(auto_now_add=True)
+    last_updated = models.DateTimeField(auto_now=True)
+    
+    # Nach 30 Tagen löschen
+    expires_at = models.DateTimeField()
+```
+
+**Fortsetzen-Link:**
+```
+Betreff: Dein unterbrochener Antrag
+
+Hallo,
+
+du hast deinen Mitgliedschaftsantrag unterbrochen.
+
+Du kannst hier fortfahren:
+[Antrag fortsetzen →]
+
+Dieser Link ist 30 Tage gültig.
+```
 
 ### Schritt 2: Automatische Validierung (System)
 - • Pflichtfelder prüfen

@@ -29,15 +29,16 @@ Dieses Dokument referenziert alle Requirements, Konzepte und Ideen für das CSC-
 ### 5. UI/UX Konzepte
 - [14-ui-wireframes.md](./14-ui-wireframes.md) - Grobe UI-Ideen
 - [15-workflows.md](./15-workflows.md) - Wichtige Arbeitsabläufe
-- [16-mitgliedschafts-workflow.md](./16-mitgliedschafts-workflow.md) - Anmelde-Prozess, E-Mails, 500-Mitglieder-Limit
-- [17-admin-dashboard.md](./17-admin-dashboard.md) - Admin-Dashboard, Newsletter, Mitgliedsversammlungen
+- [16-mitgliedschafts-workflow.md](./16-mitgliedschafts-workflow.md) - Anmelde-Prozess (5 Schritte), Zwischenspeicherung, E-Mails, 500-Mitglieder-Limit
+- [17-admin-dashboard.md](./17-admin-dashboard.md) - Admin-Dashboard, Neuanmeldungen prüfen, Newsletter, Mitgliedsversammlungen
 - [18-zahlungs-system.md](./18-zahlungs-system.md) - Stripe-Integration, Produkt-Katalog, Checkout
 - [19-warenwirtschaft.md](./19-warenwirtschaft.md) - Sorten-Datenbank, Chargen, Inventur
-- [20-pdf-dokumente.md](./20-pdf-dokumente.md) - PDF-Generierung, Mitgliedsausweis
+- [20-pdf-dokumente.md](./20-pdf-dokumente.md) - PDF-Generierung, Template-System, Platzhalter-Validierung, Mitgliedsausweis
 - [21-authentifizierung.md](./21-authentifizierung.md) - Login, Passwort-Stärke, Auth
 - [22-arbeitsstunden-zahlungen.md](./22-arbeitsstunden-zahlungen.md) - Arbeitsstunden, automatische Beiträge, Stripe-Abgleich
 - [23-shop-guthaben.md](./23-shop-guthaben.md) - Shop-System, Guthaben, Limits, SEPA
 - [24-ui-design-system.md](./24-ui-design-system.md) - UI Design (RedFlag Analyzer Style)
+- [25-sms-abholort.md](./25-sms-abholort.md) - SMS-Benachrichtigungen (Twilio), Auslieferungsstationen
 
 ### 6. Rechtliche Anforderungen (KCanG)
 - [96-gesetzliche-pflicht-features.md](./96-gesetzliche-pflicht-features.md) - Gesetzliche Pflicht-Features aus KCanG

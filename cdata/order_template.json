@@ -1,0 +1,52 @@
+[
+  {
+    "order_id": "ORD-2025-001",
+    "member_number": 100004,
+    "timestamp": "2025-03-01T10:30:00Z",
+    "status": "pending",
+    "distribution_month": "2025-03",
+    "total_amount": 25.0,
+    "total_weight": 3,
+    "payment_method": "direct_debit",
+    "items": [
+      {
+        "strain_id": 1,
+        "strain_name": "Orange Bud",
+        "type": "flower",
+        "quantity_grams": 2,
+        "price_per_gram": 8.0,
+        "total_price": 16.0
+      },
+      {
+        "strain_id": 9,
+        "strain_name": "Orange Bud",
+        "type": "clone",
+        "quantity_grams": 1,
+        "price_per_gram": 5.0,
+        "total_price": 5.0
+      }
+    ],
+    "notes": ""
+  },
+  {
+    "order_id": "ORD-2025-002",
+    "member_number": 100005,
+    "timestamp": "2025-03-01T14:15:00Z",
+    "status": "confirmed",
+    "distribution_month": "2025-03",
+    "total_amount": 18.0,
+    "total_weight": 2,
+    "payment_method": "cash",
+    "items": [
+      {
+        "strain_id": 2,
+        "strain_name": "Sage n Sour",
+        "type": "flower",
+        "quantity_grams": 2,
+        "price_per_gram": 9.0,
+        "total_price": 18.0
+      }
+    ],
+    "notes": "Ausgabe am Freitag"
+  }
+]

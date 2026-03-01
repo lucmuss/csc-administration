@@ -16,6 +16,136 @@ Mitglied erhält automatisch nach Genehmigung:
 
 ---
 
+## Admin: Template-Verwaltung
+
+### Template-System
+
+Admin kann Dokumente als Templates hochladen und verwalten:
+
+```
+📄 Dokument-Templates
+
+┌─────────────────────────────────────────────┐
+│ Aufnahmeantrag                              │
+│ Status: ✅ Aktiv                            │
+│ Format: HTML                                │
+│ Letzte Änderung: 28.02.2026                │
+│                                             │
+│ [Bearbeiten] [Vorschau] [Deaktivieren]     │
+└─────────────────────────────────────────────┘
+
+┌─────────────────────────────────────────────┐
+│ Mitgliedsausweis                            │
+│ Status: ✅ Aktiv                            │
+│ Format: HTML                                │
+│ Letzte Änderung: 15.01.2026                │
+│                                             │
+│ [Bearbeiten] [Vorschau] [Deaktivieren]     │
+└─────────────────────────────────────────────┘
+
+[+ Neues Template hochladen]
+```
+
+### Template-Editor
+
+```
+Template bearbeiten: Aufnahmeantrag
+
+Name: [Aufnahmeantrag________________________]
+
+Platzhalter (werden automatisch ersetzt):
+{{MITGLIEDSNUMMER}} - Mitgliedsnummer
+{{VORNAME}} - Vorname
+{{NACHNAME}} - Nachname
+{{GEBURTSDATUM}} - Geburtsdatum
+{{STRASSE}} - Straße
+{{PLZ}} - Postleitzahl
+{{ORT}} - Wohnort
+{{EMAIL}} - E-Mail
+{{TELEFON}} - Telefon
+{{EINTRITTSDATUM}} - Eintrittsdatum
+{{DATUM_HEUTE}} - Aktuelles Datum
+{{VORSTAND_VORSITZ}} - Name Vorstandsvorsitz
+
+HTML-Template:
+[textarea mit HTML-Code]
+
+[✅ Pflichtfelder prüfen]
+[Vorschau mit Testdaten]
+[Speichern]
+```
+
+### Pflicht-Validierung
+
+**WICHTIG:** Dokument kann NUR generiert werden wenn ALLE Pflicht-Platzhalter im Mitglied-Datensatz vorhanden sind.
+
+```python
+class DocumentTemplate(models.Model):
+    """Vorlage für PDF-Dokumente"""
+    
+    name = models.CharField(max_length=255)
+    slug = models.SlugField(unique=True)
+    
+    # Template-Inhalt (HTML)
+    html_content = models.TextField()
+    
+    # Erforderliche Platzhalter (JSON-Liste)
+    required_placeholders = models.JSONField(default=list)
+    # z.B.: ["{{VORNAME}}", "{{NACHNAME}}", "{{MITGLIEDSNUMMER}}"]
+    
+    # Optionale Platzhalter
+    optional_placeholders = models.JSONField(default=list)
+    
+    is_active = models.BooleanField(default=True)
+    
+    def validate_member_data(self, member):
+        """Prüft ob alle Pflichtdaten vorhanden"""
+        missing = []
+        
+        for placeholder in self.required_placeholders:
+            value = member.get_placeholder_value(placeholder)
+            if not value or value.strip() == "":
+                missing.append(placeholder)
+        
+        if missing:
+            raise ValidationError(
+                f"Dokument kann nicht generiert werden. "
+                f"Fehlende Daten: {', '.join(missing)}"
+            )
+        
+        return True
+
+def generate_pdf_for_member(template, member):
+    """PDF nur generieren wenn alle Daten vorhanden"""
+    
+    # 1. Validierung
+    template.validate_member_data(member)
+    
+    # 2. Platzhalter ersetzen
+    html = template.html_content
+    for placeholder in template.required_placeholders + template.optional_placeholders:
+        value = member.get_placeholder_value(placeholder)
+        html = html.replace(placeholder, value or "")
+    
+    # 3. PDF generieren
+    pdf = HTML(string=html).write_pdf()
+    
+    return pdf
+```
+
+### Fehlermeldung bei unvollständigen Daten
+
+```
+⚠️ Dokument kann nicht generiert werden
+
+Folgende Pflichtangaben fehlen beim Mitglied:
+• {{MITGLIEDSNUMMER}} - Mitglied hat noch keine Nummer
+• {{AUSWEISNUMMER}} - Ausweisnummer nicht erfasst
+
+Bitte vervollständigen Sie die Daten des Mitglieds:
+[Daten vervollständigen →]
+```
+
 ## PDF-Templates mit Platzhaltern
 
 ### Platzhalter-System
@@ -26,14 +156,20 @@ Mitglied erhält automatisch nach Genehmigung:
     "{{VORNAME}}": "Max",
     "{{NACHNAME}}": "Mustermann",
     "{{GEBURTSDATUM}}": "01.01.1990",
+    "{{GEBURTSORT}}": "Leipzig",
+    "{{STAATSANGEHOERIGKEIT}}": "Deutsch",
+    "{{AUSWEISNUMMER}}": "PA123456",
     "{{STRASSE}}": "Musterstraße 123",
     "{{PLZ}}": "12345",
     "{{ORT}}": "Musterstadt",
     "{{EMAIL}}": "max@example.com",
     "{{TELEFON}}": "0123-456789",
+    "{{HANDY}}": "0151-12345678",
     "{{EINTRITTSDATUM}}": "15.03.2026",
     "{{DATUM_HEUTE}}": "28.02.2026",
     "{{VORSTAND_VORSITZ}}": "Erika Musterfrau",
+    "{{VEREINS_NAME}}": "CSC Leipzig e.V.",
+    "{{VEREINS_ADRESSE}}": "Cannabisstraße 42, 12345 Leipzig",
 }
 ```
 

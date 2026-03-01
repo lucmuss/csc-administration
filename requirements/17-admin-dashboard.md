@@ -82,6 +82,99 @@
 
 ---
 
+## Admin-Dashboard - Neuanmeldungen Prüfen
+
+### Dashboard für Neuanmeldungen (Vorstand & Mitarbeiter)
+
+```
+┌─────────────────────────────────────────────┐
+│  🔔 Neuanmeldungen prüfen                   │
+├─────────────────────────────────────────────┤
+│                                             │
+│  Status-Filter:                             │
+│  [Alle] [Ausstehend] [In Bearbeitung]      │
+│  [Angenommen] [Abgelehnt]                  │
+│                                             │
+│  📋 Offene Anträge (12)                     │
+│                                             │
+│  ┌─────────┬──────────┬───────┬──────────┐ │
+│  │ Antrag  │ Name     │ Datum │ Status   │ │
+│  ├─────────┼──────────┼───────┼──────────┤ │
+│  │ #2024-1 │ Max M.   │ 28.02 │ 🟡 Neu   │ │
+│  │ #2024-2 │ Lisa S.  │ 27.02 │ 🔵 Prüf. │ │
+│  │ #2024-3 │ Tom B.   │ 26.02 │ 🟡 Neu   │ │
+│  └─────────┴──────────┴───────┴──────────┘ │
+│                                             │
+└─────────────────────────────────────────────┘
+```
+
+### Detail-Ansicht eines Antrags
+
+```
+Antrag #2024-001 - Max Mustermann
+Eingegangen: 28.02.2026 14:30
+Status: 🟡 Ausstehend
+
+┌─────────────────────────────────────────────┐
+│ Schritt 1: Anmeldedaten ✅                 │
+│ Schritt 2: Persönliche Daten ✅            │
+│ Schritt 3: Adresse & Kontakt ✅            │
+│ Schritt 4: Vereinsbezogene Daten ✅        │
+│ Schritt 5: Einverständnisse ✅             │
+└─────────────────────────────────────────────┘
+
+Persönliche Daten:
+• Name: Max Mustermann
+• Geburtstag: 15.03.1990 (35 Jahre)
+• Geburtsort: Leipzig
+• Staatsangehörigkeit: Deutsch
+• Ausweis: PA123456 (hochgeladen)
+
+Adresse:
+• Musterstraße 123
+• 12345 Leipzig
+• Seit: 01.01.2020
+
+Kontakt:
+• E-Mail: max@example.com
+• Telefon: +49 123 456789
+
+Vereinsbezogen:
+• Geworben durch: Freunde
+• Arbeitsstunden: Ja (Gießen, Ernte)
+• Notfallkontakt: Anna Mustermann (Frau)
+
+Prüfung:
+[ ] Ausweis geprüft
+[ ] Wohnsitz bestätigt
+[ ] Keine roten Flaggen
+[ ] Zuverlässigkeit OK
+
+Notizen:
+[Textfeld für interne Notizen]
+
+Aktionen:
+[✅ Annehmen]  [❌ Ablehnen]  [❓ Nachfragen]
+```
+
+### Rollen bei der Prüfung
+
+| Aktion | Vorstand | Mitarbeiter |
+|--------|----------|-------------|
+| Anträge sehen | ✅ | ✅ |
+| Details prüfen | ✅ | ✅ |
+| Notizen hinzufügen | ✅ | ✅ |
+| Annehmen/Ablehnen | ✅ | ❌ |
+| Nachfragen senden | ✅ | ✅ |
+| Final genehmigen | ✅ | ❌ |
+
+**Workflow:**
+1. Mitarbeiter prüft Antrag → Notizen → Empfehlung
+2. Vorstand prüft Empfehlung → Entscheidung
+3. System sendet E-Mail
+
+---
+
 ## Admin-Dashboard
 
 ### Übersicht (Widgets)

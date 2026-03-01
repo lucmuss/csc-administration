@@ -1,0 +1,120 @@
+Delivered-To: skymuss@gmail.com
+Received: by 2002:a05:7022:e1e:b0:f0:4d25:5ac9 with SMTP id dx30csp1356167dlb;
+        Wed, 24 Sep 2025 02:09:25 -0700 (PDT)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=gmail.com; s=20230601; t=1758704965; x=1759309765; dara=google.com;
+        h=to:from:subject:date:message-id:reply-to:mime-version:from:to:cc
+         :subject:date:message-id:reply-to;
+        bh=TLntmfbMGfB0cjg8JY29blcv5T7pdkI48Wbw1GTJg04=;
+        b=OvmekuxK4HbQjtJnndJQp97hv8tHZotF5lVAbrYVF+FCupJelTgAUEzu9VVk8RHDAL
+         2r2/AZR1zO2qtc7F+OrVjoui9W9B4NWgUFUm1UjmFCkVCsfOzJyfichvIxHmWgvbzgD7
+         HQ4hL+Hzg8gyVhDAx+B7BRXFoBVqhgol1pTBVLQtZ+nhHVOXYznM9+9WZmlps9GaWi0d
+         ciXZRNH9S8P31+8K8RsmLfyQB/Y6qwjlqvIMAK/Ad+HuCSxgjXrlo9la0I3gg9RipZTD
+         V2Ks0d+WoV1tMoqh1+GQCVnULwfTuEiUXFpqsgmClyzqG0AbF0RHsYxBbwQIJliaTpFY
+         xrHQ==
+X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=1e100.net; s=20230601; t=1758704965; x=1759309765;
+        h=to:from:subject:date:message-id:reply-to:mime-version:from:to:cc
+         :subject:date:message-id:reply-to;
+        bh=TLntmfbMGfB0cjg8JY29blcv5T7pdkI48Wbw1GTJg04=;
+        b=mcM2DHCqHlQmkRLQVMltavkEv61pnMJ3zspQV6XE34JSvAnsUqyMpcoIrubaHaK6xF
+         PyAK6Zo9QzQBGnhh2iNb1S6Vzd5I3EN5jHmU771J1w9Pdo/6fPH3uilgCfNelTb48wGJ
+         4iVCZF7YcPmjLHFK9R3Up1WupWUuNprCOBIAUKkbPxbBXTsBaxMueDDkc3jqdZS9ICI4
+         tTzWr7oG39gwGWi1cRGeLumYl9x5Fg8Ab5OrbmJxgsHlS043uPo8TGSKDqSmzZCnsV14
+         hBfvBwtkQVEWWXt8xlWMnVPDGIzxDdKnSuJTTGgrUtd6IBHl2jLAke97ZHGmG4WDjWOz
+         rF0A==
+X-Forwarded-Encrypted: i=1; AJvYcCVt8nVr2QPXv72bItKNCXPl3HIx3x1piJLyO/SX17WEkO0NujgikyHd2u46GiIPr0M+ObuSElTU@gmail.com
+X-Google-Smtp-Source: AGHT+IFF+/OyMldGXwgeq/vVkFtKOZxdjGirwLe8q4jk+XNQjS9Xh0hA/wGXb6P5qsqXcPJXN2g5SIwn/A==
+MIME-Version: 1.0
+X-Received: by 2002:a05:6902:2b93:b0:eae:eca3:f303 with SMTP id
+ 3f1490d57ef6-eb32da6fbc5mr4938583276.2.1758704845081; Wed, 24 Sep 2025
+ 02:07:25 -0700 (PDT)
+Reply-To: vorstand@csc-leipzig.eu
+Message-ID: <autogen-java-a9347fc7-f82e-449d-a74f-5216207af1a3@google.com>
+Date: Wed, 24 Sep 2025 09:07:25 +0000
+Subject: =?UTF-8?B?4pyoIE1pdGdsaWVkZXJ2ZXJzYW1tbHVuZyBhbSAwMS4xMC4yMDI1IOKAkyBDU0MgTGVpcA==?=
+	=?UTF-8?B?emlnIFPDvGQgZS5WLg==?=
+From: skymuss@gmail.com
+To: johannes.stern19@gmail.com
+Content-Type: multipart/alternative; boundary="0000000000008e5607063f88614f"
+
+--0000000000008e5607063f88614f
+Content-Type: text/plain; charset="UTF-8"; format=flowed; delsp=yes
+Content-Transfer-Encoding: base64
+
+U2VociBnZWVocnRlcyBNaXRnbGllZCwNCg0Kd2lyIGxhZGVuIFNpZSBoaWVybWl0IGhlcnpsaWNo
+IHp1IHVuc2VyZXIgbsOkY2hzdGVuIG9yZGVudGxpY2hlbiAgDQpNaXRnbGllZGVydmVyc2FtbWx1
+bmcgZWluLiBCaXR0ZSBiZWFjaHRlbiBTaWUsIGRhc3MgZGllIFZlcnNhbW1sdW5nIGFtICANCjAx
+LjEwLjIwMjUgdW0gMTkgVWhyIHN0YXR0ZmluZGV0LiBEaWUgTWl0Z2xpZWRlcnZlcnNhbW1sdW5n
+IGZpbmRldCBpbiAgDQpkZXV0c2NoZXIgU3ByYWNoZSBzdGF0dC4gSGllciBpc3QgZGVyIExpbmsg
+enVyIFRlaWxuYWhtZToNCmh0dHBzOi8vbWVldC5nb29nbGUuY29tL2FmZC1oYmd3LWhudw0KDQpE
+YW1pdCBkaWUgTWl0Z2xpZWRzdmVyc2FtbWx1bmcgcmVpYnVuZ3Nsb3MgdmVybMOkdWZ0LCBhY2h0
+ZSBiaXR0ZSBhdWYgIA0KZm9sZ2VuZGUgUHVua3RlLiBNYWNoZSBkaXIgYml0dGUgdm9yaGVyIEdl
+ZGFua2VuIHdlbGNoZSBQdW5rdGUgZHUgIA0KZWluYnJpbmdlbiBtw7ZjaHRlc3QuIFRlc3RlIHZv
+ciBkZW0gVmlkZW8gR2VzcHLDpGNoIGRlaW4gTWlrcm9mb24gdW5kIGRlaW5lICANCldlYmNhbS4N
+Cg0KWnUgQmVnaW5uIGRlciBNaXRnbGllZHN2ZXJzYW1tbHVuZyB3ZXJkZW4gZGllIFRlaWxuZWht
+ZW5kZW4gZGF6dSAgDQphdWZnZWZvcmRlcnQgaWhyZSBBdXN3ZWlzLURva3VtZW50ZSBpbiBkaWUg
+S2FtZXJhIHp1IGhhbHRlbiBkYW1pdCB3aXIgIA0KYWJnbGVpY2hlbiBrw7ZubmVuLCBvYiBlaW5l
+IE1pdGdsaWVkc2NoYWZ0IHZvcmxpZWd0LiBJbiBkZXIgIA0KTWl0Z2xpZWRzdmVyc2FtbWx1bmcg
+ZMO8cmZlbiBudXIgTWl0Z2xpZWRlciBhYnN0aW1tZW4sIGRpZSB2b2xsc3TDpG5kaWcgaW4gIA0K
+ZGVuIFZlcmVpbiBhdWZnZW5vbW1lbiB3dXJkZW4uDQoNCkRpZSBUYWdlc29yZG51bmdzLVB1bmt0
+ZSwgZGllIGluIGRlciBNaXRnbGllZHN2ZXJzYW1tbHVuZyBiZXNwcm9jaGVuICANCndlcmRlbiwg
+bcO8c3NlbiBzcMOkdGVzdGVucyAxIFdvY2hlIHZvciBkZW0gU3RhdHRmaW5kZW4gZGVyIFZlcmFu
+c3RhbHR1bmcgIA0KYmVpbSBWb3JzdGFuZCBlaW5nZXJlaWNodCB3ZXJkZW4uIFZlcndlbmRlIGRh
+enUgZGllIGZvbGdlbmRlIEUtTWFpbCAgDQpBZHJlc3NlOiB2b3JzdGFuZEBjc2MtbGVpcHppZy5l
+dQ0KDQpEaWUgUHJvdG9rb2xsZSBkZXIgbGV0enRlbiBNaXRnbGllZHN2ZXJzYW1tbHVuZ2VuIGZp
+bmRlc3QgZHUgaW4gdW5zZXJlbSAgDQpHb29nbGUgRHJpdmUgT3JkbmVyLiBIaWVyIGlzdCBkZXIg
+TGluayB6dSBkZW4gUHJvdG9rb2xsZW46DQpQcm90b2tvbGxlIGltIEdvb2dsZSBEcml2ZQ0KDQpG
+YWxscyBkdSBGcmFnZW4gaGFzdCB6dW0gQWJsYXVmLCBrYW5uc3QgZHUgYW4gZGVuIFZvcnN0YW5k
+IGVpbmZhY2ggZWluZSAgDQpFLU1haWwgc2NoaWNrZW4uDQoNCldpciBmcmV1ZW4gdW5zIGF1ZiBJ
+aHJlIFRlaWxuYWhtZSENCkRpZSBWb3JzdMOkbmRlDQoNClp1c8OkdHpsaWNoZSBLb250YWt0aW5m
+b3JtYXRpb25lbjoNCkNhbm5hYmlzIFNvY2lhbCBDbHViIExlaXB6aWcgU8O8ZCBlVg0KUG9zdGZh
+Y2ggMzUgMDMgMDQNCjA0MTY1IExlaXB6aWcNCmluZm9AY3NjLWxlaXB6aWcuZXUNCis0OTE3NjQz
+MjkxNDM5DQo=
+--0000000000008e5607063f88614f
+Content-Type: text/html; charset="UTF-8"
+Content-Transfer-Encoding: quoted-printable
+
+
+<p>Sehr geehrtes Mitglied,</p>
+
+<p>wir laden Sie hiermit herzlich zu unserer n=C3=A4chsten ordentlichen Mit=
+gliederversammlung ein. Bitte beachten Sie, dass die Versammlung am <strong=
+>01.10.2025 um 19 Uhr</strong> stattfindet. Die Mitgliederversammlung finde=
+t in <strong>deutscher Sprache</strong> statt. Hier ist der Link zur Teilna=
+hme:<br>
+<a href=3D"https://meet.google.com/afd-hbgw-hnw">https://meet.google.com/af=
+d-hbgw-hnw</a></p>
+
+<p>Damit die Mitgliedsversammlung reibungslos verl=C3=A4uft, achte bitte au=
+f folgende Punkte. Mache dir bitte vorher Gedanken welche Punkte du einbrin=
+gen m=C3=B6chtest. Teste vor dem Video Gespr=C3=A4ch dein Mikrofon und dein=
+e Webcam.</p>
+
+<p>Zu Beginn der Mitgliedsversammlung werden die Teilnehmenden dazu aufgefo=
+rdert ihre Ausweis-Dokumente in die Kamera zu halten damit wir abgleichen k=
+=C3=B6nnen, ob eine Mitgliedschaft vorliegt. In der Mitgliedsversammlung d=
+=C3=BCrfen nur Mitglieder abstimmen, die vollst=C3=A4ndig in den Verein auf=
+genommen wurden.</p>
+
+<p>Die <strong>Tagesordnungs-Punkte</strong>, die in der Mitgliedsversammlu=
+ng besprochen werden, m=C3=BCssen <strong>sp=C3=A4testens 1 Woche vor</stro=
+ng> dem Stattfinden der Veranstaltung beim Vorstand eingereicht werden. Ver=
+wende dazu die folgende E-Mail Adresse: <a href=3D"mailto:vorstand@csc-leip=
+zig.eu">vorstand@csc-leipzig.eu</a></p>
+
+<p>Die Protokolle der letzten Mitgliedsversammlungen findest du in unserem =
+Google Drive Ordner. Hier ist der Link zu den Protokollen:<br>
+<a href=3D"https://drive.google.com/drive/folders/1kSJdYzuNEHvyZTPgV6MMs7AK=
+HSeMBZXg?usp=3Dsharing">Protokolle im Google Drive</a></p>
+
+<p>Falls du Fragen hast zum Ablauf, kannst du an den Vorstand einfach eine =
+E-Mail schicken.</p>
+
+<p>Wir freuen uns auf Ihre Teilnahme!<br>Die Vorst=C3=A4nde</p>
+
+<p><u>Zus=C3=A4tzliche Kontaktinformationen:</u><br>Cannabis Social Club Le=
+ipzig S=C3=BCd e.V.<br>Postfach 35 03 04<br>04165 Leipzig<br>info@csc-leipz=
+ig.eu<br>+4917643291439</p>
+
+--0000000000008e5607063f88614f--

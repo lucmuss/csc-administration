@@ -1,0 +1,44 @@
+Delivered-To: skymuss@gmail.com
+Received: by 2002:a05:7022:e1e:b0:f0:4d25:5ac9 with SMTP id dx30csp764091dlb;
+        Tue, 23 Sep 2025 03:26:15 -0700 (PDT)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=gmail.com; s=20230601; t=1758623176; x=1759227976; dara=google.com;
+        h=content-transfer-encoding:to:from:subject:date:message-id:reply-to
+         :mime-version:from:to:cc:subject:date:message-id:reply-to;
+        bh=JfBcm25Tc4NXSZLgn1ImgMK1dfyqzfKffRrzw3B1n4k=;
+        b=SYhG+UXtZMlO4uRlwc8YiSCLW3KxrCEVB+R4Vm8eQcSgc/h4Dvv6TCbMA7Tv+gC41N
+         loQTks6LIO+p3dh9JHFSQGBiqgkeeXWn9GCdiW9hyrvQSvwIGzjXJ2aP6kivBlMYAQKI
+         VFVY7VvuiIwQ0j2MvCbUUhgfX4ky9o/MFPyBVst1aUMR78/2iVU9ptoLauhlySDwu/Y1
+         xUz1A57wSn2JpVA+CDtTJRv6KdyHR7azQTrP5wHvSlRdtIwUdW0SVoOvwuOLCa4lic7E
+         Ekas27rZ/FjnNFbhj7Y+WwlJzRNsf7QXcZQNjTkdFvx+rKFWgEBm/NrE2aq+hhyMJgf/
+         qLyQ==
+X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=1e100.net; s=20230601; t=1758623176; x=1759227976;
+        h=content-transfer-encoding:to:from:subject:date:message-id:reply-to
+         :mime-version:from:to:cc:subject:date:message-id:reply-to;
+        bh=JfBcm25Tc4NXSZLgn1ImgMK1dfyqzfKffRrzw3B1n4k=;
+        b=TVq2rSKm2CsyBf1Wwijj9udyFyzNbcp1aycIFWPemSNcPiuwrV8CJPiG4szZ4m2jmd
+         gKGs2V7NK32VtQydL5v9t6b6MuFSk8r8L1LwJCquxoxWZ3Sy+KzDq4h5mNRcckL9VIXS
+         hGsRFX5wkRk89yOy2I4uA8ujQws8hFnJFvlTfQsNV6hKQrNANZiDOMxZWRC8AhjuPdB+
+         s+TDkpvMgUDvcOhYmuMTgxSu5nLrZwGoZCz0ejnzlesbej7VOoXU2zt9+7j14ZCwPPhq
+         vgt6nCjtGb8nBI8EtE/vujGTCaArhUXESCIU2ql0JaCARIiz7ILNzWdJFCS2oH0B2uyP
+         WFzA==
+X-Forwarded-Encrypted: i=1; AJvYcCVG/kIeVCDrdqBjavffPLQntkKBHFRw4KX+/Pp0nCF8FJmmU9fiXgEk+k5hTZZIMWUGsEUZ6PbV@gmail.com
+X-Google-Smtp-Source: AGHT+IHJLoJj+SGOY5EvfpvR+M8bkLdbykban53MkloHxSbI6HzaOw6nyAt8XWz9d8w5+Y+4QA5mt9Z0CQ==
+MIME-Version: 1.0
+X-Received: by 2002:a05:690c:5092:b0:74a:f470:1039 with SMTP id
+ 00721157ae682-758a81ef175mr12222717b3.52.1758623175866; Tue, 23 Sep 2025
+ 03:26:15 -0700 (PDT)
+Reply-To: info@csc-leipzig.eu
+Message-ID: <autogen-java-4f7bb0dd-5a4c-4e0c-99a7-1b6cc54f1759@google.com>
+Date: Tue, 23 Sep 2025 10:26:15 +0000
+Subject: =?UTF-8?Q?=E2=9C=A8_Mitgliedschaft_abgelehnt_=2D_CSC_Leipzig_S=C3=BCd_e=2EV=2E?=
+From: skymuss@gmail.com
+To: tim.diana.love25@gmail.com
+Content-Type: text/plain; charset="UTF-8"; format=flowed; delsp=yes
+Content-Transfer-Encoding: base64
+
+RXJmw7xsbGVuIG5pY2h0IGRpZSBBbHRlcnNhbmZvcmRlcnVuZyB2b24gMjEgSmFocmVuLg0KDQpa
+dXPDpHR6bGljaGUgS29udGFrdGluZm9ybWF0aW9uZW46DQpDYW5uYWJpcyBTb2NpYWwgQ2x1YiBM
+ZWlwemlnIFPDvGQgZS5WLg0KUG9zdGZhY2ggMzUgMDMgMDQNCjA0MTY1IExlaXB6aWcNCmluZm9A
+Y3NjLWxlaXB6aWcuZXUNCis0OTE3NjQzMjkxNDM5DQo=

@@ -1,0 +1,96 @@
+// Scriptname: CleanTable
+// ==========================
+
+// Konfigurationsvariablen
+// ==========================
+var CLEANTABLE_DAYS_THRESHOLD = 30;
+var CLEANTABLE_ORDER_SHEET_NAME = 'Bestellungen';
+var CLEANTABLE_LOGGING_ENABLED = true;
+
+var CLEANTABLE_EMAIL_NOTIFICATION_ENABLED = false; // Setze auf true, wenn E-Mail-Benachrichtigung aktiv sein soll
+var CLEANTABLE_EMAIL_RECIPIENT = "info@csc-leipzig.eu";
+var CLEANTABLE_EMAIL_TEMPLATE = {
+  subject: "Bereinigung: Alte offene Bestellungen gelöscht ({date})",
+  body: "Die automatische Tabellenbereinigung hat am {date} die folgenden offenen Bestellungen gelöscht (älter als {daysThreshold} Tage):\n\n{rows}\n\nDies ist eine automatische Benachrichtigung. Bitte prüfen Sie ggf. die Daten."
+};
+
+// ==========================
+// Hauptfunktion
+// ==========================
+function mainCleanTable() {
+  if (CLEANTABLE_LOGGING_ENABLED) Logger.log("[START] mainCleanTable");
+
+  var sheet = SpreadsheetApp.getActiveSpreadsheet().getSheetByName(CLEANTABLE_ORDER_SHEET_NAME);
+  if (!sheet) {
+    if (CLEANTABLE_LOGGING_ENABLED) Logger.log("[ERROR] Das Arbeitsblatt '" + CLEANTABLE_ORDER_SHEET_NAME + "' konnte nicht gefunden werden.");
+    return;
+  }
+
+  var data = sheet.getDataRange().getValues();
+  if (data.length < 2) {
+    if (CLEANTABLE_LOGGING_ENABLED) Logger.log("[INFO] Keine Daten zum Bereinigen gefunden.");
+    return;
+  }
+
+  var headers = data[0];
+  var statusIndex = headers.indexOf("Bestellstatus");
+  var timestampIndex = headers.indexOf("Zeitstempel");
+
+  if (statusIndex === -1 || timestampIndex === -1) {
+    if (CLEANTABLE_LOGGING_ENABLED) Logger.log("[ERROR] Die erforderlichen Spalten 'Bestellstatus' oder 'Zeitstempel' fehlen.");
+    return;
+  }
+
+  var currentDate = new Date();
+  var thresholdDate = new Date(currentDate.getTime() - (CLEANTABLE_DAYS_THRESHOLD * 24 * 60 * 60 * 1000));
+  var deletedRowsInfo = [];
+
+  // Von unten nach oben durchlaufen, damit deleteRow nicht zu Problemen führt
+  for (var i = data.length - 1; i >= 1; i--) {
+    var orderStatus = data[i][statusIndex];
+    var timestamp = data[i][timestampIndex];
+    var orderDate = new Date(timestamp);
+
+    if (orderStatus === "offen" && orderDate < thresholdDate) {
+      try {
+        sheet.deleteRow(i + 1); // +1 wegen Header
+        var rowInfo = headers.map(function(h, idx) {
+          return h + ": " + data[i][idx];
+        }).join(" | ");
+        deletedRowsInfo.push("Zeile " + (i + 1) + ": " + rowInfo);
+        if (CLEANTABLE_LOGGING_ENABLED) Logger.log(`[INFO] Zeile ${i + 1} gelöscht: Bestellstatus '${orderStatus}', Datum '${orderDate.toISOString()}'.`);
+      } catch (error) {
+        if (CLEANTABLE_LOGGING_ENABLED) Logger.log(`[ERROR] Fehler beim Löschen der Zeile ${i + 1}: ${error.message}`);
+      }
+    }
+  }
+
+  if (CLEANTABLE_EMAIL_NOTIFICATION_ENABLED && deletedRowsInfo.length > 0) {
+    cleanTableSendNotificationEmail(deletedRowsInfo, currentDate);
+  }
+
+  if (CLEANTABLE_LOGGING_ENABLED) Logger.log("[END] mainCleanTable");
+}
+
+// ==========================
+// Hilfsfunktionen
+// ==========================
+function cleanTableSendNotificationEmail(deletedRowsInfo, actionDate) {
+  var placeholders = {
+    date: Utilities.formatDate(actionDate, Session.getScriptTimeZone(), "dd.MM.yyyy HH:mm"),
+    daysThreshold: CLEANTABLE_DAYS_THRESHOLD,
+    rows: deletedRowsInfo.join("\n")
+  };
+  var subject = cleanTableReplacePlaceholders(CLEANTABLE_EMAIL_TEMPLATE.subject, placeholders);
+  var body = cleanTableReplacePlaceholders(CLEANTABLE_EMAIL_TEMPLATE.body, placeholders);
+
+  MailApp.sendEmail(CLEANTABLE_EMAIL_RECIPIENT, subject, body);
+  if (CLEANTABLE_LOGGING_ENABLED) Logger.log("[EMAIL] Benachrichtigung gesendet an: " + CLEANTABLE_EMAIL_RECIPIENT + ", Betreff: " + subject);
+}
+
+function cleanTableReplacePlaceholders(str, vars) {
+  for (var key in vars) {
+    str = str.replace(new RegExp("\\{" + key + "\\}", "g"), vars[key]);
+  }
+  return str;
+}

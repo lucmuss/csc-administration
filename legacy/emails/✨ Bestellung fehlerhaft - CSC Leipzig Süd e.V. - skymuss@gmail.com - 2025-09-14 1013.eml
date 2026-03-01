@@ -1,0 +1,103 @@
+Delivered-To: skymuss@gmail.com
+Received: by 2002:a05:7022:440a:b0:bb:34bf:393 with SMTP id ca10csp579931dlb;
+        Sun, 14 Sep 2025 01:13:28 -0700 (PDT)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=gmail.com; s=20230601; t=1757837608; x=1758442408; dara=google.com;
+        h=to:from:subject:date:message-id:mime-version:from:to:cc:subject
+         :date:message-id:reply-to;
+        bh=/Q3Dg9/QcBQaPc6nlp4AILEU33tFLddYPa3Nkt3jyoA=;
+        b=a0leM38nOZAyQG7Qa4HpqPM8Iuj9C22I0dhJXJOlEa27M/eTJQ/OdZ4zce6vJlv1eL
+         WgK5BEg/GHo/VxFEklzcLLedS8hryfpwn//JYHJCitD/xx8YmmrA7w12v6hNuLmRYB6c
+         maaCRe8hCaCsb+q6OvYHta5mIEqyzaBUU2qAlVoTYXGopK0+1doc9vg1kj9LzedWB4nb
+         vQNHZ49d6FPZIiUl3Uan5QZKdgiCGeM0QgUzyi2PtC6pCRmmFxX80/kBfCqPlMgmSDea
+         llE08dt18VKEaND1RVhjse5GhmSgMkweI99MUUUIiuzCGDJhW3Mt2Fc6M+zmF34sl8tD
+         5fLw==
+X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=1e100.net; s=20230601; t=1757837608; x=1758442408;
+        h=to:from:subject:date:message-id:mime-version:from:to:cc:subject
+         :date:message-id:reply-to;
+        bh=/Q3Dg9/QcBQaPc6nlp4AILEU33tFLddYPa3Nkt3jyoA=;
+        b=GF9vFZp2aLJPlGjr62S2TbpVHNZX6TWXaPJOGCw5TjvEXKGKo40t0uQiohP1NA7w1+
+         Q6mvwIZeMALlOcHH2dMeTIEv81rD/QQPeNWsrnDzlb3C1G8x2N4lF3W4H8nJ66imwKLd
+         eoNUWELdX6fDP5OVAKA0z8dap/JAlpDIkThLVDkOVUkmIBq5RS3QSyZoPfQ1laQDwS0O
+         Hgk6ObacFnSWIHF+2mfGXpaIpaaXvBnGo5GDfXn5G8Ksm2z86UQh6GcBLXYPmOLqng28
+         IZkyzNXzEPvycRb+MQt13ahngZCh8ugCQrH/ulvBUIjGXiskS3DXTCKTKBkwKKeNxRRX
+         a0lQ==
+X-Forwarded-Encrypted: i=1; AJvYcCVbsxseP5+Kw/a7VPiwYh663Qqi0KCMU1s2flfnm2kF0MbYOo3i8kGFQ+2ykda0r8cSRFWO3ddA@gmail.com
+X-Google-Smtp-Source: AGHT+IGoDTAuyV0XR566yFwXj+tj/7BpbUnHUWGL9a1yOMcGDEi8GFk1cR3OXeaBna+/v2v/ZRU3FicRkw==
+MIME-Version: 1.0
+X-Received: by 2002:a05:6e02:450c:b0:422:3cf7:9bf with SMTP id
+ e9e14a558f8ab-4223cf70aa2mr63124635ab.1.1757837607878; Sun, 14 Sep 2025
+ 01:13:27 -0700 (PDT)
+Message-ID: <autogen-java-887f8ca6-b4e0-4bc0-99e6-ae5ad99b785f@google.com>
+Date: Sun, 14 Sep 2025 08:13:27 +0000
+Subject: =?UTF-8?Q?=E2=9C=A8_Bestellung_fehlerhaft_=2D_CSC_Leipzig_S=C3=BCd_e=2EV=2E?=
+From: skymuss@gmail.com
+To: simon.lober@gmx.de
+Content-Type: multipart/alternative; boundary="00000000000030c943063ebe76eb"
+
+--00000000000030c943063ebe76eb
+Content-Type: text/plain; charset="UTF-8"; format=flowed; delsp=yes
+Content-Transfer-Encoding: base64
+
+SWhyZSBWb3JiZXN0ZWxsdW5nc2FuZnJhZ2Uga29ubnRlIG5pY2h0IGJlYXJiZWl0ZXQgd2VyZGVu
+LCBkYSBmb2xnZW5kZSAgDQpTb3J0ZW4gbmljaHQgYXVzcmVpY2hlbmQgdmVyZsO8Z2JhciBzaW5k
+Og0KDQpTb3J0ZTogT3JhbmdlIEJ1ZCB2ZXJmw7xnYmFyOiAwIGcNCg0KSMOkdWZpZyBnZXN0ZWxs
+dGUgRnJhZ2VuDQpodHRwczovL3d3dy5jc2MtbGVpcHppZy5ldS9mYXENCg0KWnVzw6R0emxpY2hl
+IEJlc3RlbGxpbmZvcm1hdGlvbmVuOg0KTWl0Z2xpZWRzbnVtbWVyOiAxMDAwODINCg0KQmVzdGVs
+bHRlIFNvcnRlbiB1bmQgTWVuZ2VuOg0KMS4gU29ydGU6IE9yYW5nZSBCdWQ6IDVnDQpHZXNhbXR3
+ZXJ0IGRlciBCZXN0ZWxsdW5nOiA0MC4wMCBFVVINCk1vbmF0c2xpbWl0OiA1MGcNCkFrdHVlbGxl
+ciBCZXN0ZWxsc3RhdHVzOiBVbmJla2FubnQNCkF1c2dhYmUgTW9uYXQ6IDEwLjIwMjUNCkJlc3Rl
+bGxkYXR1bTogMTQuMDkuMjAyNSAxMDoxMw0KDQpTb3J0ZSBWZXJmw7xnYmFya2VpdDoNCk9yYW5n
+ZSBCdWQgLSBQcmVpczogOOKCrC9nIC0gVmVyZsO8Z2JhcmtlaXQ6IDBnDQpTYWdlIG4gU291ciAt
+IFByZWlzOiA54oKsL2cgLSBWZXJmw7xnYmFya2VpdDogMGcNCkJsdWUgRHJlYW0gLSBQcmVpczog
+OOKCrC9nIC0gVmVyZsO8Z2JhcmtlaXQ6IDBnDQpPcmFuZ2UgU2hlcmJlcnQgLSBQcmVpczogOeKC
+rC9nIC0gVmVyZsO8Z2JhcmtlaXQ6IDBnDQpPcmFuZ2UgSGlsbCBTcGVjaWFsIC0gUHJlaXM6IDni
+gqwvZyAtIFZlcmbDvGdiYXJrZWl0OiAwZw0KV2FwcGEgLSBQcmVpczogOOKCrC9nIC0gVmVyZsO8
+Z2JhcmtlaXQ6IDBnDQpDaG9jb2xvcGUgLSBQcmVpczogOeKCrC9nIC0gVmVyZsO8Z2JhcmtlaXQ6
+IDBnDQpDaGFubmVsIC0gUHJlaXM6IDfigqwvZyAtIFZlcmbDvGdiYXJrZWl0OiAwZw0KDQpTdGVj
+a2xpbmcgVmVyZsO8Z2JhcmtlaXQ6DQpPcmFuZ2UgQnVkIC0gUHJlaXM6IDXigqwvU3TDvGNrIC0g
+VmVyZsO8Z2JhcmtlaXQ6IDAgU3TDvGNrDQpTYWdlIG4gU291ciAtIFByZWlzOiA14oKsL1N0w7xj
+ayAtIFZlcmbDvGdiYXJrZWl0OiAwIFN0w7xjaw0KQmx1ZSBEcmVhbSAtIFByZWlzOiA14oKsL1N0
+w7xjayAtIFZlcmbDvGdiYXJrZWl0OiAwIFN0w7xjaw0KT3JhbmdlIFNoZXJiZXJ0IC0gUHJlaXM6
+IDXigqwvU3TDvGNrIC0gVmVyZsO8Z2JhcmtlaXQ6IDAgU3TDvGNrDQpPcmFuZ2UgSGlsbCBTcGVj
+aWFsIC0gUHJlaXM6IDXigqwvU3TDvGNrIC0gVmVyZsO8Z2JhcmtlaXQ6IDAgU3TDvGNrDQpXYXBw
+YSAtIFByZWlzOiA14oKsL1N0w7xjayAtIFZlcmbDvGdiYXJrZWl0OiAwIFN0w7xjaw0KQ2hvY29s
+b3BlIC0gUHJlaXM6IDXigqwvU3TDvGNrIC0gVmVyZsO8Z2JhcmtlaXQ6IDAgU3TDvGNrDQpDaGFu
+bmVsIC0gUHJlaXM6IDXigqwvU3TDvGNrIC0gVmVyZsO8Z2JhcmtlaXQ6IDAgU3TDvGNrDQoNClp1
+c8OkdHpsaWNoZSBLb250YWt0aW5mb3JtYXRpb25lbjoNCkNhbm5hYmlzIFNvY2lhbCBDbHViIExl
+aXB6aWcgU8O8ZCBlVg0KUG9zdGZhY2ggMzUgMDMgMDQNCjA0MTY1IExlaXB6aWcNCmluZm9AY3Nj
+LWxlaXB6aWcuZXUNCis0OTE3NjQzMjkxNDM5DQo=
+--00000000000030c943063ebe76eb
+Content-Type: text/html; charset="UTF-8"
+Content-Transfer-Encoding: quoted-printable
+
+Ihre Vorbestellungsanfrage konnte nicht bearbeitet werden, da folgende <b>S=
+orten nicht ausreichend verf=C3=BCgbar</b> sind:<br><br>Sorte: Orange Bud v=
+erf=C3=BCgbar: 0 g<br><br>H=C3=A4ufig gestellte Fragen<br><a href=3D'https:=
+//www.csc-leipzig.eu/faq'>https://www.csc-leipzig.eu/faq</a><br><br><u>Zus=
+=C3=A4tzliche Bestellinformationen:</u><br>Mitgliedsnummer: <strong>100082<=
+/strong><br><br><u>Bestellte Sorten und Mengen:</u><br>1. Sorte: Orange Bud=
+: 5g<br>Gesamtwert der Bestellung: <b>40.00 EUR</b><br>Monatslimit: <b>50g<=
+/b><br>Aktueller Bestellstatus: <b>Unbekannt</b><br>Ausgabe Monat: <b>10.20=
+25</b><br>Bestelldatum: <b>14.09.2025 10:13</b><br><br><u>Sorte Verf=C3=BCg=
+barkeit:</u><br>Orange Bud - Preis: 8=E2=82=AC/g - Verf=C3=BCgbarkeit: 0g<b=
+r>Sage n Sour - Preis: 9=E2=82=AC/g - Verf=C3=BCgbarkeit: 0g<br>Blue Dream =
+- Preis: 8=E2=82=AC/g - Verf=C3=BCgbarkeit: 0g<br>Orange Sherbert - Preis: =
+9=E2=82=AC/g - Verf=C3=BCgbarkeit: 0g<br>Orange Hill Special - Preis: 9=E2=
+=82=AC/g - Verf=C3=BCgbarkeit: 0g<br>Wappa - Preis: 8=E2=82=AC/g - Verf=C3=
+=BCgbarkeit: 0g<br>Chocolope - Preis: 9=E2=82=AC/g - Verf=C3=BCgbarkeit: 0g=
+<br>Channel - Preis: 7=E2=82=AC/g - Verf=C3=BCgbarkeit: 0g<br><br><u>Steckl=
+ing Verf=C3=BCgbarkeit:</u><br>Orange Bud - Preis: 5=E2=82=AC/St=C3=BCck - =
+Verf=C3=BCgbarkeit: 0 St=C3=BCck<br>Sage n Sour - Preis: 5=E2=82=AC/St=C3=
+=BCck - Verf=C3=BCgbarkeit: 0 St=C3=BCck<br>Blue Dream - Preis: 5=E2=82=AC/=
+St=C3=BCck - Verf=C3=BCgbarkeit: 0 St=C3=BCck<br>Orange Sherbert - Preis: 5=
+=E2=82=AC/St=C3=BCck - Verf=C3=BCgbarkeit: 0 St=C3=BCck<br>Orange Hill Spec=
+ial - Preis: 5=E2=82=AC/St=C3=BCck - Verf=C3=BCgbarkeit: 0 St=C3=BCck<br>Wa=
+ppa - Preis: 5=E2=82=AC/St=C3=BCck - Verf=C3=BCgbarkeit: 0 St=C3=BCck<br>Ch=
+ocolope - Preis: 5=E2=82=AC/St=C3=BCck - Verf=C3=BCgbarkeit: 0 St=C3=BCck<b=
+r>Channel - Preis: 5=E2=82=AC/St=C3=BCck - Verf=C3=BCgbarkeit: 0 St=C3=BCck=
+<br><br><u>Zus=C3=A4tzliche Kontaktinformationen:</u><br>Cannabis Social Cl=
+ub Leipzig S=C3=BCd e.V.<br>Postfach 35 03 04<br>04165 Leipzig<br>info@csc-=
+leipzig.eu<br>+4917643291439<br>
+--00000000000030c943063ebe76eb--

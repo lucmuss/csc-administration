@@ -37,6 +37,136 @@ Verwaltungssystem für einen Cannabis Social Club (CSC) nach dem neuen CanG (Can
 - **SEPA-Lastschrift**: Mandatsverwaltung, automatische Abbuchung
 - **Buchhaltung**: Export für Steuerberater
 
+### 2.5 Automatisierung & Workflows (aus Appscripts)
+
+#### Mitgliedschafts-Workflow
+```
+1. Antragseingang (Google Form)
+   ↓
+2. Automatische Prüfung:
+   - Duplikat-Check (E-Mail)
+   - Altersprüfung (21+)
+   - Mitgliedsnummer-Vergabe (automatisch fortlaufend)
+   - Beitrittsdatum = 1. des Folgemonats
+   ↓
+3. Status-Setzung:
+   - Akzeptiert: "Nein"
+   - Verifiziert: "Nein"
+   - Zahlung: "Nein"
+   - Guthaben: 0€
+   - Monatsabgabe: 50g
+   - Tagesabgabe: 25g
+   ↓
+4. E-Mail mit Dokumenten:
+   - Aufnahmeantrag (PDF)
+   - SEPA-Lastschriftmandat (PDF)
+   - Selbstauskunft (PDF)
+   - Mitgliederausweis (PDF)
+   ↓
+5. Manuelle Prüfung durch Vorstand
+   ↓
+6. Freischaltung (Akzeptiert + Verifiziert)
+```
+
+#### Dokumenten-Generierung
+**Templates mit Platzhaltern:**
+- `{{vorname}}` - Vorname
+- `{{nachname}}` - Nachname
+- `{{geburtsdatum}}` - Geburtsdatum
+- `{{strasse}}` - Straße, Hausnummer
+- `{{postleitzahl}}` - PLZ
+- `{{stadt}}` - Stadt
+- `{{telefonnummer}}` - Telefon
+- `{{email}}` - E-Mail
+- `{{aufnahmedatum}}` - Aufnahmedatum
+- `{{mitgliedsnummer}}` - Mitgliedsnummer
+- `{{kreditinstitut}}` - Bank
+- `{{bic}}` - BIC
+- `{{iban}}` - IBAN
+- `{{beitrittsdatum}}` - Beitrittsdatum
+- `{{datenschutzhinweis_checkbox}}` - [x] wenn akzeptiert
+- `{{keinmitglied_checkbox}}` - [x] wenn kein anderer CSC
+- `{{lebensjahr_checkbox}}` - [x] wenn 21+
+- `{{wohnsitz_checkbox}}` - [x] wenn DE
+- `{{lichtbild_checkbox}}` - [x] wenn Ausweis vorhanden
+
+**Dokumente:**
+1. **Aufnahmeantrag** - Mitgliedschaftsvertrag
+2. **SEPA-Lastschriftmandat** - Lastschrift-Einwilligung
+3. **Selbstauskunft** - Persönliche Erklärung
+4. **Mitgliederausweis** - Ausweis für das Mitglied
+
+#### Mitgliederversammlungen
+- **Termine**: Vierteljährlich (01.01., 01.04., 01.07., 01.10.)
+- **Einladung**: 6 Tage vorher per E-Mail
+- **Teilnehmer**: Nur akzeptierte und verifizierte Mitglieder
+- **Format**: Google Meet (Video-Konferenz)
+- **Dauer**: 19:00 - 21:00 Uhr
+- **Features**:
+  - Automatischer Kalendereintrag
+  - Meet-Link-Generierung
+  - Protokoll-Ordner (Google Drive)
+  - Abstimmungsberechtigung nur für vollständige Mitglieder
+  - Ausweis-Check per Kamera zu Beginn
+
+#### Limit-Reset-Automatik
+```
+TÄGLICH (z.B. 00:00 Uhr):
+- Tagesabgabe aller Mitglieder auf 25g zurücksetzen
+
+MONATLICH (am 1. des Monats):
+- Monatsabgabe aller Mitglieder auf 50g zurücksetzen
+```
+
+#### Inaktivitäts-Benachrichtigung
+- **Trigger**: 60 Tage ohne Bestellung
+- **Bedingungen**:
+  - Mitglied akzeptiert: Ja
+  - Mitglied verifiziert: Ja
+  - Optionaler Newsletter: Ja
+- **Inhalt**: Erinnerung mit aktuellem Sortenangebot
+- **Links**: Bestellformular, FAQ
+
+### 2.6 E-Mail-Kommunikation
+
+#### Standard-E-Mail-Format
+```
+Betreff: ✨ [Betreff] - CSC Leipzig Süd e.V.
+
+[Inhalt]
+
+--
+Zusätzliche Kontaktinformationen:
+Cannabis Social Club Leipzig Süd e.V.
+Postfach 35 03 04
+04165 Leipzig
+info@csc-leipzig.eu
++4917643291439
+```
+
+#### E-Mail-Templates
+1. **Mitgliedschaftsantrag eingegangen**
+   - Bestätigung des Antrags
+   - Anhang: 4 PDF-Dokumente
+   - Hinweis: 8 Wochen Frist zur Registrierung
+   - FAQ-Link
+
+2. **Mitgliederversammlungseinladung**
+   - Termin und Uhrzeit
+   - Google Meet-Link
+   - Hinweise zur Teilnahme (Technik, Ausweis)
+   - Tagesordnungspunkte (1 Woche vorher einreichen)
+   - Protokoll-Archiv
+
+3. **Bestell-Erinnerung (Inaktivität)**
+   - Freundliche Erinnerung
+   - Aktuelles Sortenangebot
+   - Direktlink zum Bestellformular
+
+4. **Registrierung fehlgeschlagen**
+   - Duplikat gefunden
+   - Altersanforderung nicht erfüllt
+
 ---
 
 ## 3. Datenmodell
@@ -298,6 +428,84 @@ def check_limits(member_id, requested_amount):
 - Alle Passwörter hashen (bcrypt)
 - SQL-Injection verhindern (Prepared Statements)
 - XSS-Schutz im Frontend
+
+---
+
+## Anhang A: Legacy Appscripts (Referenz)
+
+Die folgenden Google Appscripts wurden aus dem alten System extrahiert und dienen als Referenz für die Implementierung:
+
+### A.1 FormSubmit.gs
+**Funktion**: Verarbeitung neuer Mitgliedschaftsanträge
+- Trigger: Bei Formular-Submit
+- Aktionen:
+  - Duplikat-Prüfung (E-Mail)
+  - Altersprüfung (21+)
+  - Mitgliedsnummer-Vergabe (fortlaufend ab 100000)
+  - Beitrittsdatum = 1. Folgemonat
+  - Telefonnummer-Normalisierung (+ → 00)
+  - Status-Initialisierung (Akzeptiert/Verifiziert/Zahlung = Nein)
+  - Zeilen-Farbmarkierung (#B7CDE8)
+  - E-Mail-Versand mit Dokumenten
+
+### A.2 RestLimitDay.gs
+**Funktion**: Tägliches Zurücksetzen der Tageslimits
+- Trigger: Täglich (00:00 Uhr)
+- Aktion: Tagesabgabe aller Mitglieder auf 25g setzen
+
+### A.3 RestLimitMonth.gs
+**Funktion**: Monatliches Zurücksetzen der Monatslimits
+- Trigger: Täglich (prüft ob 1. des Monats)
+- Aktion: Monatsabgabe aller Mitglieder auf 50g setzen (nur am 1.)
+
+### A.4 NotifyOrder.gs
+**Funktion**: Benachrichtigung bei Inaktivität
+- Trigger: Täglich
+- Bedingung: 60 Tage ohne Bestellung + akzeptiert + verifiziert + Newsletter
+- Aktion: E-Mail mit Sortenangebot und Bestelllink
+
+### A.5 MembershipInvitation.gs
+**Funktion**: Einladung zu Mitgliederversammlungen
+- Trigger: Täglich (prüft auf 6 Tage vor Quartalsbeginn)
+- Termine: 01.01., 01.04., 01.07., 01.10.
+- Features:
+  - Google Calendar Event mit Meet-Link
+  - E-Mail an alle akzeptierten Mitglieder
+  - Template-System für personalisierte Einladungen
+
+### A.6 SendMembershipDocuments.gs
+**Funktion**: Versand personalisierter Dokumente
+- Trigger: Bei Antragseingang (gleicher Tag)
+- Dokumente: Aufnahmeantrag, SEPA-Mandat, Selbstauskunft, Mitgliederausweis
+- Technik: Google Docs Template → PDF → E-Mail-Anhang
+
+## Anhang B: Formular-Strukturen
+
+### B.1 Mitgliedschaftsantrag (Google Form)
+**Pflichtfelder:**
+- E-Mail-Adresse
+- Vorname, Nachname
+- Geburtsdatum
+- Straße, Hausnummer
+- Postleitzahl, Stadt
+- Telefonnummer
+- Datenschutzerklärung (Checkbox)
+- IBAN, BIC, Kreditinstitut
+- SEPA-Lastschriftmandat (Checkbox)
+- Keine andere CSC-Mitgliedschaft (Checkbox)
+- Fester Wohnsitz in Deutschland (Checkbox)
+- Mindestalter 21 Jahre (Checkbox)
+- Aktueller Lichtbildausweis (Checkbox)
+- Newsletter wichtige Ankündigungen (Checkbox)
+- Optionaler Newsletter (Checkbox)
+
+### B.2 Bestellformular (Google Form)
+**Struktur:**
+- Mitgliedsnummer (Validierung)
+- Zeitstempel (automatisch)
+- Auswahl der Sorten (8 Blüten + 8 Stecklinge)
+- Mengenfelder (in Gramm)
+- Hinweis: Automatische Limit-Prüfung
 
 ---
 

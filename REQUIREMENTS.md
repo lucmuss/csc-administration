@@ -37,9 +37,209 @@ Verwaltungssystem für einen Cannabis Social Club (CSC) nach dem neuen CanG (Can
 - **SEPA-Lastschrift**: Mandatsverwaltung, automatische Abbuchung
 - **Buchhaltung**: Export für Steuerberater
 
-### 2.5 Automatisierung & Workflows (aus Appscripts)
+### 2.5 Rollen- & Rechtesystem (RBAC)
 
-#### Mitgliedschafts-Workflow
+#### Rollen-Hierarchie
+```
+┌─────────────────────────────────────────────────────────────┐
+│                    SYSTEM-ADMINISTRATOR                     │
+│                    (technischer Zugriff)                    │
+└───────────────────────────┬─────────────────────────────────┘
+                            │
+┌───────────────────────────▼─────────────────────────────────┐
+│                     GESCHÄFTSFÜHRER                         │
+│              (Vollzugriff auf alle Clubs)                   │
+└───────────────────────────┬─────────────────────────────────┘
+                            │
+        ┌───────────────────┼───────────────────┐
+        │                   │                   │
+┌───────▼──────┐  ┌────────▼────────┐  ┌──────▼──────┐
+│   VORSTAND   │  │    KASSIERER    │  │  MITARBEITER │
+│  (1. Vors.,  │  │  (Finanzen,     │  │  (Support,   │
+│   2. Vors.,  │  │   Zahlungen,    │  │   Logistik,  │
+│   Schriftf.) │  │   Buchhaltung)  │  │   Events)    │
+└───────┬──────┘  └────────┬────────┘  └──────┬──────┘
+        │                  │                  │
+        └──────────────────┼──────────────────┘
+                           │
+                    ┌──────▼──────┐
+                    │   MITGLIED  │
+                    │  (nur Lesen)│
+                    └─────────────┘
+```
+
+#### Berechtigungs-Matrix
+
+| Funktion | System-Admin | GF | Vorstand | Kassierer | Mitarbeiter | Mitglied |
+|----------|-------------|----|----------|-----------|-------------|----------|
+| **Mitglieder** |
+| Antrag ansehen | ✅ | ✅ | ✅ | ❌ | ❌ | Eigen |
+| Mitglieder akzeptieren | ❌ | ✅ | ✅ | ❌ | ❌ | ❌ |
+| Mitglieder verifizieren | ❌ | ✅ | ✅ | ❌ | ❌ | ❌ |
+| Mitglieder deaktivieren | ❌ | ✅ | ✅ | ❌ | ❌ | ❌ |
+| Bankdaten sehen | ❌ | ✅ | ❌ | ✅ | ❌ | ❌ |
+| **Finanzen** |
+| Zahlungen erfassen | ❌ | ✅ | ✅ | ✅ | ❌ | ❌ |
+| SEPA-Lastschrift ausführen | ❌ | ✅ | ❌ | ✅ | ❌ | ❌ |
+| Berichte exportieren | ✅ | ✅ | ✅ | ✅ | ❌ | ❌ |
+| Preise ändern | ❌ | ✅ | ✅ | ❌ | ❌ | ❌ |
+| **Bestellungen** |
+| Bestellungen sehen | ✅ | ✅ | ✅ | ✅ | ✅ | Eigen |
+| Bestellungen bearbeiten | ❌ | ✅ | ✅ | ❌ | ✅ | ❌ |
+| Ausgabe bestätigen | ❌ | ✅ | ✅ | ❌ | ✅ | ❌ |
+| **Kommunikation** |
+| E-Mails senden | ✅ | ✅ | ✅ | ❌ | ✅ | ❌ |
+| Mitgliederversammlung einberufen | ❌ | ✅ | ✅ | ❌ | ❌ | ❌ |
+| Newsletter versenden | ❌ | ✅ | ✅ | ❌ | ✅ | ❌ |
+| **System** |
+| Einstellungen ändern | ✅ | ✅ | ❌ | ❌ | ❌ | ❌ |
+| Benutzer verwalten | ✅ | ✅ | ❌ | ❌ | ❌ | ❌ |
+| Logs einsehen | ✅ | ✅ | ✅ | ❌ | ❌ | ❌ |
+| Backups erstellen | ✅ | ✅ | ❌ | ❌ | ❌ | ❌ |
+
+#### Wichtige Regeln (aus Satzung § 3)
+- **Nur Vorstand** darf Mitglieder aufnehmen (einfache Mehrheit)
+- **Kündigungsfrist**: 2 Monate zum Ende der Mitgliedschaft
+- **Max. Mitglieder**: 500 pro Club
+- **Mindestmitgliedschaft**: 3 Monate
+- **Keine Doppelmitgliedschaft** in anderen CSCs
+
+### 2.6 Präventionsmodul (Suchtprävention)
+
+#### Konsum-Muster-Analyse
+```
+PRÜFUNGSKRITERIEN:
+├── Häufigkeit
+│   ├── Tägliche Bestellungen (>20 Tage/Monat)
+│   ├── Steigende Mengen (+30% zum Vormonat)
+│   └── Frühzeitige Nachbestellung
+│
+├── Muster
+│   ├── Konstanter hoher Verbrauch (>40g/Monat)
+│   ├── Nacht-Bestellungen (22:00-06:00)
+│   └── Mehrfachbestellungen pro Tag
+│
+└── Risikoindikatoren
+    ├── Mehrere CSC-Mitgliedschaften
+    ├── Unvollständige Angaben
+    └── Zahlungsrückstände
+```
+
+#### Eskalationsstufen
+| Stufe | Kriterium | Aktion | Benachrichtigung |
+|-------|-----------|--------|------------------|
+| 🟡 **Aufmerksam** | 2+ Indikatoren | Markierung im System | Interne Notiz |
+| 🟠 **Gespräch** | 4+ Indikatoren oder >45g/Monat | Persönliches Gespräch | Vorstand |
+| 🔴 **Prävention** | 6+ Indikatoren oder >50g/Monat | Zwangsberatung | Vorstand + Beratungsstelle |
+| ⚫ **Ausschluss** | Wiederholte Verstöße | Mitgliedschaft beenden | Vorstand |
+
+#### Automatische Maßnahmen
+- **Wöchentliche Reports** an Vorstand mit auffälligen Mitgliedern
+- **Monatliche Auswertung**: Durchschnittskonsum, Trends
+- **Automatische Warnung** bei Überschreitung von 40g/Monat
+- **Suchtberatungs-Hotline** verlinken im Mitgliederbereich
+
+### 2.7 Multi-Tenant Architektur
+
+#### Club-Verwaltung
+```
+PLATTFORM
+├── Club 1: CSC Leipzig Süd
+│   ├── Eigene Mitglieder
+│   ├── Eigene Sorten/Preise
+│   ├── Eigene Vorstände
+│   └── Eigene Einstellungen
+│
+├── Club 2: CSC Berlin Mitte
+│   ├── Eigene Mitglieder
+│   ├── Eigene Sorten/Preise
+│   └── ...
+│
+└── Club 3: [Weiterer Club]
+    └── ...
+```
+
+#### White-Label Features
+- **Logo-Upload** für jeden Club
+- **Farbschema** anpassbar (Primary, Secondary)
+- **E-Mail-Templates** pro Club individualisierbar
+- **Domain-Mapping** (optional: club.csc-platform.de)
+- **Eigene Bankverbindung** pro Club
+- **Eigene Satzung** hinterlegbar
+
+### 2.8 Admin-Dashboard Einstellungen
+
+#### System-Einstellungen (nur System-Admin)
+```yaml
+Datenbank:
+  - Backup-Zeitplan (täglich/wöchentlich)
+  - Aufbewahrungsfrist (min. 2 Jahre laut CanG)
+  - Verschlüsselung aktivieren
+
+Sicherheit:
+  - 2FA für alle Admin-Benutzer
+  - Passwort-Richtlinien
+  - Session-Timeout
+  - IP-Whitelist
+
+Monitoring:
+  - Fehlerprotokolle
+  - Performance-Metriken
+  - API-Rate-Limits
+```
+
+#### Club-Einstellungen (Vorstand)
+```yaml
+Mitgliedschaft:
+  Aufnahmegebühr: 20 EUR
+  Monatsbeitrag Standard: 24 EUR
+  Mindestmitgliedschaft: 3 Monate
+  Max. Mitglieder: 500
+  
+Abgabelimits:
+  Tageslimit: 25g
+  Monatslimit: 50g
+  
+Sorten & Preise:
+  - Orange Bud: 8 EUR/g
+  - Sage n Sour: 9 EUR/g
+  - [Weitere Sorten...]
+  
+Prävention:
+  Warnschwelle: 40g/Monat
+  Beratungspflicht: 45g/Monat
+  
+Automatisierung:
+  Limit-Reset: täglich 00:00
+  Mahnungen: nach 7 Tagen
+  Inaktivitäts-Erinnerung: nach 60 Tagen
+  
+Kommunikation:
+  Absender-E-Mail: info@csc-leipzig.eu
+  SMTP-Server: [konfigurierbar]
+  Newsletter-Provider: [optional]
+```
+
+#### Benachrichtigungs-Einstellungen (pro Rolle)
+```yaml
+Vorstand:
+  - Neuer Mitgliedsantrag: sofort
+  - Überschreitung Präventionsschwelle: sofort
+  - Zahlungsrückstand: täglich
+  - Mitgliederversammlung anstehend: 6 Tage vorher
+
+Kassierer:
+  - Neue Zahlung eingegangen: sofort
+  - SEPA-Lastschrift fehlgeschlagen: sofort
+  - Monatlicher Finanzreport: 1. des Monats
+
+Mitarbeiter:
+  - Neue Bestellung: sofort
+  - Inventar niedrig: täglich
+  - Ausgabe-Termin morgen: 1 Tag vorher
+```
+
+### 2.9 Automatisierung & Workflows (aus Appscripts)
 ```
 1. Antragseingang (Google Form)
    ↓
@@ -428,6 +628,195 @@ def check_limits(member_id, requested_amount):
 - Alle Passwörter hashen (bcrypt)
 - SQL-Injection verhindern (Prepared Statements)
 - XSS-Schutz im Frontend
+
+---
+
+## 5. Rechtliche Anforderungen (Frontend/Webseite)
+
+### 5.1 Öffentliche Webseite (Google Sites/Custom)
+
+#### Pflichtseiten (nach CanG und DSGVO)
+| Seite | Inhalt | Pflicht |
+|-------|--------|---------|
+| **Startseite** | Überblick, Werte, Kontakt | ✅ |
+| **Mitgliedschaft** | Antragsformular, Preise, FAQ | ✅ |
+| **Sorten/Preise** | Aktuelle Sorten, Preisliste | ✅ |
+| **Suchtprävention** | Info, Beratungsstellen, Hilfe | ✅ (CanG) |
+| **Satzung** | PDF-Download, Änderungshistorie | ✅ |
+| **Impressum** | Vereinsdaten, Vorstand, Kontakt | ✅ |
+| **Datenschutz** | DSGVO-konforme Erklärung | ✅ |
+| **Kontakt** | Formular, Adresse, Öffnungszeiten | Empfohlen |
+| **Mitglieder-Login** | Link zum Backend | ✅ |
+
+#### Impressum (Pflichtangaben)
+```
+Cannabis Social Club [Name] e.V.
+[Postfach/Adresse]
+[PLZ Ort]
+
+Vertreten durch:
+1. Vorsitzende/r: [Name]
+2. Vorsitzende/r: [Name]
+Schriftführer/in: [Name]
+
+Kontakt:
+E-Mail: [info@club.de]
+Telefon: [optional]
+
+Registergericht: Amtsgericht [Stadt]
+Vereinsregisternummer: [VR XXXXX]
+```
+
+#### Datenschutzerklärung (DSGVO-konform)
+**Pflichtangaben:**
+1. Verantwortlicher (Vorstand)
+2. Datenschutzbeauftragter (wenn >10 Mitarbeiter)
+3. Erhobene Daten (Name, Adresse, Bankdaten, etc.)
+4. Zweck der Verarbeitung
+5. Rechtsgrundlage (Art. 6 DSGVO)
+6. Speicherdauer (min. 2 Jahre nach Austritt laut CanG)
+7. Weitergabe an Behörden (bei Anfrage)
+8. Betroffenenrechte (Auskunft, Löschung, etc.)
+9. Cookies/Tracking (nur technisch notwendig)
+10. Änderungshistorie
+
+#### Suchtpräventions-Seite (CanG-Anforderung)
+```
+Pflicht-Inhalte:
+- Informationen zu Cannabis-Sucht
+- Warnsignale für problematischen Konsum
+- Kontakt zu Beratungsstellen
+- Links zu professioneller Hilfe
+- Suchtpräventions-Quiz (optional)
+- Kontaktdaten des Club-Präventionsbeauftragten
+```
+
+### 5.2 Backend (Admin-Oberfläche)
+
+#### Login-Seite
+- Club-Auswahl (bei Multi-Tenant)
+- Benutzername/E-Mail
+- Passwort
+- 2FA-Code (wenn aktiviert)
+- "Passwort vergessen"-Funktion
+- Link zu öffentlicher Webseite
+
+#### Impressum/DSGVO im Backend
+- Footer mit Link zu Impressum
+- Datenschutz-Hinweis bei Formularen
+- Cookie-Banner (nur technisch notwendig)
+- Auskunftsrecht-Button (eigene Daten exportieren)
+- Löschungsrecht (Account deaktivieren)
+
+---
+
+## 6. Parametrisierbare Konfiguration
+
+### 6.1 Appscripts → Backend-Parameter
+
+#### Mitgliedschafts-Workflow (konfigurierbar)
+```yaml
+mitgliedschaft:
+  aufnahmegebühr: 20              # EUR
+  mindestmitgliedschaft: 3        # Monate
+  max_mitglieder: 500             # pro Club
+  beitrittsdatum: "erster_tag_folgemonat"
+  
+  altersprüfung:
+    mindestalter: 21              # Jahre
+    wohnsitz_deutschland: true
+    wohnsitz_dauer: 6             # Monate
+    
+  nummernvergabe:
+    start: 100000
+    schema: "sequentiell"
+    
+  dokumente:
+    aufnahmeantrag: true
+    sepa_mandat: true
+    selbstauskunft: true
+    mitgliedsausweis: true
+    
+  fristen:
+    unterlagen_einreichen: 56     # Tage (8 Wochen)
+    kündigungsfrist: 2            # Monate
+```
+
+#### Limits & Prävention (konfigurierbar)
+```yaml
+abgabelimits:
+  tageslimit: 25                  # Gramm
+  monatslimit: 50                 # Gramm
+  
+prävention:
+  warnschwelle: 40                # Gramm/Monat
+  beratungspflicht: 45            # Gramm/Monat
+  kritisch: 50                    # Gramm/Monat
+  
+  indikatoren:
+    tägliche_bestellungen: 20     # Tage/Monat
+    mengenzuwachs: 30             # % zum Vormonat
+    nacht_bestellungen: true      # 22:00-06:00
+    
+  automatische_maßnahmen:
+    wöchentlicher_report: true
+    email_an_vorstand: true
+    suchtberatung_verlinken: true
+```
+
+#### Automatisierung (konfigurierbar)
+```yaml
+automatisierung:
+  limit_reset:
+    täglich: "00:00"
+    monatlich: "1. 00:00"
+    
+  mitgliederversammlung:
+    termine: ["01.01", "01.04", "01.07", "01.10"]
+    einladung_vorher: 6           # Tage
+    uhrzeit: "19:00"
+    dauer: 2                      # Stunden
+    
+  inaktivitäts_check:
+    tage: 60
+    nur_mit_newsletter: true
+    
+  zahlungserinnerung:
+    erste_mahnung: 7              # Tage
+    zweite_mahnung: 14            # Tage
+    dritte_mahnung: 21            # Tage
+    
+  dokumente_generierung:
+    template_system: "google_docs" # oder "custom"
+    platzhalter_format: "{{name}}"
+```
+
+#### E-Mail-Kommunikation (konfigurierbar)
+```yaml
+email:
+  absender: "info@csc-leipzig.eu"
+  antwort_an: "vorstand@csc-leipzig.eu"
+  
+  templates:
+    mitgliedschaftsantrag:
+      betreff: "✨ Ihre Mitgliedschaftsunterlagen"
+      anhänge: ["aufnahmeantrag", "sepa", "selbstauskunft", "ausweis"]
+      
+    mitgliederversammlung:
+      betreff: "✨ Mitgliederversammlung am {{datum}}"
+      calender_event: true
+      meet_link: true
+      
+    inaktivitäts_erinnerung:
+      betreff: "✨ Wir vermissen Ihre Vorbestellungen!"
+      sortenliste: true
+      
+  signatur:
+    name: "Cannabis Social Club Leipzig Süd e.V."
+    adresse: "Postfach 35 03 04, 04165 Leipzig"
+    email: "info@csc-leipzig.eu"
+    telefon: "+4917643291439"
+```
 
 ---
 

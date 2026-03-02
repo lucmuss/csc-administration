@@ -29,13 +29,15 @@ Verwaltungssystem für einen Cannabis Social Club (CSC) nach dem neuen CanG (Can
 
 ### 2.3 Inventar & Abgabe
 - **Chargen-Tracking**: Herkunft, Erntedatum, Qualitätsgrade
+- **THC/CBD-Erfassung** (Kritisch!): Pflichtfeld bei jeder Charge (Infozettel-Pflicht CanG)
 - **Abgabe-Logging**: Zeitstempel, Menge, verbleibende Limits
 - **Compliance-Reports**: Nachweis für Behörden
 
 ### 2.4 Finanzen
 - **Zahlungs-Tracking**: Offene Posten, eingegangene Zahlungen
+- **USt-Split** (Kritisch!): Automatisch 7% (Cannabis-Abgabe) vs 19% (Merchandise/Services)
 - **SEPA-Lastschrift**: Mandatsverwaltung, automatische Abbuchung
-- **Buchhaltung**: Export für Steuerberater
+- **Buchhaltung**: Export für Steuerberater (DATEV-konform)
 
 ### 2.5 Rollen- & Rechtesystem (RBAC)
 
@@ -377,6 +379,13 @@ info@csc-leipzig.eu
 Member (Mitglied)
 ├── Personal: name, birth_date, address, contact
 ├── Membership: number, join_date, status, limits
+
+Backup-Strategie (Kritisch!)
+├── Täglich: Automatisches Backup (02:00 Uhr)
+├── Verschlüsselung: AES-256 vor Upload
+├── Speicherort: Extern (nicht auf gleichem Server)
+├── Aufbewahrung: 30 Tage Versionierung
+├── Test: Monatliche Wiederherstellungs-Übung
 ├── Consent: privacy, sepa, age_verified, etc.
 └── BankDetails: iban, bic, mandate (separate Tabelle)
 
@@ -395,6 +404,12 @@ Distribution (Abgabe)
 ├── Log: timestamp, quantity, remaining_limits
 ├── Verification: id_check, signature
 └── Audit: who, when, what
+
+DSGVO-Automatisierung (Kritisch!)
+├── Automatische Löschung: 2 Jahre nach Austritt (CanG-Frist)
+├── Anonymisierung: Personenbezogene Daten entfernen
+├── Finanzdaten: 10 Jahre getrennt aufbewahren (Steuerrecht)
+├── Benachrichtigung: E-Mail 30 Tage vor Löschung
 ```
 
 ### 3.2 Daten-Dateien (cdata/)
@@ -444,8 +459,10 @@ Distribution (Abgabe)
 **Import-Skript**: `import_members.py`
 - Konvertiert Excel-Daten in SQLite
 - Validiert Pflichtfelder
+- **IBAN-Validierung** (Kritisch!): Prüfziffer-Check vor Speicherung
 - Trennt Bankdaten (DSGVO)
 - Erkennt Duplikate
+- **Fehlerbehandlung**: Rollback bei Fehlern (Transaktionssicherheit)
 
 ### 4.2 Export-Formate
 
@@ -484,12 +501,14 @@ Distribution (Abgabe)
 - Max. 50g/Monat, 25g/Tag pro Mitglied
 - Keine Weitergabe an Dritte
 - Dokumentationspflicht (2 Jahre)
+- **Verdachtsanzeige** (Kritisch!): Bei Auffälligkeiten (>50g/Monat, Weitergabe-Verdacht) automatisch generieren
 
 ### 6.2 DSGVO
 - Einwilligung nachweisbar speichern
 - Zweckbindung der Daten
 - Löschung nach Austritt (nach Aufbewahrungsfrist)
 - Auskunftsrecht für Mitglieder
+- **Breach-Notification** (Kritisch!): Automatische Meldung binnen 72h bei Datenleck (DSGVO Art. 33/34)
 
 ### 6.3 SEPA
 - Mandatsreferenz pro Mitglied
@@ -767,6 +786,7 @@ prävention:
 #### Automatisierung (konfigurierbar)
 ```yaml
 automatisierung:
+  zeitzone: "Europe/Berlin"       # Kritisch: MEZ nicht UTC für Limit-Reset!
   limit_reset:
     täglich: "00:00"
     monatlich: "1. 00:00"
@@ -884,6 +904,13 @@ email:
 - **Eidesstattliche Erklärung**: Checkbox im Antrag
 - **Stichproben**: Manuelle Prüfung durch Vorstand
 - **Sanktion**: Automatische Sperre bei Verstoß
+
+#### Doppelmitgliedschaft-Prüfung (Kritisch!)
+- **Eidesstattliche Erklärung**: Checkbox im Antrag (verpflichtend)
+- **Datenbank-Abgleich**: Ggf. mit anderen CSCs (API falls verfügbar)
+- **Stichproben**: Manuelle Überprüfung durch Vorstand (monatlich)
+- **Sanktion**: Automatische Sperre bei Verstoß, Vorstand informieren
+- **Dokumentation**: Unterschriften für 2 Jahre aufbewahren (CanG)
 
 #### Kündigungsfrist-Tracking
 - **Automatische Berechnung**: 2 Monate zum Quartalsende
@@ -1031,8 +1058,9 @@ DOKUMENTE_EINGEREICHT → IN_PRÜFUNG → VIDEO_CALL_GEPLANT → VERIFIZIERT
 #### Reservierungssystem
 - **Vorauswahl**: Mitglieder reservieren online
 - **Zeitfenster**: Abholung innerhalb 48h
+- **Timeout**: Automatische Freigabe nach 48h (kritisch: blockiert sonst Bestand)
 - **Streichung**: Automatisch nach Ablauf
-- **Benachrichtigung**: Erinnerung vor Ablauf
+- **Benachrichtigung**: Erinnerung vor Ablauf (24h + 2h vorher)
 - **Priorisierung**: Nach Wartezeit/Fairness
 
 #### Warteliste (bei Ausverkauf)

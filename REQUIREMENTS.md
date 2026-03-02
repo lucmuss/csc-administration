@@ -773,9 +773,28 @@ automatisierung:
     
   mitgliederversammlung:
     termine: ["01.01", "01.04", "01.07", "01.10"]
-    einladung_vorher: 6           # Tage
     uhrzeit: "19:00"
     dauer: 2                      # Stunden
+    
+    einladung:
+      delta_t: 14                 # Tage vorher (konfigurierbar: 7-21)
+      kanaele: ["email", "sms"]   # Einzeln oder kombiniert
+      prioritaet: "hoch"          # E-Mail: wichtig markieren
+      
+    erinnerung:
+      aktiviert: true
+      delta_t: 2                  # Tage vorher (zusätzliche Erinnerung)
+      kanaele: ["email"]          # Nur E-Mail für Erinnerung
+      
+    kalender:
+      calender_event: true        # iCal-Datei anhängen
+      meet_link_generieren: true  # Google Meet/Zoom Link
+      ort_angabe: true            # Adresse oder "Online"
+      
+    teilnehmer:
+      nur_aktive_mitglieder: true # Nur akzeptiert + verifiziert
+      ausweis_check: true         # Hinweis auf Ausweispflicht
+      anmeldePflicht: false       # Freiwillige Teilnahme
     
   inaktivitäts_check:
     tage: 60
@@ -976,6 +995,17 @@ email:
 
 ### 7.7 API & Integrationen
 
+#### SMS-Gateway (für Mitgliederversammlung & Alerts)
+- **Anbieter**: Twilio, MessageBird, or SMS77
+- **Versand**: Automatisch bei wichtigen Ereignissen
+- **Kosten**: ~0,05-0,10€ pro SMS
+- **Inhalte**:
+  - Mitgliederversammlungseinladung (kurz)
+  - Erinnerung (1 Tag vorher)
+  - Wichtige Club-Infos (Notfälle, Ausfälle)
+- **Opt-In**: Mitglied muss SMS explizit erlauben (DSGVO)
+- **Abmelden**: "STOP" Funktion
+
 #### REST API
 - **Authentifizierung**: OAuth 2.0 / API-Keys
 - **Ratenlimit**: 1000 Requests/Stunde
@@ -1001,6 +1031,92 @@ email:
 - **Profile**: Optionale öffentliche Profile
 - **Freundschaften**: Vernetzung zwischen Mitgliedern
 - **Gruppen**: Interessengruppen bilden
+
+### 7.9 Admin-Panel Einstellungen (Konfigurationsoberfläche)
+
+#### Mitgliederversammlung Einstellungen
+**Pfad**: Admin → Einstellungen → Mitgliederversammlung
+
+```yaml
+einstellungen_mitgliederversammlung:
+  termine:
+    quartal_1: "01.01"
+    quartal_2: "01.04"
+    quartal_3: "01.07"
+    quartal_4: "01.10"
+    uhrzeit: "19:00"
+    dauer: 2
+    
+  einladung:
+    delta_t:                      # Slider: 7-21 Tage
+      wert: 14
+      min: 7
+      max: 21
+      schritt: 1
+    kanaele:                      # Checkboxen
+      email: true
+      sms: true
+    prioritaet: "hoch"            # Dropdown: normal/hoch/wichtig
+    
+  erinnerung:
+    aktiviert: true               # Toggle
+    delta_t: 2                    # Slider: 1-7 Tage
+    kanaele:
+      email: true
+      sms: false
+      
+  kalender:
+    calender_event_anhaengen: true
+    meet_link_generieren: true
+    ort: "Online (Google Meet)"   # Textfeld
+    
+  teilnehmer:
+    nur_aktive_mitglieder: true
+    ausweis_check_hinweis: true
+    max_teilnehmer: 500           # Number input
+```
+
+**UI-Komponenten**:
+- **Slider** für Delta-T (visuell: 7-21 Tage)
+- **Toggle-Switches** für Aktivierung/Deaktivierung
+- **Checkboxen** für Kanäle (E-Mail, SMS)
+- **Dropdown** für E-Mail-Priorität
+- **Vorschau**: Nächste Versandtermine automatisch berechnen
+- **Test-Modus**: Einladung an Test-E-Mail/SMS senden
+
+**Berechtigungen**:
+- Nur Geschäftsführer und Vorstand können ändern
+- Änderungen werden im Audit-Trail protokolliert
+- Bei Änderung: Bestätigungsdialog mit Hinweis auf betroffene Mitglieder
+
+#### Automatisierung Übersicht (Dashboard)
+**Pfad**: Admin → Dashboard → Automatisierung
+
+```yaml
+automation_dashboard:
+  naechste_ereignisse:
+    - ereignis: "Mitgliederversammlung Q1"
+      datum: "01.01.2027"
+      einladung_versand: "18.12.2026"      # Automatisch berechnet (delta_t)
+      erinnerung_versand: "30.12.2026"      # Automatisch berechnet
+      status: "Geplant"
+      
+  aktive_cronjobs:
+    - name: "Täglicher Limit-Reset"
+      zeit: "00:00"
+      status: "Aktiv"
+      letzte_ausfuehrung: "Heute 00:00"
+      
+    - name: "Monatlicher Limit-Reset"
+      zeit: "1. 00:00"
+      status: "Aktiv"
+      naechste_ausfuehrung: "01.04.2027"
+      
+    - name: "Mitgliederversammlungseinladung"
+      trigger: "Täglich (Prüfung Delta-T)"
+      status: "Aktiv"
+      naechster_versand: "18.12.2026"
+```
 
 ---
 
@@ -1037,14 +1153,19 @@ Die folgenden Google Appscripts wurden aus dem alten System extrahiert und diene
 - Bedingung: 60 Tage ohne Bestellung + akzeptiert + verifiziert + Newsletter
 - Aktion: E-Mail mit Sortenangebot und Bestelllink
 
-### A.5 MembershipInvitation.gs
-**Funktion**: Einladung zu Mitgliederversammlungen
-- Trigger: Täglich (prüft auf 6 Tage vor Quartalsbeginn)
-- Termine: 01.01., 01.04., 01.07., 01.10.
+### A.5 MembershipInvitation.gs (Neu: Konfigurierbar)
+**Funktion**: Automatische Einladung zu Mitgliederversammlungen
+- Trigger: Täglich (prüft auf konfigurierbares Delta-T vor Quartalsbeginn)
+- Termine: 01.01., 01.04., 01.07., 01.10. (konfigurierbar)
+- Delta-T: Konfigurierbar (7-21 Tage vorher, Standard: 14 Tage)
+- Kanäle: E-Mail + optional SMS
 - Features:
-  - Google Calendar Event mit Meet-Link
-  - E-Mail an alle akzeptierten Mitglieder
+  - Google Calendar Event mit Meet-Link (iCal-Anhang)
+  - E-Mail an alle akzeptierten Mitglieder (hohe Priorität)
+  - SMS-Benachrichtigung (optional, Opt-in erforderlich)
+  - Zusätzliche Erinnerung 2 Tage vorher
   - Template-System für personalisierte Einladungen
+  - Vorschau im Admin-Panel (nächste geplante Versände)
 
 ### A.6 SendMembershipDocuments.gs
 **Funktion**: Versand personalisierter Dokumente

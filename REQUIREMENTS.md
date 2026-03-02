@@ -820,6 +820,190 @@ email:
 
 ---
 
+## 7. Erweiterte Features (aus Competitor-Analyse)
+
+### 7.1 Sicherheit & Compliance (Kritisch)
+
+#### Zwei-Faktor-Authentifizierung (2FA)
+- **Beschreibung**: Zusätzliche Sicherheitsebene für Admin-Zugriff
+- **Methoden**: TOTP (Authenticator-App), SMS-Backup
+- **Pflicht für**: System-Admin, Geschäftsführer, Vorstand
+- **Optional für**: Kassierer, Mitarbeiter
+- **Compliance**: DSGVO-Pflicht bei sensiblen Daten
+
+#### Audit-Trail (Änderungsprotokoll)
+- **Erfassung**: Wer hat was wann geändert
+- **Daten**: Benutzer, Zeitstempel, Altwert, Neuwert, Begründung
+- **Speicherung**: Unveränderbar, 2 Jahre (CanG)
+- **Export**: PDF/CSV für Behörden
+- **Filter**: Nach Benutzer, Datum, Entität
+
+#### Session-Management
+- **Automatischer Logout**: Nach 30 Minuten Inaktivität
+- **Parallele Sessions**: Max. 3 pro Benutzer
+- **Session-Überwachung**: Liste aktiver Sessions, Remote-Logout
+- **IP-Logging**: Für Sicherheitsprüfungen
+
+### 7.2 Mitgliederverwaltung (Erweitert)
+
+#### Digitale Mitgliedsausweise
+- **Format**: QR-Code + Mitgliedsnummer
+- **Anzeige**: Name, Foto, Gültigkeitsdatum
+- **Verifikation**: QR-Scan bei Abholung
+- **App-Integration**: iOS/Android Wallet
+- **Backup**: PDF-Version zum Ausdrucken
+
+#### Doppelmitgliedschaft-Check
+- **Datenbank**: Abgleich mit anderen CSCs (wenn API verfügbar)
+- **Eidesstattliche Erklärung**: Checkbox im Antrag
+- **Stichproben**: Manuelle Prüfung durch Vorstand
+- **Sanktion**: Automatische Sperre bei Verstoß
+
+#### Kündigungsfrist-Tracking
+- **Automatische Berechnung**: 2 Monate zum Quartalsende
+- **Erinnerungen**: 30, 14, 7 Tage vor Ablauf
+- **Status**: Aktiv → Gekündigt → Ausgetreten
+- **Bestätigung**: Automatische Kündigungsbestätigung
+
+### 7.3 Finanzen (Erweitert)
+
+#### SEPA-Workflows (Vollständig)
+- **Mandatsverwaltung**:
+  - Erstellung mit eindeutiger Mandatsreferenz
+  - Widerruf mit Begründung
+  - Archivierung (2 Jahre)
+  - Status-Tracking (Aktiv/Widerrufen/Ausgelaufen)
+
+- **Batch-Einzüge**:
+  - Sammelbuchung aller offenen Posten
+  - Vorschau vor Ausführung
+  - Einzel- oder Sammelbuchung
+  - Status-Tracking (Ausstehend/Eingezogen/Rückläufer)
+
+- **Rückläufer-Handling**:
+  - Automatische Erkennung
+  - Benachrichtigung an Mitglied + Kassierer
+  - Wiedervorlage-Liste
+  - Manuelle Nachbuchung
+
+#### Mahnwesen (Automatisiert)
+- **Stufen**:
+  1. Zahlungserinnerung (7 Tage nach Fälligkeit)
+  2. Erste Mahnung (14 Tage, 5€ Mahngebühr)
+  3. Zweite Mahnung (21 Tage, 10€ Mahngebühr)
+  4. Dritte Mahnung (28 Tage, 15€ Mahngebühr + Sperre)
+
+- **Kanäle**: E-Mail, Post (bei wiederholten Mahnungen)
+- **Automatisierung**: Täglicher Cronjob
+- **Eskalation**: Automatische Mitgliedschaftssperre
+
+#### DATEV-Export
+- **Format**: DATEV-CSV (Standard)
+- **Inhalt**: Kontenrahmen, Buchungssätze, Belegnummern
+- **Zeitraum**: Monatlich, Quartalsweise, Jährlich
+- **Übertragung**: Automatischer Upload (SFTP) oder Download
+- **Abstimmung**: Saldi mit Bankkonto
+
+### 7.4 Anbau & Lager (Seed-to-Sale)
+
+#### Growtagebuch (Detailliert)
+- **Räume**: Anbau-, Trocknungs-, Lager-Räume
+- **Equipment**: LEDs, Klimaanlagen, Filter, Bewässerung
+- **Aktivitäten**:
+  - Bewässerung (Menge, pH-Wert, Nährstoffe)
+  - Düngung (Produkt, Menge, Datum)
+  - Schädlingsbekämpfung
+  - Ernte (Datum, Erntemenge, Qualität)
+
+- **Dokumentation**: Fotos optional
+- **Export**: PDF für Behörden
+
+#### THC/CBD-Erfassung
+- **Laborwerte**: Eingabe nach Analyse
+- **Produkte**: Verknüpfung mit Chargen
+- **Anzeige**: Auf Infozettel und Etiketten
+- **Warnungen**: Bei Abweichungen von Sorten-Standard
+
+#### Lager-Bestandsklassen
+- **Klassen**: A+ (Premium), A (Standard), B (Geringere Qualität)
+- **Zuordnung**: Bei Einlagerung durch Vorstand
+- **Preisgestaltung**: Unterschiedliche Preise pro Klasse
+- **Berichte**: Übersicht nach Klassen
+
+#### Inventur-Funktion
+- **Jährliche Inventur**: Vollständige Zählung
+- **Stichproben**: Monatliche Teilinventur
+- **Differenzen**: Automatische Abgleichung mit System
+- **Bericht**: Inventurbericht für Behörden
+
+#### Abfallnachweise
+- **Vernichtung**: Dokumentation vernichteter Chargen
+- **Gründe**: MHD überschritten, Qualitätsmangel, Beschlagnahme
+- **Zeuge**: Zweiter Vorstand als Zeuge
+- **Unterschrift**: Digitale Unterschrift beider Zeugen
+- **Archivierung**: Unveränderbare Dokumentation
+
+### 7.5 Ausgabe & Distribution (Erweitert)
+
+#### Transportbescheinigungen
+- **Automatische Generierung**: Bei Ausgabe
+- **Inhalt**: Menge, Sorte, THC/CBD, Ausgabedatum, Mitgliederdaten
+- **Format**: PDF mit QR-Code
+- **Rechtsgrundlage**: CanG Übergabedokumentation
+- **Archivierung**: 2 Jahre
+
+#### Reservierungssystem
+- **Vorauswahl**: Mitglieder reservieren online
+- **Zeitfenster**: Abholung innerhalb 48h
+- **Streichung**: Automatisch nach Ablauf
+- **Benachrichtigung**: Erinnerung vor Ablauf
+- **Priorisierung**: Nach Wartezeit/Fairness
+
+### 7.6 Mobile App (Mitglieder)
+
+#### Kernfunktionen
+- **Digitale Ausweise**: QR-Code für schnelle Identifikation
+- **Bestellung**: Mobile Sortenauswahl und Reservierung
+- **Kontostand**: Guthaben und offene Posten
+- **Historie**: Vergangene Bestellungen und Limits
+- **Push-Benachrichtigungen**: Neue Sorten, Erinnerungen
+
+#### Technische Anforderungen
+- **Plattformen**: iOS 14+, Android 10+
+- **Offline-Modus**: Grundfunktionen ohne Internet
+- **Sicherheit**: Biometrische Authentifizierung
+- **Updates**: Automatisch über App-Stores
+
+### 7.7 API & Integrationen
+
+#### REST API
+- **Authentifizierung**: OAuth 2.0 / API-Keys
+- **Ratenlimit**: 1000 Requests/Stunde
+- **Dokumentation**: OpenAPI/Swagger
+- **Versionierung**: v1, v2, etc.
+
+#### Schnittstellen
+- **Steuerberater-Software**: DATEV, Addison
+- **Banking**: FinTS/HBCI für Kontenabruf
+- **E-Mail**: SMTP für Versand
+- **SMS**: Gateway für 2FA und Benachrichtigungen
+- **Kalender**: iCal-Export für Termine
+
+### 7.8 Community-Features (Optional)
+
+#### Interne Kommunikation
+- **Forum**: Themenbasierte Diskussionen
+- **Chat**: Direktnachrichten zwischen Mitgliedern
+- **Events**: Veranstaltungskalender intern
+- **Dokumente**: Mitgliederbereich mit Downloads
+
+#### Social Features
+- **Profile**: Optionale öffentliche Profile
+- **Freundschaften**: Vernetzung zwischen Mitgliedern
+- **Gruppen**: Interessengruppen bilden
+
+---
+
 ## Anhang A: Legacy Appscripts (Referenz)
 
 Die folgenden Google Appscripts wurden aus dem alten System extrahiert und dienen als Referenz für die Implementierung:

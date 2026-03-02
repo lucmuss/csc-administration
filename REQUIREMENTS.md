@@ -16,10 +16,13 @@ Verwaltungssystem für einen Cannabis Social Club (CSC) nach dem neuen CanG (Can
 
 ### 2.1 Mitgliederverwaltung
 - **Mitglieder-Import**: CSV/Excel-Import aus Google Forms oder anderen Quellen
+- **Telefonnummer-Normalisierung**: Automatisch "+" → "00", als String speichern (Excel-kompatibel)
 - **Verifikations-Workflow**: Altersprüfung (21+), Wohnsitzverifizierung, Ausschluss anderer CSCs
 - **Status-Tracking**: Antrag → Akzeptiert → Verifiziert → Aktiv
 - **Abgabelimits**: 50g/Monat, 25g/Tag (gesetzlich vorgeschrieben)
 - **Guthaben-Verwaltung**: Kontostand für Vorauszahlungen
+- **8-Wochen-Deadline**: Automatisches Tracking der Registrierungsfrist (Antrag → Unterlagen vollständig)
+- **Farbmarkierung**: Visuelle Statusanzeige (z.B. blau = neu, grün = aktiv, rot = Problem)
 
 ### 2.2 Bestellsystem
 - **Sorten-Auswahl**: Blüten und Stecklinge mit Live-Bestand
@@ -38,6 +41,13 @@ Verwaltungssystem für einen Cannabis Social Club (CSC) nach dem neuen CanG (Can
 - **USt-Split** (Kritisch!): Automatisch 7% (Cannabis-Abgabe) vs 19% (Merchandise/Services)
 - **SEPA-Lastschrift**: Mandatsverwaltung, automatische Abbuchung
 - **Buchhaltung**: Export für Steuerberater (DATEV-konform)
+
+### 2.5 Bulk-Operations (Massenverarbeitung)
+- **Mehrfachbearbeitung**: Auswahl mehrerer Mitglieder für gemeinsame Aktionen
+- **CSV-Export gefilterter Listen**: Mit aktuellen Filtern und Sichtbarkeiten
+- **Massen-E-Mail**: An Mitgliedersegmente (z.B. alle mit offenen Zahlungen)
+- **Status-Änderungen**: Mehrere Mitglieder gleichzeitig aktivieren/deaktivieren
+- **Rollen-Zuweisung**: Bulk-Zuweisung von Berechtigungen
 
 ### 2.5 Rollen- & Rechtesystem (RBAC)
 
@@ -369,6 +379,21 @@ info@csc-leipzig.eu
    - Duplikat gefunden
    - Altersanforderung nicht erfüllt
 
+#### PDF-Generierung (aus Templates)
+- **Template-Engine**: Google Docs oder HTML → PDF
+- **18 Platzhalter**: {{vorname}}, {{nachname}}, {{geburtsdatum}}, etc.
+- **Dokumente**:
+  1. Aufnahmeantrag
+  2. SEPA-Lastschriftmandat
+  3. Selbstauskunft
+  4. Mitgliedsausweis
+- **Anhang-Limit**: Max. 10 MB pro E-Mail (alle PDFs zusammen)
+
+#### E-Mail-Threading
+- **Konversationsverlauf**: Alle E-Mails zum Mitglied gruppiert
+- **Antwort-Erkennung**: Automatische Zuordnung an Mitglied
+- **Ticket-System**: Status "Offen", "Warte auf Antwort", "Geschlossen"
+
 ---
 
 ## 3. Datenmodell
@@ -491,6 +516,20 @@ DSGVO-Automatisierung (Kritisch!)
 - **Zugriffskontrolle**: 2FA für Admins
 - **Audit-Log**: Alle Änderungen protokolliert
 - **Backup**: Automatisch verschlüsselt
+
+### 5.4 Logging-System
+- **Konfigurierbar**: Logging an/aus schaltbar (für Performance/Entwicklung)
+- **Strukturierte Logs**: Zeitstempel, Benutzer, Aktion, Details (JSON)
+- **Level**: DEBUG, INFO, WARN, ERROR
+- **Ziele**: Datei, Datenbank, externer Service (optional)
+- **Retention**: Automatische Bereinigung nach 90 Tagen
+
+### 5.5 Konfigurations-Management
+- **Zentrale Config**: Keine Hardcoding, alle Werte konfigurierbar
+- **Umgebungsvariablen**: .env-Datei für sensible Daten
+- **Admin-Oberfläche**: Web-UI für Konfiguration ohne Code-Änderung
+- **Validierung**: Config-Werte werden beim Speichern geprüft
+- **Versionierung**: Änderungen werden protokolliert
 
 ---
 
@@ -1152,7 +1191,27 @@ DOKUMENTE_EINGEREICHT → IN_PRÜFUNG → VIDEO_CALL_GEPLANT → VERIFIZIERT
 - **Freundschaften**: Vernetzung zwischen Mitgliedern
 - **Gruppen**: Interessengruppen bilden
 
-### 7.9 Admin-Panel Einstellungen (Konfigurationsoberfläche)
+### 7.10 Dashboard & Widgets
+
+#### Tages-Übersicht (Startseite)
+- **Neue Mitglieder**: Anzahl heute/letzte 7 Tage
+- **Ausgaben**: Heutige Abgaben, Umsatz
+- **Warnungen**: Farblich hervorgehoben
+  - Niedriger Bestand (< 10% Mindestbestand)
+  - Offene Zahlungen (> 7 Tage überfällig)
+  - Unvollständige Verifizierungen (> 14 Tage)
+  - Anstehende Mitgliederversammlungen
+
+#### Schnell-Links
+- Häufige Aktionen: "Neues Mitglied", "Bestellung erfassen", "Ausgabe buchen"
+- Letzte Aktionen: Wiederholen-Funktion
+
+#### Statistik-Widgets
+- Mitglieder-Wachstum (Diagramm)
+- Top-Sorten (Meistbestellte Sorten)
+- Finanz-Übersicht (Umsatz Monat/Quartal)
+
+### 7.11 Admin-Panel Einstellungen (Konfigurationsoberfläche)
 
 #### Mitgliederversammlung Einstellungen
 **Pfad**: Admin → Einstellungen → Mitgliederversammlung
@@ -1257,7 +1316,7 @@ automation_dashboard:
       naechster_versand: "18.12.2026"
 ```
 
-### 7.10 Kritische Fallstricke & Warnungen
+### 7.12 Kritische Fallstricke & Warnungen
 
 #### Rechtliche Fallstricke
 1. **Delta-T zu kurz** (<7 Tage)

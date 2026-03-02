@@ -540,7 +540,22 @@ DSGVO-Automatisierung (Kritisch!)
 - Max. 50g/Monat, 25g/Tag pro Mitglied
 - Keine Weitergabe an Dritte
 - Dokumentationspflicht (2 Jahre)
-- **Verdachtsanzeige** (Kritisch!): Bei Auffälligkeiten (>50g/Monat, Weitergabe-Verdacht) automatisch generieren
+
+#### Verdachtsanzeige (Automatisiert - Kritisch!)
+- **Pflicht**: Bei Verdacht auf Weitergabe/Überkonsum an Behörde melden
+- **Trigger** (automatisch):
+  - >50g/Monat konsumiert (>100% des Limits)
+  - >25g an einem Tag mehrfach hintereinander
+  - Auffällige Bestellmuster (z.B. täglich genau 24,9g)
+  - Mehrere CSC-Mitgliedschaften (Doppelmitgliedschaft)
+  - Abholung durch unterschiedliche Personen (Bevollmächtigte wechseln häufig)
+- **Automatisierung**:
+  1. System erkennt Muster (Algorithmus)
+  2. Alert an Vorstand + Sicherheitsbeauftragten
+  3. Bei Bestätigung: Automatische PDF-Generierung der Verdachtsanzeige
+  4. Versand an zuständige Behörde (Polizei/Landratsamt)
+- **Datenschutz**: Nur pseudonymisierte Daten, keine Gesundheitsdaten
+- **Frist**: Unverzüglich nach Erkennen des Verdachts
 
 ### 6.2 DSGVO
 - Einwilligung nachweisbar speichern
@@ -820,6 +835,18 @@ prävention:
     wöchentlicher_report: true
     email_an_vorstand: true
     suchtberatung_verlinken: true
+    
+  suchtberatung:
+    verlinkung_aktiv: true
+    anbieter:
+      - name: "Suchtberatung Leipzig"
+        telefon: "0341 12345678"
+        email: "beratung@example.de"
+        website: "https://suchtberatung-leipzig.de"
+      - name: "Deutsche Hauptstelle für Suchtfragen"
+        telefon: "0221 901901"
+        website: "https://dhs.de"
+    automatische_meldung: Bei >45g/Monat automatisch Hinweis in App + E-Mail
 ```
 
 #### Automatisierung (konfigurierbar)
@@ -923,11 +950,17 @@ email:
 - **IP-Logging**: Für Sicherheitsprüfungen
 - **IP-Whitelisting**: Admin-Zugriff nur von bestimmten IPs (optional)
 
-#### Breach Notification (Datenleck-Meldung)
+#### Breach Notification (Datenleck-Meldung) - Automatisiert
 - **Pflicht**: DSGVO Art. 33/34 - Meldung innerhalb 72 Stunden
-- **Automatisierung**: E-Mail an betroffene Mitglieder + Aufsichtsbehörde
+- **Trigger**: Automatisch bei erkanntem Datenleck (ungewöhnliche Zugriffe, Failed Logins >100/h)
+- **Workflow**:
+  1. System erkennt Anomalie (z.B. Massen-Download, unautorisierter Admin-Zugriff)
+  2. Automatische E-Mail an Datenschutzbeauftragten + Vorstand
+  3. E-Mail an betroffene Mitglieder (wenn bestätigt)
+  4. Meldung an Aufsichtsbehörde (LSI) mit Template
 - **Inhalt**: Art des Vorfalls, betroffene Daten, Maßnahmen, Kontakt
-- **Protokollierung**: Unveränderbarer Nachweis der Meldung
+- **Protokollierung**: Unveränderbarer Nachweis der Meldung mit Zeitstempel
+- **Frist-Tracking**: Countdown 72h sichtbar im Admin-Dashboard
 
 ### 7.2 Mitgliederverwaltung (Erweitert)
 
@@ -1084,6 +1117,15 @@ DOKUMENTE_EINGEREICHT → IN_PRÜFUNG → VIDEO_CALL_GEPLANT → VERIFIZIERT
 - **Zeuge**: Zweiter Vorstand als Zeuge
 - **Unterschrift**: Digitale Unterschrift beider Zeugen
 - **Archivierung**: Unveränderbare Dokumentation
+- **Automatisierung**: Bei Vernichtung automatisch PDF generieren + E-Mail an Vorstand
+
+#### Seed-to-Sale Tracking (Erweitert - CanG-kritisch)
+- **Lückenlose Kette**: Steckling-ID → Pflanzen-ID → Charge-ID → Verkauf
+- **Herkunftsnachweis**: Woher kam der Steckling (legaler Bezug)
+- **Mutterpflanzen-Tracking**: Vererbung der Genetik
+- **Zwischenstufen**: Vegetation → Blüte → Ernte → Trocknung → Lagerung
+- **Qualitätsstufen**: A+, A, B pro Charge dokumentieren
+- **Rückverfolgbarkeit**: Bei Rückruf alle betroffenen Mitglieder identifizieren (innerhalb 24h)
 
 ### 7.5 Ausgabe & Distribution (Erweitert)
 

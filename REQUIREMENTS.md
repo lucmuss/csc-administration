@@ -557,12 +557,38 @@ DSGVO-Automatisierung (Kritisch!)
 - **Datenschutz**: Nur pseudonymisierte Daten, keine Gesundheitsdaten
 - **Frist**: Unverzüglich nach Erkennen des Verdachts
 
-### 6.2 DSGVO
-- Einwilligung nachweisbar speichern
-- Zweckbindung der Daten
-- Löschung nach Austritt (nach Aufbewahrungsfrist)
-- Auskunftsrecht für Mitglieder
-- **Breach-Notification** (Kritisch!): Automatische Meldung binnen 72h bei Datenleck (DSGVO Art. 33/34)
+### 6.2 DSGVO (Minimal-Viable)
+
+#### Datenminimierung (Reduziert)
+- **Nur Stammdaten**: Name, Adresse, Alter, Kontakt
+- **KEINE Konsumgewohnheiten**: Keine Speicherung von Vorlieben, Häufigkeiten, Mustern
+- **KEINE Gesundheitsdaten**: Ohne explizite Einwilligung
+- **Zweckbindung**: Daten nur für Vereinszweck verwenden
+
+#### Einwilligung
+- Checkbox bei Registrierung (nachweisbar speichern mit Zeitstempel)
+- Jederzeit widerrufbar
+- Getrennte Einwilligungen für: Mitgliedschaft, Newsletter, Datenverarbeitung
+
+#### Selbstbedienung (DSGVO-Rechte)
+- **Auskunft**: Mitglied kann eigene Daten einsehen (Profil-Export)
+- **Berichtigung**: Selbst ändern im Profil
+- **Löschung**: "Account löschen"-Button (nach 2 Jahren CanG-Frist)
+- **Datenübertragbarkeit**: CSV-Export der eigenen Daten
+- **KEIN Support-Ticket** nötig für Standard-Anfragen
+
+#### Aufbewahrungsfristen (Minimal)
+| Daten | Frist | Nach Ablauf |
+|-------|-------|-------------|
+| Mitgliedsdaten | 2 Jahre nach Austritt | Automatische Löschung |
+| Finanzdaten | 10 Jahre (Steuerrecht) | Anonymisierung |
+| Buchungsbelege | 10 Jahre | Archivierung (Papier) |
+| Kommunikation | 2 Jahre | Löschung |
+
+#### Breach-Notification (Kritisch!)
+- Automatische Erkennung: >100 Failed Logins/h, Massen-Downloads
+- Meldung binnen 72h an: Landesbeauftragte für Datenschutz + betroffene Mitglieder
+- Nur bei echtem Datenleck (nicht bei jedem Fehlversuch)
 
 ### 6.3 SEPA
 - Mandatsreferenz pro Mitglied
@@ -657,6 +683,126 @@ DSGVO-Automatisierung (Kritisch!)
 - [ ] Erweiterte Analytics
 - [ ] White-Label-Lösung
 - [ ] Cloud-Hosting
+
+---
+
+## 13. MVP Definition (Minimal Viable Product)
+
+### MVP-Philosophie
+**Nicht alles auf einmal!** Fokus auf CanG-Konformität und operative Fähigkeit.
+
+### Top 5 MVP-Features (MUST-HAVE)
+
+| Rang | Feature | Begründung |
+|------|---------|------------|
+| 1 | **Mitgliederverwaltung mit Altersprüfung** | CanG: Mindestalter 21, Wohnsitz 6 Monate |
+| 2 | **Limit-Prüfung (25g/Tag, 50g/Monat)** | CanG: Hard-Limits, automatische Durchsetzung |
+| 3 | **Bestandsverwaltung & Chargenrückverfolgung** | CanG: Seed-to-Sale, 2 Jahre Dokumentation |
+| 4 | **Präventions- & Jugendschutz-Management** | CanG: Pflichtkonzept, Beratung bei Abgabe |
+| 5 | **Sicherheits- & Zutrittskontrolle** | CanG: Schutz vor unbefugtem Zugriff |
+
+### MVP-Plus (SHOULD-HAVE für Launch)
+- [ ] SEPA-Zahlung (für bargeldlosen Betrieb)
+- [ ] Quittungssystem/Belegerstellung (für Transparenz)
+- [ ] Jahresmeldung an Behörden (automatisiert)
+- [ ] E-Mail-Kommunikation (Einladungen, Erinnerungen)
+
+### POST-MVP (NACH Launch)
+- [ ] Mobile App (PWA reicht erstmal)
+- [ ] KI-Assistent (optional)
+- [ ] Community-Features
+- [ ] Erweiterte Analytics
+- [ ] Multi-Tenant
+
+### MVP-Timeline (Empfohlen)
+| Phase | Dauer | Deliverable |
+|-------|-------|-------------|
+| Setup & Core | 4 Wochen | Django-Setup, Auth, Models |
+| Mitgliedschaft | 3 Wochen | Registrierung, Verifizierung, Profile |
+| Bestellung & Limits | 3 Wochen | Shop, Warenkorb, Limit-Prüfung |
+| Compliance | 2 Wochen | CanG-Reports, Prävention |
+| Testing & Launch | 2 Wochen | E2E-Tests, Bugfixes, Go-Live |
+| **Gesamt** | **14 Wochen** | **MVP Ready** |
+
+---
+
+## 14. UI/UX Guidelines (für 50+ Zielgruppe)
+
+### Barrierefreiheit
+
+#### Kontrast & Lesbarkeit
+- **WCAG AA Standard**: Kontrastverhältnis mindestens 4.5:1
+- **Schriftgröße**: Mindestens 16px (besser 18px) für Fließtext
+- **Schriftart**: Serifenlose Schrift (system-ui, sans-serif)
+- **Zeilenabstand**: 1.5 für bessere Lesbarkeit
+- **Kein helles Grau auf Weiß**: Verwende dunkles Grau (#333) statt Hellgrau (#999)
+
+#### Visuelles Feedback
+- **Erfolgsbestätigungen**: Text statt nur Farbe
+  - ❌ "Button wird grün"
+  - ✅ "Bestellung erfolgreich gespeichert"
+- **Fehlermeldungen**: Konstruktiv und lösungsorientiert
+  - ❌ "Fehler"
+  - ✅ "E-Mail-Adresse ungültig. Bitte überprüfen Sie das Format."
+- **Ladezustände**: Deutlich sichtbar (Spinner + Text "Wird geladen...")
+
+#### Sprache & Terminologie
+- **Kein Fachjargon**:
+  - ❌ "Dashboard"
+  - ✅ "Mein Bereich" / "Übersicht"
+- **Keine Anglizismen** (wenn möglich):
+  - ❌ "Checkout"
+  - ✅ "Zur Kasse"
+  - ❌ "Inventory"
+  - ✅ "Vorrat"
+- **Verständliche Begriffe**:
+  - ❌ "CRUD-Operationen"
+  - ✅ "Anlegen, Anzeigen, Bearbeiten, Löschen"
+
+### Navigation & Orientierung
+
+#### Konsistente Struktur
+- **Navigation immer sichtbar**: Sticky Header
+- **Breadcrumb**: Wo bin ich? (Home > Shop > Blue Dream)
+- **Zurück-Button**: In jedem Formular
+- **Startseite-Button**: Logo klickbar
+
+#### Einfache Workflows
+- **Maximal 3 Klicks** bis zur Zielaktion
+- **Keine verschachtelten Menüs**: Maximal 1 Ebene
+- **Klare Call-to-Action**: Ein primärer Button pro Seite
+- **Fortschrittsanzeige**: Bei mehrstufigen Prozessen (Registrierung: Schritt 1 von 3)
+
+### Formulare
+
+#### Eingabefelder
+- **Große Touch-Targets**: Mindestens 44x44px
+- **Label immer sichtbar**: Nicht nur Placeholder
+- **Feldvalidierung in Echtzeit**: Aber nicht zu aggressiv (nach Verlassen des Feldes)
+- **Autofill unterstützen**: Name, Adresse, E-Mail
+
+#### Bestätigungen
+- **Wichtige Aktionen bestätigen**: "Möchten Sie wirklich löschen?"
+- **Aber nicht zu viele**: Nur bei kritischen Aktionen (Löschen, Kündigen)
+
+### Mobile Optimierung
+
+#### Touch-Optimierung
+- **Abstände zwischen Buttons**: Mindestens 8px
+- **Keine Hover-States**: Touch hat kein Hover
+- **Swipe-Gesten**: Optional, nicht Pflicht (Alternative immer sichtbar)
+
+#### Performance
+- **Ladezeit < 3 Sekunden**: Sonst Absprung
+- **Progressive Loading**: Erst Text, dann Bilder
+- **Offline-Indikator**: "Sie sind offline" anzeigen
+
+### Test-Checkliste (vor Launch)
+- [ ] Mit 60+ jährigen Testern ausprobieren
+- [ ] Screenreader-Test (VoiceOver/TalkBack)
+- [ ] Tastatur-Navigation testen (Tab-Taste)
+- [ ] Kontrast-Checker (WebAIM)
+- [ ] Mobile Geräte testen (iPhone, Android)
 
 ---
 
@@ -936,12 +1082,12 @@ email:
 - **Optional für**: Kassierer, Mitarbeiter
 - **Compliance**: DSGVO-Pflicht bei sensiblen Daten
 
-#### Audit-Trail (Änderungsprotokoll)
-- **Erfassung**: Wer hat was wann geändert
-- **Daten**: Benutzer, Zeitstempel, Altwert, Neuwert, Begründung
-- **Speicherung**: Unveränderbar, 2 Jahre (CanG)
-- **Export**: PDF/CSV für Behörden
-- **Filter**: Nach Benutzer, Datum, Entität
+#### Änderungsprotokoll (Minimal)
+- **Erfassung**: Nur wichtige Änderungen (Mitgliedsstatus, Zahlungen, Abgaben)
+- **Daten**: Wer, Wann, Was (keine Details zu Lesevorgängen)
+- **Speicherung**: 2 Jahre (CanG)
+- **Export**: Bei Bedarf für Behörden
+- **Kein Audit für**: Profil-Updates, Einstellungen-Änderungen (zu viel Overhead)
 
 #### Session-Management
 - **Automatischer Logout**: Nach 30 Minuten Inaktivität
@@ -1060,6 +1206,70 @@ DOKUMENTE_EINGEREICHT → IN_PRÜFUNG → VIDEO_CALL_GEPLANT → VERIFIZIERT
 - **Einzahlung**: Nachweis Bank/Zentrale
 
 ### 7.4 Anbau & Lager (Seed-to-Sale)
+
+#### Neue Django Apps Struktur
+```
+apps/
+├── cultivation/          # Anbaudokumentation
+│   ├── models: Mutterpflanze, Steckling, Blütezyklus
+│   ├── services: Dünger-Tracking, Pflanzenschutz
+│   └── admin: Anbau-Übersicht für Vorstand
+│
+├── compliance/           # Gesetzeskonformität
+│   ├── models: Limit-Register, Verdachtsanzeige, Präventionsprotokoll
+│   ├── services: Automatische Sperre, Jahresmeldung
+│   └── admin: Compliance-Dashboard
+│
+└── participation/        # Mitglieds-Mitwirkung
+    ├── models: Arbeitsstunden, Schichten, Pflichtstunden
+    ├── services: Stunden-Tracking, Schichtplanung
+    └── admin: Engagement-Übersicht
+```
+
+#### CanG Compliance Features (Kritisch)
+
+**Jugendschutzbeauftragter**
+- Benennung im System mit Sachkunde-Nachweis
+- Dokumentation der Schulungen
+- Jährliche Fortbildungserinnerung
+
+**Präventionskonzept (standortspezifisch)**
+- Dokumentation des vom Vorstand erstellten Konzepts
+- Pflichtinformationen bei ERSTER Abgabe (Suchtprävention, Wirkungen, Risiken)
+- Mitglied bestätigt Kenntnisnahme digital
+
+**Sicherungskonzept**
+- Dokumentation: Einbruchschutz, Tresore, Alarmanlage
+- Zutrittskontrolle: Wer hat wann Zugang (Protokoll)
+- Bestandsschutz: Überwachung gegen Diebstahl
+
+**Konsumverbot Überwachung**
+- Protokollierung: Kein Konsum innerhalb 100m des Vereins
+- Hinweisschilder dokumentiert
+- Mitgliederklärung: Kein Konsum vor Ort
+
+**Beipackzettel (Pflichtangaben)**
+- Automatische Generierung mit:
+  - Gewicht, Erntedatum, MHD
+  - Sortenname, THC/CBD-Gehalt
+  - Warnhinweise (Schwangerschaft, Fahren, Mischkonsum)
+  - Herkunft (Charge-ID für Rückverfolgung)
+- Druck bei jeder Abgabe
+
+**Jahresmeldung an Behörden**
+- Automatische Generierung (31.12.)
+- Anonymisierte Daten:
+  - Gesamterzeugte Menge (g)
+  - Lagerstand (g)
+  - Abgegebene Mengen pro Mitglied (anonymisiert)
+  - Durchschnittlicher THC/CBD-Gehalt
+- Export als PDF/CSV
+- Erinnerung an Vorstand 30 Tage vor Frist
+
+**Wohnsitzprüfung (>6 Monate)**
+- Dokumentation: Meldebescheinigung oder vergleichbarer Nachweis
+- Automatische Prüfung: Eintrittsdatum + 6 Monate = Freischaltung
+- Erinnerung an Mitglied: Nachweis einreichen
 
 #### Growtagebuch (Detailliert)
 - **Räume**: Anbau-, Trocknungs-, Lager-Räume

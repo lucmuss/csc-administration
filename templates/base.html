@@ -37,6 +37,7 @@
           {% if user.is_authenticated %}
             <a class="touch-target" href="{% url 'core:dashboard' %}">Startseite</a>
             <a class="touch-target" href="{% url 'inventory:strain_list' %}">Sorten</a>
+            <a class="touch-target" href="{% url 'inventory:location_list' %}">Lagerorte</a>
             <a class="touch-target" href="{% url 'orders:shop' %}">Shop</a>
             <a class="touch-target" href="{% url 'orders:cart' %}">Warenkorb</a>
             <a class="touch-target" href="{% url 'finance:dashboard' %}">Finanzen</a>
@@ -46,6 +47,7 @@
             {% if user.role == 'board' %}
               <a class="touch-target" href="{% url 'compliance:dashboard' %}">Regeln &amp; Meldungen</a>
               <a class="touch-target" href="{% url 'participation:admin_hours' %}">Stunden-Verwaltung</a>
+              <a class="touch-target" href="{% url 'cultivation:dashboard' %}">Anbau</a>
             {% endif %}
             <a class="touch-target" href="{% url 'accounts:logout' %}">Abmelden</a>
           {% else %}

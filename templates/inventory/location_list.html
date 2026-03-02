@@ -1,0 +1,24 @@
+{% extends 'base.html' %}
+{% block title %}Lagerorte{% endblock %}
+{% block content %}
+<div class="card">
+  <h1 class="mb-4 text-xl font-semibold">Lagerorte</h1>
+  <table class="w-full text-left text-sm">
+    <thead>
+      <tr><th>Name</th><th>Typ</th><th>Kapazität (g)</th><th>Positionen</th></tr>
+    </thead>
+    <tbody>
+      {% for location in locations %}
+      <tr>
+        <td>{{ location.name }}</td>
+        <td>{{ location.get_type_display }}</td>
+        <td>{{ location.capacity }}</td>
+        <td>{{ location.items.count }}</td>
+      </tr>
+      {% empty %}
+      <tr><td colspan="4">Keine Lagerorte vorhanden.</td></tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+{% endblock %}

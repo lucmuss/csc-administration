@@ -1,0 +1,29 @@
+{% extends 'base.html' %}
+{% block title %}Anbau-Übersicht{% endblock %}
+{% block content %}
+<div class="grid gap-4 md:grid-cols-3 mb-4">
+  <div class="card"><p class="text-sm">Mutterpflanzen</p><p class="text-2xl font-bold">{{ mother_count }}</p></div>
+  <div class="card"><p class="text-sm">Aktive Pflanzen</p><p class="text-2xl font-bold">{{ active_plants }}</p></div>
+  <div class="card"><p class="text-sm">Ernten</p><p class="text-2xl font-bold">{{ harvest_count }}</p></div>
+</div>
+<div class="card mb-4">
+  <h1 class="text-xl font-semibold mb-2">Anbau-Übersicht</h1>
+  <p class="mb-3">
+    <a href="{% url 'cultivation:mother_plant_list' %}" class="underline">Mutterpflanzen</a> |
+    <a href="{% url 'cultivation:cutting_list' %}" class="underline">Stecklinge</a>
+  </p>
+  <h2 class="font-semibold mb-2">Nächste Ernten</h2>
+  <ul class="space-y-1">
+    {% for row in upcoming_harvests %}
+      <li>
+        <a class="underline" href="{% url 'cultivation:plant_detail' row.plant.id %}">
+          Pflanze #{{ row.plant.id }} ({{ row.plant.cutting.mother_plant.strain.name }})
+        </a>
+        - Prognose {{ row.estimated_harvest }}
+      </li>
+    {% empty %}
+      <li>Keine aktiven Pflanzen vorhanden.</li>
+    {% endfor %}
+  </ul>
+</div>
+{% endblock %}

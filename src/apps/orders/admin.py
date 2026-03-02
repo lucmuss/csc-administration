@@ -6,7 +6,7 @@ from .models import Order, OrderItem
 class OrderItemInline(admin.TabularInline):
     model = OrderItem
     extra = 0
-    readonly_fields = ("strain", "quantity_grams", "unit_price", "total_price")
+    readonly_fields = ("strain", "batch", "quantity_grams", "unit_price", "total_price")
 
 
 @admin.register(Order)
@@ -19,4 +19,4 @@ class OrderAdmin(admin.ModelAdmin):
 
 @admin.register(OrderItem)
 class OrderItemAdmin(admin.ModelAdmin):
-    list_display = ("order", "strain", "quantity_grams", "total_price")
+    list_display = ("order", "strain", "batch", "quantity_grams", "total_price")

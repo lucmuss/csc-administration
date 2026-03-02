@@ -28,4 +28,13 @@
     {% endif %}
   </section>
 </div>
+{% if cultivation_overview %}
+<section class="card mt-4">
+  <h2 class="text-lg font-semibold">Anbau-Übersicht</h2>
+  <p>Mutterpflanzen: {{ cultivation_overview.mother_count }}</p>
+  <p>Aktive Pflanzen: {{ cultivation_overview.active_plants }}</p>
+  <p>Ernten: {{ cultivation_overview.harvest_count }}</p>
+  <p class="mt-2"><a class="underline" href="{% url 'cultivation:dashboard' %}">Zum Anbau-Dashboard</a></p>
+</section>
+{% endif %}
 {% endblock %}

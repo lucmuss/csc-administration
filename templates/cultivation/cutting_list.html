@@ -1,0 +1,26 @@
+{% extends 'base.html' %}
+{% block title %}Stecklinge{% endblock %}
+{% block content %}
+<div class="card">
+  <h1 class="mb-4 text-xl font-semibold">Stecklinge</h1>
+  <table class="w-full text-left text-sm">
+    <thead>
+      <tr><th>ID</th><th>Mutterpflanze</th><th>Sorte</th><th>Gesteckt</th><th>Bewurzelt</th><th>Status</th></tr>
+    </thead>
+    <tbody>
+      {% for cutting in cuttings %}
+      <tr>
+        <td>{{ cutting.id }}</td>
+        <td>#{{ cutting.mother_plant.id }}</td>
+        <td>{{ cutting.mother_plant.strain.name }}</td>
+        <td>{{ cutting.planted_date }}</td>
+        <td>{{ cutting.rooting_date|default:'-' }}</td>
+        <td>{{ cutting.get_status_display }}</td>
+      </tr>
+      {% empty %}
+      <tr><td colspan="6">Keine Stecklinge vorhanden.</td></tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+{% endblock %}

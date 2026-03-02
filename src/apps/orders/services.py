@@ -11,7 +11,7 @@ from apps.compliance.services import (
     ensure_prevention_info_for_first_dispense,
 )
 from apps.finance.services import create_invoice_for_order
-from apps.inventory.models import Strain
+from apps.inventory.models import Batch, Strain
 from apps.members.models import Profile
 
 from .models import Order, OrderItem
@@ -69,13 +69,27 @@ def create_reserved_order(*, user, cart_lines: list[CartLine]) -> Order:
     for line in cart_lines:
         strain = strains[line.strain_id]
         line_total = strain.price * line.grams
+        batch = (
+            Batch.objects.select_for_update()
+            .filter(
+                strain=strain,
+                is_active=True,
+                quantity__gte=line.grams,
+            )
+            .order_by("harvested_at", "created_at")
+            .first()
+        )
         OrderItem.objects.create(
             order=order,
             strain=strain,
+            batch=batch,
             quantity_grams=line.grams,
             unit_price=strain.price,
             total_price=line_total,
         )
+        if batch:
+            batch.quantity = F("quantity") - line.grams
+            batch.save(update_fields=["quantity"])
         strain.stock = F("stock") - line.grams
         strain.save(update_fields=["stock"])
 
@@ -105,10 +119,14 @@ def release_expired_reservations(now=None) -> int:
         profile.monthly_used -= order.total_grams
         profile.save(update_fields=["balance", "daily_used", "monthly_used", "updated_at"])
 
-        for item in order.items.select_related("strain"):
+        for item in order.items.select_related("strain", "batch"):
             strain = item.strain
             strain.stock += item.quantity_grams
             strain.save(update_fields=["stock"])
+            if item.batch:
+                batch = item.batch
+                batch.quantity += item.quantity_grams
+                batch.save(update_fields=["quantity"])
 
         order.status = Order.STATUS_CANCELLED
         order.save(update_fields=["status", "updated_at"])

@@ -1,0 +1,51 @@
+{% extends 'base.html' %}
+{% block title %}Pflanze #{{ plant.id }}{% endblock %}
+{% block content %}
+<div class="card mb-4">
+  <h1 class="text-xl font-semibold">Pflanze #{{ plant.id }}</h1>
+  <p>Sorte: {{ plant.cutting.mother_plant.strain.name }}</p>
+  <p>Raum: {{ plant.room }}</p>
+  <p>Status: {{ plant.get_growth_stage_display }}</p>
+  <p>Pflanzdatum: {{ plant.planting_date }}</p>
+  {% if plant.growth_stage != 'harvested' %}
+    <p class="mt-2"><a class="underline" href="{% url 'cultivation:harvest_form' plant.id %}">Ernte dokumentieren</a></p>
+  {% endif %}
+</div>
+
+<div class="card mb-4">
+  <h2 class="text-lg font-semibold mb-2">Growtagebuch hinzufügen</h2>
+  <form method="post" class="space-y-2">
+    {% csrf_token %}
+    <input type="hidden" name="action" value="add_log">
+    <div><label>Datum <input type="date" name="date" required class="w-full border p-2"></label></div>
+    <div>
+      <label>Aktivität
+        <select name="activity_type" class="w-full border p-2" required>
+          <option value="watering">Bewässerung</option>
+          <option value="nutrients">Düngung</option>
+          <option value="pruning">Schnitt</option>
+          <option value="health">Gesundheitscheck</option>
+        </select>
+      </label>
+    </div>
+    <div><label>Nährstoffe <input type="text" name="nutrients" class="w-full border p-2"></label></div>
+    <div><label>Notizen <textarea name="notes" class="w-full border p-2"></textarea></label></div>
+    <button class="bg-csc-900 text-white px-3 py-2" type="submit">Eintrag speichern</button>
+  </form>
+</div>
+
+<div class="card">
+  <h2 class="text-lg font-semibold mb-2">Growtagebuch</h2>
+  <ul class="space-y-2">
+    {% for log in logs %}
+      <li>
+        <strong>{{ log.date }}</strong> - {{ log.get_activity_type_display }}
+        {% if log.nutrients %}<span>(Nährstoffe: {{ log.nutrients }})</span>{% endif %}
+        <div>{{ log.notes|default:'-' }}</div>
+      </li>
+    {% empty %}
+      <li>Keine Einträge vorhanden.</li>
+    {% endfor %}
+  </ul>
+</div>
+{% endblock %}

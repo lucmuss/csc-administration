@@ -1,0 +1,25 @@
+{% extends 'base.html' %}
+{% block title %}Mutterpflanzen{% endblock %}
+{% block content %}
+<div class="card">
+  <h1 class="mb-4 text-xl font-semibold">Mutterpflanzen</h1>
+  <table class="w-full text-left text-sm">
+    <thead>
+      <tr><th>ID</th><th>Sorte</th><th>Pflanzdatum</th><th>Status</th><th>Genetik</th></tr>
+    </thead>
+    <tbody>
+      {% for plant in mother_plants %}
+      <tr>
+        <td>{{ plant.id }}</td>
+        <td>{{ plant.strain.name }}</td>
+        <td>{{ plant.planted_date }}</td>
+        <td>{{ plant.get_status_display }}</td>
+        <td>{{ plant.genetics|default:'-' }}</td>
+      </tr>
+      {% empty %}
+      <tr><td colspan="5">Keine Mutterpflanzen vorhanden.</td></tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+{% endblock %}

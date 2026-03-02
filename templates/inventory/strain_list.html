@@ -1,25 +1,31 @@
 {% extends 'base.html' %}
 {% block title %}Sorten{% endblock %}
 {% block content %}
-<div class="card">
+<div class="card mb-4">
   <h1 class="mb-4 text-xl font-semibold">Sorten</h1>
+  <p class="mb-3">
+    <a href="{% url 'inventory:location_list' %}" class="underline">Lagerorte</a> |
+    <a href="{% url 'inventory:inventory_count_form' %}" class="underline">Inventur erfassen</a> |
+    <a href="{% url 'inventory:discrepancy_report' %}" class="underline">Abweichungsbericht</a>
+  </p>
   <table class="w-full text-left text-sm">
     <thead>
       <tr>
-        <th>Name</th><th>THC</th><th>CBD</th><th>Preis/g</th><th>Bestand</th>
+        <th>Name</th><th>Qualität</th><th>THC</th><th>CBD</th><th>Preis/g</th><th>Bestand</th>
       </tr>
     </thead>
     <tbody>
       {% for strain in strains %}
       <tr>
         <td>{{ strain.name }}</td>
+        <td>{{ strain.quality_grade }}</td>
         <td>{{ strain.thc }}%</td>
         <td>{{ strain.cbd }}%</td>
         <td>{{ strain.price }} EUR</td>
         <td>{{ strain.stock }}g</td>
       </tr>
       {% empty %}
-      <tr><td colspan="5">Keine Sorten vorhanden.</td></tr>
+      <tr><td colspan="6">Keine Sorten vorhanden.</td></tr>
       {% endfor %}
     </tbody>
   </table>

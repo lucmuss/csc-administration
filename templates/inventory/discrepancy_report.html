@@ -1,0 +1,23 @@
+{% extends 'base.html' %}
+{% block title %}Abweichungsbericht{% endblock %}
+{% block content %}
+<div class="card">
+  <h1 class="mb-4 text-xl font-semibold">Abweichungsbericht</h1>
+  {% for count in counts %}
+    <div class="mb-4 border-b pb-3">
+      <h2 class="font-semibold">Inventur {{ count.date }} ({{ count.items_counted }} Positionen)</h2>
+      {% if count.discrepancies %}
+        <ul class="list-disc ml-5">
+          {% for entry in count.discrepancies %}
+            <li>{{ entry.strain }} @ {{ entry.location }}: Soll {{ entry.expected }}g, Ist {{ entry.counted }}g, Delta {{ entry.delta }}g</li>
+          {% endfor %}
+        </ul>
+      {% else %}
+        <p>Keine Abweichungen.</p>
+      {% endif %}
+    </div>
+  {% empty %}
+    <p>Noch keine Inventuren vorhanden.</p>
+  {% endfor %}
+</div>
+{% endblock %}

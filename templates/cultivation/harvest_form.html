@@ -1,0 +1,16 @@
+{% extends 'base.html' %}
+{% block title %}Ernte dokumentieren{% endblock %}
+{% block content %}
+<div class="card">
+  <h1 class="mb-2 text-xl font-semibold">Ernte dokumentieren (Pflanze #{{ plant.id }})</h1>
+  <p class="mb-4">Prognose: {{ estimated_harvest }}</p>
+  <form method="post" class="space-y-3">
+    {% csrf_token %}
+    <div><label>Erntedatum <input type="date" name="harvest_date" required class="w-full border p-2"></label></div>
+    <div><label>Nassgewicht (g) <input type="number" name="wet_weight" min="0" step="0.01" required class="w-full border p-2"></label></div>
+    <div><label>Trockengewicht (g) <input type="number" name="dry_weight" min="0" step="0.01" required class="w-full border p-2"></label></div>
+    <div><label>Charge (optional) <input type="text" name="batch_code" class="w-full border p-2"></label></div>
+    <button class="bg-csc-900 text-white px-3 py-2" type="submit">Ernte speichern</button>
+  </form>
+</div>
+{% endblock %}

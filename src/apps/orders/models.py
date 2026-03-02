@@ -5,7 +5,7 @@ from django.conf import settings
 from django.db import models
 from django.utils import timezone
 
-from apps.inventory.models import Strain
+from apps.inventory.models import Batch, Strain
 
 
 class Order(models.Model):
@@ -41,6 +41,7 @@ class Order(models.Model):
 class OrderItem(models.Model):
     order = models.ForeignKey(Order, on_delete=models.CASCADE, related_name="items")
     strain = models.ForeignKey(Strain, on_delete=models.PROTECT)
+    batch = models.ForeignKey(Batch, on_delete=models.PROTECT, blank=True, null=True, related_name="order_items")
     quantity_grams = models.DecimalField(max_digits=8, decimal_places=2)
     unit_price = models.DecimalField(max_digits=8, decimal_places=2)
     total_price = models.DecimalField(max_digits=10, decimal_places=2)

@@ -862,6 +862,13 @@ email:
 - **Parallele Sessions**: Max. 3 pro Benutzer
 - **Session-Überwachung**: Liste aktiver Sessions, Remote-Logout
 - **IP-Logging**: Für Sicherheitsprüfungen
+- **IP-Whitelisting**: Admin-Zugriff nur von bestimmten IPs (optional)
+
+#### Breach Notification (Datenleck-Meldung)
+- **Pflicht**: DSGVO Art. 33/34 - Meldung innerhalb 72 Stunden
+- **Automatisierung**: E-Mail an betroffene Mitglieder + Aufsichtsbehörde
+- **Inhalt**: Art des Vorfalls, betroffene Daten, Maßnahmen, Kontakt
+- **Protokollierung**: Unveränderbarer Nachweis der Meldung
 
 ### 7.2 Mitgliederverwaltung (Erweitert)
 
@@ -883,6 +890,17 @@ email:
 - **Erinnerungen**: 30, 14, 7 Tage vor Ablauf
 - **Status**: Aktiv → Gekündigt → Ausgetreten
 - **Bestätigung**: Automatische Kündigungsbestätigung
+
+#### Verifizierungs-Workflow (Feingranular)
+```
+DOKUMENTE_EINGEREICHT → IN_PRÜFUNG → VIDEO_CALL_GEPLANT → VERIFIZIERT
+      ↓                      ↓              ↓                  ↓
+   Antrag               Vorstand        Termin            Aktivierung
+   eingegangen          prüft          vereinbart         des Kontos
+```
+- **Automatische Eskalation**: Erinnerung nach 14 Tagen ohne Fortschritt
+- **Video-Call**: Integration Jitsi/Zoom für Altersprüfung
+- **Dokumenten-Status**: Einzelne Uploads tracken (Ausweis, Wohnsitznachweis)
 
 ### 7.3 Finanzen (Erweitert)
 
@@ -923,6 +941,25 @@ email:
 - **Übertragung**: Automatischer Upload (SFTP) oder Download
 - **Abstimmung**: Saldi mit Bankkonto
 
+#### Echte vs. Unechte Beiträge (USt-Berechnung)
+- **Echte Beiträge**: USt-frei (ideeller Bereich, z.B. Vereinszweck)
+- **Unechte Beiträge**: 7% USt (wirtschaftlicher Bereich, z.B. Cannabis-Abgabe)
+- **Automatische Berechnung**: Basierend auf Produktkategorie
+- **Ausweisung**: Separate Positionen auf Rechnung
+- **Prüfung**: Hinweis bei Grenzüberschreitung (>35.000€/Jahr)
+
+#### Spenden-Tracking
+- **Separat von Beiträgen**: Steuerlich absetzbar für Spender
+- **Spendenbescheinigung**: Automatische Generierung (Jahresende)
+- **Sammelspendenbescheinigung**: Bei <300€/Jahr pro Spender
+- **Dokumentation**: Zweckbindung der Spenden
+
+#### Bargeld-Abrechnung (Ausgabestellen)
+- **Tagesabschluss**: Kassenstand, Ein- und Ausgaben
+- **Quittungsnummern**: Lückenlose Nummerierung prüfen
+- **Abweichungen**: Differenzen dokumentieren und begründen
+- **Einzahlung**: Nachweis Bank/Zentrale
+
 ### 7.4 Anbau & Lager (Seed-to-Sale)
 
 #### Growtagebuch (Detailliert)
@@ -936,6 +973,26 @@ email:
 
 - **Dokumentation**: Fotos optional
 - **Export**: PDF für Behörden
+
+#### Pflanzen-Tracking (Einzeln, nicht nur Chargen)
+- **Pflanzen-ID**: Eindeutige Nummer pro Pflanze
+- **Lebenszyklus**: Steckling → Vegetation → Blüte → Ernte
+- **Mutterpflanzen**: Vererbung der ID bei Stecklingen
+- **QR-Code**: Physisches Label an der Pflanze
+- **Historie**: Vollständige Herkunft einer einzelnen Pflanze
+
+#### Schädlings-Protokoll
+- **Befallsbild**: Fotos, betroffene Pflanzen, Ausmaß
+- **Maßnahme**: Produkt, Menge, Anwendungsdatum
+- **Quarantäne**: Isolierung betroffener Pflanzen
+- **Erfolgskontrolle**: Nach 7 Tagen Folgeprüfung
+- **Dokumentation**: Für Bio-Zertifizierung relevant
+
+#### Ernte-Prognose
+- **Blütezeit**: Automatische Berechnung basierend auf Sorte
+- **Erntefenster**: Frühe/optimale/späte Ernte
+- **Mengenschätzung**: Basierend auf letztem Gewicht/Stück
+- **Verfügbarkeitsanzeige**: "Verfügbar in ca. 3 Wochen"
 
 #### THC/CBD-Erfassung
 - **Laborwerte**: Eingabe nach Analyse
@@ -978,6 +1035,25 @@ email:
 - **Benachrichtigung**: Erinnerung vor Ablauf
 - **Priorisierung**: Nach Wartezeit/Fairness
 
+#### Warteliste (bei Ausverkauf)
+- **FIFO**: First In, First Out (gerecht)
+- **Priorität**: Optional: Langjährige Mitglieder bevorzugt
+- **Benachrichtigung**: Automatisch wenn Sorte verfügbar
+- **Zeitfenster**: 24h zur Reservierung nach Freigabe
+
+#### Express-Abholung (Zeitfenster-Buchung)
+- **Terminwahl**: 15-Minuten-Fenster (z.B. 18:00-18:15)
+- **Wartezeit**: Reduzierung durch exakte Planung
+- **Pünktlichkeit**: Verspätung = Verfall der Reservierung (15 Min.)
+- **Reservierung**: Nur mit aktivem Guthaben möglich
+
+#### Bevollmächtigung (Delegierung)
+- **Vollmacht**: Digitale Erteilung im Mitgliederbereich
+- **Bevollmächtigter**: Name, Geburtsdatum, Ausweisnummer
+- **Ausweiskopie**: Upload bei Erteilung der Vollmacht
+- **Limit-Prüfung**: Trotzdem gegen Mitgliedslimits
+- **Protokollierung**: Wer hat für wen abgeholt
+
 ### 7.6 Mobile App (Mitglieder)
 
 #### Kernfunktionen
@@ -992,6 +1068,22 @@ email:
 - **Offline-Modus**: Grundfunktionen ohne Internet
 - **Sicherheit**: Biometrische Authentifizierung
 - **Updates**: Automatisch über App-Stores
+
+#### Offline-Bestellung
+- **Warteschlange**: Bestellungen werden lokal gespeichert
+- **Synchronisierung**: Automatisch bei Verbindung
+- **Konfliktlösung**: Warnung wenn Sorte zwischenzeitlich ausverkauft
+- **Queue-Status**: Anzeige "Wartet auf Übermittlung"
+
+#### Dark Mode
+- **Diskrete Nutzung**: Weniger auffällig in der Öffentlichkeit
+- **Akku-Schonung**: OLED-Displays profitieren
+- **Automatik**: Je nach System-Einstellung
+
+#### Schneller Checkout (Biometrie)
+- **Face-ID/Fingerprint**: Ein-Klick-Bestellung
+- **Express-Abholung**: Schnellerer Zugang
+- **Sicherheit**: Biometrie nur für Bestätigung, nicht für Login
 
 ### 7.7 API & Integrationen
 
@@ -1089,6 +1181,25 @@ einstellungen_mitgliederversammlung:
 - Änderungen werden im Audit-Trail protokolliert
 - Bei Änderung: Bestätigungsdialog mit Hinweis auf betroffene Mitglieder
 
+#### Multi-Language Support
+- **Sprachen**: Deutsch, Englisch (weitere optional)
+- **Mitglieder-Präferenz**: Individuell wählbar
+- **Automatische Erkennung**: Browser-Sprache als Default
+- **Rechtliche Texte**: Immer Deutsch (maßgeblich)
+
+#### Rollen-Vorlagen
+- **Schnellzuweisung**: "Standard-Mitarbeiter", "Vorstand", "Kassierer"
+- **Berechtigungs-Pakete**: Vordefinierte Kombinationen
+- **Individuelle Anpassung**: Nach Zuweisung modifizierbar
+- **Neue Vorlagen**: Selbst erstellbar
+
+#### Daten-Retention (Automatische Löschung)
+- **Aufbewahrungsfristen**: 2 Jahre nach Austritt (CanG)
+- **Anonymisierung**: Nach Frist personenbezogene Daten entfernen
+- **Archiv**: Nur statistische Daten behalten
+- **DSGVO-konform**: Recht auf Vergessen automatisiert
+- **Ausnahme**: Finanzdaten 10 Jahre (Steuerrecht)
+
 #### Automatisierung Übersicht (Dashboard)
 **Pfad**: Admin → Dashboard → Automatisierung
 
@@ -1117,6 +1228,64 @@ automation_dashboard:
       status: "Aktiv"
       naechster_versand: "18.12.2026"
 ```
+
+### 7.10 Kritische Fallstricke & Warnungen
+
+#### Rechtliche Fallstricke
+1. **Delta-T zu kurz** (<7 Tage)
+   - **Problem**: Rechtlich problematisch, Mitglieder können klagen
+   - **Lösung**: Minimum 7 Tage, empfohlen 14 Tage
+   - **Validierung**: System blockiert Werte <7
+
+2. **SMS ohne Opt-in**
+   - **Problem**: DSGVO-Verstoß, Bußgelder bis 20 Mio. € oder 4% Umsatz
+   - **Lösung**: Explizite Einwilligung erforderlich, Double-Opt-In
+   - **Dokumentation**: Einwilligung mit Zeitstempel speichern
+
+3. **Audit-Trail löschbar**
+   - **Problem**: Manipulation möglich, Vertrauensverlust
+   - **Lösung**: Append-only Datenbank, kryptografische Prüfsummen
+   - **Backup**: Unveränderbare externe Kopie
+
+4. **THC-Werte falsch**
+   - **Problem**: Strafrechtliche Konsequenzen, Behördenmaßnahmen
+   - **Lösung**: Labortests dokumentieren, Toleranzbereiche definieren
+   - **Haftung**: Keine Garantie übernehmen, nur dokumentieren
+
+5. **Limit-Reset Zeitzone**
+   - **Problem**: Server in USA = Reset um 18:00 MEZ
+   - **Lösung**: Explizit Europe/Berlin Zeitzone
+   - **DST**: Sommer-/Winterzeit automatisch beachten
+
+#### Technische Fallstricke
+6. **Doppelte Mitgliedsnummern**
+   - **Problem**: Race Condition bei gleichzeitiger Registrierung
+   - **Lösung**: Datenbank-Constraint (UNIQUE), Transaktionen
+
+7. **Gleichzeitige Bestellungen**
+   - **Problem**: Bestand überschritten bei parallelen Sessions
+   - **Lösung**: Pessimistisches Locking, Bestandsreservierung
+
+8. **SEPA-Rückläufer nach Mahnung**
+   - **Problem**: Mitglied bereits gemahnt, aber Zahlung doch eingegangen
+   - **Lösung**: Idempotente Verarbeitung, Status-Checks
+
+9. **Backup während Abgabe**
+   - **Problem**: Inkonsistente Daten (Bestand bereits reduziert, Log noch nicht)
+   - **Lösung**: Transaktionen, Point-in-Time Recovery
+
+#### Organisatorische Fallstricke
+10. **Fehlende Schulung**
+    - **Problem**: Mitarbeiter wissen nicht, wie System funktioniert
+    - **Lösung**: Pflichtschulung, Handbuch, Videos
+
+11. **Kein Notfallplan**
+    - **Problem**: Systemausfall bei Abgabetag
+    - **Lösung**: Papier-Backup-Prozess, manuelle Quittungen
+
+12. **Datenexport vergessen**
+    - **Problem**: Beim Wechsel zu anderer Software keine Migration
+    - **Lösung**: Monatliche Exporte, standardisierte Formate
 
 ---
 

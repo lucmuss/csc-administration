@@ -67,6 +67,8 @@ def schedule_sepa_payment(*, invoice: Invoice, scheduled_for: date | None = None
         return None
 
     mandate = invoice.profile.sepa_mandate
+    if not mandate:
+        mandate = SepaMandate.objects.filter(active_for_profile__id=invoice.profile_id, is_active=True).first()
     if not mandate or not mandate.is_active:
         return None
 

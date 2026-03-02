@@ -93,7 +93,7 @@ def test_inactivity_and_deadline_notifications(member_user):
     )
     MemberEngagement.objects.create(
         profile=inactive_profile,
-        registration_deadline=timezone.localdate() + timedelta(days=7),
+        registration_deadline=timezone.localdate(),  # Deadline reached today
         registration_completed=False,
     )
 
@@ -103,4 +103,4 @@ def test_inactivity_and_deadline_notifications(member_user):
     inactive_engagement = MemberEngagement.objects.get(profile=inactive_profile)
     assert inactive_engagement.inactivity_notified_at is not None
     assert inactive_engagement.registration_reminder_sent_at is not None
-    assert len(mail.outbox) == 2
+    assert len(mail.outbox) == 3  # 2 inactivity + 1 deadline

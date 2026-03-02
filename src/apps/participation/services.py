@@ -145,7 +145,7 @@ class DeadlineService:
         due_engagements = MemberEngagement.objects.select_related("profile__user").filter(
             registration_completed=False,
             registration_deadline__isnull=False,
-            registration_deadline__lte=today + timedelta(days=7),
+            registration_deadline__lte=today,
         )
 
         for engagement in due_engagements:

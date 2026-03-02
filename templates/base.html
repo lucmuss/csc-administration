@@ -59,13 +59,15 @@
     </header>
 
     <main id="main-content" class="mx-auto max-w-5xl p-4" tabindex="-1">
-      {% if messages %}
-        <div class="mb-4 space-y-2" aria-live="polite">
-          {% for message in messages %}
-            <div class="feedback feedback-{{ message.tags|default:'info' }}" role="status">{{ message }}</div>
-          {% endfor %}
-        </div>
-      {% endif %}
+      <div aria-live="polite">
+        {% if messages %}
+          <div class="mb-4 space-y-2">
+            {% for message in messages %}
+              <div class="feedback feedback-{{ message.tags|default:'info' }}" role="status">{{ message }}</div>
+            {% endfor %}
+          </div>
+        {% endif %}
+      </div>
       {% block content %}{% endblock %}
     </main>
 

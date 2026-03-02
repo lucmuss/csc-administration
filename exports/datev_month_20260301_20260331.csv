@@ -1,0 +1,2 @@
+Belegdatum;Belegnummer;Konto;Gegenkonto;Betrag;Buchungstext;Mitglied;Status
+2026-03-02;INV-TEST-DATEV-1;1200;8400;88.00;Mitgliedsverkauf;member@example.com;open

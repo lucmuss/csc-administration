@@ -1,0 +1,33 @@
+{% extends 'base.html' %}
+{% block title %}Stundenverwaltung{% endblock %}
+{% block content %}
+<div class="card">
+  <h1 class="mb-4 text-xl font-semibold">Arbeitsstunden (Admin)</h1>
+  {% if hours %}
+    <table class="w-full text-sm">
+      <thead>
+        <tr>
+          <th class="text-left">Mitglied</th>
+          <th class="text-left">Datum</th>
+          <th class="text-left">Stunden</th>
+          <th class="text-left">Schicht</th>
+          <th class="text-left">Freigegeben</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for entry in hours %}
+          <tr>
+            <td>{{ entry.profile.user.email }}</td>
+            <td>{{ entry.date|date:'d.m.Y' }}</td>
+            <td>{{ entry.hours }}</td>
+            <td>{{ entry.shift.title|default:'-' }}</td>
+            <td>{{ entry.approved|yesno:'Ja,Nein' }}</td>
+          </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  {% else %}
+    <p>Keine Eintraege vorhanden.</p>
+  {% endif %}
+</div>
+{% endblock %}

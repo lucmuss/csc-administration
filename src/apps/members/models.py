@@ -39,6 +39,8 @@ class Profile(models.Model):
     monthly_used = models.DecimalField(max_digits=6, decimal_places=2, default=Decimal("0.00"))
     daily_counter_date = models.DateField(default=date.today)
     monthly_counter_key = models.CharField(max_length=7, default="1970-01")
+    last_activity = models.DateTimeField(null=True, blank=True)
+    work_hours_done = models.DecimalField(max_digits=6, decimal_places=2, default=Decimal("0.00"))
 
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)

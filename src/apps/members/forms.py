@@ -4,6 +4,7 @@ from django import forms
 from django.contrib.auth.password_validation import validate_password
 
 from apps.accounts.models import User
+from apps.participation.models import MemberEngagement
 
 from .models import Profile
 
@@ -51,4 +52,5 @@ class MemberRegistrationForm(forms.Form):
         )
         profile.full_clean()
         profile.save()
+        MemberEngagement.objects.create(profile=profile)
         return user

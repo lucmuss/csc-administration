@@ -1,0 +1,37 @@
+{% extends 'base.html' %}
+{% block title %}Mitwirkung{% endblock %}
+{% block content %}
+<div class="card space-y-3">
+  <h1 class="text-xl font-semibold">Meine Arbeitsstunden</h1>
+  <p>Pflichtstunden geleistet: {{ total_hours }}h / {{ engagement.required_hours_year }}h</p>
+  <p>Im Profil gespeichert: {{ profile.work_hours_done }}h</p>
+</div>
+
+<div class="card mt-4">
+  <h2 class="mb-3 text-lg font-semibold">Letzte Eintraege</h2>
+  {% if entries %}
+    <table class="w-full text-sm">
+      <thead>
+        <tr>
+          <th class="text-left">Datum</th>
+          <th class="text-left">Stunden</th>
+          <th class="text-left">Schicht</th>
+          <th class="text-left">Freigegeben</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for entry in entries %}
+          <tr>
+            <td>{{ entry.date|date:'d.m.Y' }}</td>
+            <td>{{ entry.hours }}</td>
+            <td>{{ entry.shift.title|default:'-' }}</td>
+            <td>{{ entry.approved|yesno:'Ja,Nein' }}</td>
+          </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  {% else %}
+    <p>Noch keine Stunden erfasst.</p>
+  {% endif %}
+</div>
+{% endblock %}

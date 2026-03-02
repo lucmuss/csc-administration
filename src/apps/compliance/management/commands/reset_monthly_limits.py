@@ -1,11 +1,11 @@
 from django.core.management.base import BaseCommand
 
-from apps.compliance.services import reset_monthly_limits
+from apps.participation.services import LimitResetService
 
 
 class Command(BaseCommand):
     help = "Setzt monatliche Verbrauchslimits fuer alle Mitglieder zurueck"
 
     def handle(self, *args, **options):
-        updated = reset_monthly_limits()
+        updated = LimitResetService.reset_monthly()
         self.stdout.write(self.style.SUCCESS(f"Monatliche Limits zurueckgesetzt: {updated}"))

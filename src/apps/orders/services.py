@@ -81,7 +81,8 @@ def create_reserved_order(*, user, cart_lines: list[CartLine]) -> Order:
 
     profile.balance -= total_price
     profile.consume(total_grams)
-    profile.save(update_fields=["balance", "daily_used", "monthly_used", "updated_at"])
+    profile.last_activity = timezone.now()
+    profile.save(update_fields=["balance", "daily_used", "monthly_used", "last_activity", "updated_at"])
     detect_suspicious_activity_for_profile(profile=profile)
     ensure_prevention_info_for_first_dispense(user=user, order=order)
     create_invoice_for_order(order=order)

@@ -2,14 +2,136 @@
 @tailwind components;
 @tailwind utilities;
 
+@layer base {
+  html {
+    font-size: 16px;
+  }
+
+  a:focus-visible,
+  button:focus-visible,
+  select:focus-visible,
+  input:focus-visible {
+    outline: 3px solid #0f766e;
+    outline-offset: 2px;
+  }
+}
+
 @layer components {
   .btn {
     @apply rounded-md px-4 py-2 font-medium;
+    min-height: 44px;
+    min-width: 44px;
   }
   .btn-primary {
     @apply btn bg-csc-700 text-white hover:bg-csc-900;
   }
   .card {
     @apply rounded-lg border border-slate-200 bg-white p-4 shadow-sm;
+  }
+  .touch-target {
+    align-items: center;
+    border-radius: 0.375rem;
+    display: inline-flex;
+    min-height: 44px;
+    min-width: 44px;
+    padding: 0.5rem 0.75rem;
+  }
+  .main-nav {
+    display: none;
+    gap: 0.25rem;
+    margin-top: 0.75rem;
+  }
+  .main-nav.open {
+    display: flex;
+    flex-direction: column;
+  }
+  .btn-mobile-nav {
+    align-items: center;
+    background-color: #0f766e;
+    border: 1px solid #99f6e4;
+    border-radius: 0.375rem;
+    color: #ffffff;
+    display: inline-flex;
+    font-size: 1.125rem;
+    justify-content: center;
+    min-height: 44px;
+    min-width: 44px;
+    padding: 0.25rem 0.5rem;
+  }
+  .feedback {
+    border-radius: 0.5rem;
+    border-width: 1px;
+    font-size: 1rem;
+    font-weight: 600;
+    padding: 0.75rem;
+  }
+  .feedback-success {
+    background: #dcfce7;
+    border-color: #15803d;
+    color: #14532d;
+  }
+  .feedback-error {
+    background: #fee2e2;
+    border-color: #b91c1c;
+    color: #7f1d1d;
+  }
+  .feedback-info,
+  .feedback-warning {
+    background: #e0f2fe;
+    border-color: #0369a1;
+    color: #082f49;
+  }
+  .card-shop {
+    border-color: #cbd5e1;
+    border-width: 2px;
+  }
+  .shop-form {
+    align-items: center;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+    margin-top: 0.75rem;
+  }
+  .field-select {
+    border: 1px solid #475569;
+    border-radius: 0.375rem;
+    min-height: 44px;
+    padding: 0.5rem 0.625rem;
+  }
+  .skip-link {
+    background: #ffffff;
+    color: #0f172a;
+    left: 0.5rem;
+    padding: 0.5rem 0.75rem;
+    position: absolute;
+    top: -80px;
+    z-index: 50;
+  }
+  .skip-link:focus {
+    top: 0.5rem;
+  }
+  .sr-only {
+    border: 0;
+    clip: rect(0, 0, 0, 0);
+    height: 1px;
+    margin: -1px;
+    overflow: hidden;
+    padding: 0;
+    position: absolute;
+    width: 1px;
+  }
+}
+
+@media (min-width: 768px) {
+  .main-nav {
+    align-items: center;
+    display: flex;
+    flex-direction: row;
+    flex-wrap: wrap;
+    gap: 0.25rem;
+    margin-top: 0.5rem;
+  }
+  .btn-mobile-nav {
+    display: none;
   }
 }

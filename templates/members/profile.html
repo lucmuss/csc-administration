@@ -11,5 +11,7 @@
   <p>Guthaben: {{ profile.balance }} EUR</p>
   <p>Tagesverbrauch: {{ profile.daily_used }}g / 25g</p>
   <p>Monatsverbrauch: {{ profile.monthly_used }}g / 50g</p>
+  <p>Letzte Aktivitaet: {{ profile.last_activity|date:'d.m.Y H:i'|default:'-' }}</p>
+  <p>Geleistete Pflichtstunden: {{ profile.work_hours_done }}h</p>
 </div>
 {% endblock %}

@@ -12,6 +12,7 @@ os.environ.setdefault("DJANGO_SETTINGS_MODULE", "config.settings")
 def member_user(db):
     from apps.accounts.models import User
     from apps.members.models import Profile
+    from apps.participation.models import MemberEngagement
 
     user = User.objects.create_user(
         email="member@example.com",
@@ -20,7 +21,7 @@ def member_user(db):
         last_name="Mustermann",
         role=User.ROLE_MEMBER,
     )
-    Profile.objects.create(
+    profile = Profile.objects.create(
         user=user,
         birth_date=date(1990, 1, 1),
         status=Profile.STATUS_ACTIVE,
@@ -29,4 +30,5 @@ def member_user(db):
         balance=Decimal("200.00"),
         monthly_counter_key=date.today().strftime("%Y-%m"),
     )
+    MemberEngagement.objects.create(profile=profile)
     return user

@@ -14,6 +14,8 @@ class ProfileAdmin(admin.ModelAdmin):
         "balance",
         "daily_used",
         "monthly_used",
+        "work_hours_done",
+        "last_activity",
     )
     search_fields = ("user__email", "member_number")
     list_filter = ("status", "is_verified", "is_locked_for_orders")

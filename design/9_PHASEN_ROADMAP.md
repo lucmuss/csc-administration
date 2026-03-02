@@ -1,4 +1,4 @@
-# CSC Administration - 10-Phasen Roadmap
+# CSC Administration - 9-Phasen Roadmap
 
 ## Phase 0: Setup (Woche 1-2)
 - Django-Projekt, PostgreSQL, Tailwind, Docker
@@ -36,9 +36,5 @@
 - PWA, WCAG-Barrierefreiheit (50+), Touch-Optimierung
 - Tests: PWA-Install, Kontrast-Check, Touch-Targets
 
-## Phase 9: Polish (Woche 27-28)
-- Dokumentation, Bugfixing
-- Tests: N+1 Query-Check
-
-**Gesamt: 28 Wochen (7 Monate)**
+**Gesamt: 26 Wochen (6,5 Monate)**
 **Keine KI-Funktionalität** ✅

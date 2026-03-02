@@ -1,0 +1,33 @@
+services:
+  db:
+    image: postgres:16-alpine
+    container_name: csc_db
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: csc
+      POSTGRES_USER: csc
+      POSTGRES_PASSWORD: csc
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+
+  web:
+    build: .
+    container_name: csc_web
+    restart: unless-stopped
+    command: bash -c "python src/manage.py migrate && python src/manage.py runserver 0.0.0.0:8000"
+    env_file:
+      - .env
+    environment:
+      DATABASE_HOST: db
+      DATABASE_PORT: 5432
+    ports:
+      - "8000:8000"
+    volumes:
+      - .:/app
+    depends_on:
+      - db
+
+volumes:
+  postgres_data:

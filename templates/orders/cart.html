@@ -1,0 +1,35 @@
+{% extends 'base.html' %}
+{% block title %}Warenkorb{% endblock %}
+{% block content %}
+<div class="card">
+  <h1 class="mb-4 text-xl font-semibold">Warenkorb</h1>
+  {% if rows %}
+    <table class="mb-4 w-full text-left text-sm">
+      <thead><tr><th>Sorte</th><th>Menge</th><th>Preis</th></tr></thead>
+      <tbody>
+      {% for row in rows %}
+        <tr>
+          <td>{{ row.strain.name }}</td>
+          <td>{{ row.grams }}g</td>
+          <td>{{ row.line_total }} EUR</td>
+        </tr>
+      {% endfor %}
+      </tbody>
+    </table>
+    <p>Gesamtmenge: {{ total_grams }}g</p>
+    <p>Gesamtpreis: {{ total }} EUR</p>
+    <div class="mt-4 flex gap-2">
+      <form method="post" action="{% url 'orders:checkout' %}">
+        {% csrf_token %}
+        <button class="btn-primary" type="submit">Reserviert bestellen (48h)</button>
+      </form>
+      <form method="post" action="{% url 'orders:clear_cart' %}">
+        {% csrf_token %}
+        <button class="btn" type="submit">Leeren</button>
+      </form>
+    </div>
+  {% else %}
+    <p>Warenkorb ist leer.</p>
+  {% endif %}
+</div>
+{% endblock %}

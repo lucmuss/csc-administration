@@ -1,0 +1,15 @@
+{% extends 'base.html' %}
+{% block title %}Profil{% endblock %}
+{% block content %}
+<div class="card">
+  <h1 class="mb-4 text-xl font-semibold">Mein Profil</h1>
+  <p>Name: {{ profile.user.full_name }}</p>
+  <p>E-Mail: {{ profile.user.email }}</p>
+  <p>Mitgliedsnummer: {{ profile.member_number|default:'-' }}</p>
+  <p>Status: {{ profile.get_status_display }}</p>
+  <p>Verifiziert: {{ profile.is_verified|yesno:'Ja,Nein' }}</p>
+  <p>Guthaben: {{ profile.balance }} EUR</p>
+  <p>Tagesverbrauch: {{ profile.daily_used }}g / 25g</p>
+  <p>Monatsverbrauch: {{ profile.monthly_used }}g / 50g</p>
+</div>
+{% endblock %}

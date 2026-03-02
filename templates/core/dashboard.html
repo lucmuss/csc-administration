@@ -1,0 +1,31 @@
+{% extends 'base.html' %}
+{% block title %}Dashboard{% endblock %}
+{% block content %}
+<h1 class="mb-4 text-2xl font-bold">Admin Dashboard</h1>
+<div class="grid gap-4 md:grid-cols-2">
+  <section class="card">
+    <h2 class="text-lg font-semibold">Mein Profil</h2>
+    {% if profile %}
+      <p>Mitgliedsnummer: {{ profile.member_number|default:'-' }}</p>
+      <p>Status: {{ profile.get_status_display }}</p>
+      <p>Guthaben: {{ profile.balance }} EUR</p>
+      <p>Heute: {{ profile.daily_used }}g / 25g</p>
+      <p>Monat: {{ profile.monthly_used }}g / 50g</p>
+    {% else %}
+      <p>Kein Profil vorhanden.</p>
+    {% endif %}
+  </section>
+  <section class="card">
+    <h2 class="text-lg font-semibold">Letzte Bestellungen</h2>
+    {% if recent_orders %}
+      <ul class="space-y-2">
+        {% for order in recent_orders %}
+          <li>#{{ order.id }} - {{ order.total }} EUR - {{ order.get_status_display }}</li>
+        {% endfor %}
+      </ul>
+    {% else %}
+      <p>Keine Bestellungen vorhanden.</p>
+    {% endif %}
+  </section>
+</div>
+{% endblock %}

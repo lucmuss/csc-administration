@@ -37,8 +37,8 @@
 - Tests: PWA-Install, Kontrast-Check, Touch-Targets
 
 ## Phase 9: Polish (Woche 27-28)
-- Performance (Query-Optimierung, Caching), Dokumentation, Bugfixing
-- Tests: Ladezeit <2s, N+1 Query-Check
+- Dokumentation, Bugfixing
+- Tests: N+1 Query-Check
 
 **Gesamt: 28 Wochen (7 Monate)**
 **Keine KI-Funktionalität** ✅

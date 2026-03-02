@@ -18,6 +18,9 @@
             <a href="{% url 'orders:shop' %}">Shop</a>
             <a href="{% url 'orders:cart' %}">Warenkorb</a>
             <a href="{% url 'members:profile' %}">Profil</a>
+            {% if user.role == 'board' %}
+              <a href="{% url 'compliance:dashboard' %}">Compliance</a>
+            {% endif %}
             <a href="{% url 'accounts:logout' %}">Logout</a>
           {% else %}
             <a href="{% url 'accounts:login' %}">Login</a>

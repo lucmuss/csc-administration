@@ -1,0 +1,25 @@
+{% extends 'base.html' %}
+{% block title %}Jahresmeldung {{ selected_year }}{% endblock %}
+{% block content %}
+<h1 class="mb-4 text-2xl font-bold">CanG Jahresmeldung {{ selected_year }}</h1>
+<section class="card space-y-2">
+  <p>Generiert am: {{ report.generated_at|date:'d.m.Y H:i' }}</p>
+  <p>Anzahl Abgaben: {{ report.total_orders }}</p>
+  <p>Anzahl Mitglieder: {{ report.total_members }}</p>
+  <p>Abgegebene Menge: {{ report.total_grams }}g</p>
+  <p>Verdachtsfaelle: {{ report.suspicious_cases }}</p>
+</section>
+
+<section class="card mt-4">
+  <h2 class="mb-2 text-lg font-semibold">Monatswerte</h2>
+  {% if report.report_data.monthly_stats %}
+    <ul class="space-y-1">
+      {% for row in report.report_data.monthly_stats %}
+        <li>{{ row.month }} - {{ row.total_orders }} Abgaben - {{ row.total_grams }}g</li>
+      {% endfor %}
+    </ul>
+  {% else %}
+    <p>Keine Daten fuer dieses Jahr vorhanden.</p>
+  {% endif %}
+</section>
+{% endblock %}

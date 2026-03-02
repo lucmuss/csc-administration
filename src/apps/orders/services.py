@@ -6,6 +6,10 @@ from django.db import transaction
 from django.db.models import F
 from django.utils import timezone
 
+from apps.compliance.services import (
+    detect_suspicious_activity_for_profile,
+    ensure_prevention_info_for_first_dispense,
+)
 from apps.inventory.models import Strain
 from apps.members.models import Profile
 
@@ -75,6 +79,8 @@ def create_reserved_order(*, user, cart_lines: list[CartLine]) -> Order:
     profile.balance -= total_price
     profile.consume(total_grams)
     profile.save(update_fields=["balance", "daily_used", "monthly_used", "updated_at"])
+    detect_suspicious_activity_for_profile(profile=profile)
+    ensure_prevention_info_for_first_dispense(user=user, order=order)
 
     return order
 

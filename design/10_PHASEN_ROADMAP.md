@@ -33,7 +33,7 @@
 - Tests: Daily Reset, Meeting-Einladungen, Inaktivitäts-Benachrichtigung
 
 ## Phase 8: Mobile & UX (Woche 24-26)
-- PWA, Dark Mode, WCAG-Barrierefreiheit (50+), Touch-Optimierung
+- PWA, WCAG-Barrierefreiheit (50+), Touch-Optimierung
 - Tests: PWA-Install, Kontrast-Check, Touch-Targets
 
 ## Phase 9: Polish (Woche 27-28)

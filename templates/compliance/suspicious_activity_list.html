@@ -1,0 +1,33 @@
+{% extends 'base.html' %}
+{% block title %}Verdachtsaktivitaeten{% endblock %}
+{% block content %}
+<h1 class="mb-4 text-2xl font-bold">Verdachtsaktivitaeten</h1>
+<section class="card">
+  {% if activities %}
+    <table class="w-full text-left text-sm">
+      <thead>
+        <tr>
+          <th>Mitglied</th>
+          <th>Monat</th>
+          <th>Verbrauch</th>
+          <th>Schwelle</th>
+          <th>Gemeldet</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for activity in activities %}
+          <tr>
+            <td>{{ activity.profile.user.email }}</td>
+            <td>{{ activity.month_key }}</td>
+            <td>{{ activity.consumed_grams }}g</td>
+            <td>{{ activity.threshold_grams }}g</td>
+            <td>{% if activity.is_reported %}Ja{% else %}Nein{% endif %}</td>
+          </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  {% else %}
+    <p>Keine Verdachtsaktivitaeten vorhanden.</p>
+  {% endif %}
+</section>
+{% endblock %}

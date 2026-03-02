@@ -19,6 +19,7 @@ INSTALLED_APPS = [
     "apps.members",
     "apps.inventory",
     "apps.orders",
+    "apps.compliance",
 ]
 
 MIDDLEWARE = [

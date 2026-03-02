@@ -1394,10 +1394,7 @@ apps/
 - **Konfliktlösung**: Warnung wenn Sorte zwischenzeitlich ausverkauft
 - **Queue-Status**: Anzeige "Wartet auf Übermittlung"
 
-#### Dark Mode
-- **Diskrete Nutzung**: Weniger auffällig in der Öffentlichkeit
-- **Akku-Schonung**: OLED-Displays profitieren
-- **Automatik**: Je nach System-Einstellung
+
 
 #### Schneller Checkout (Biometrie)
 - **Face-ID/Fingerprint**: Ein-Klick-Bestellung

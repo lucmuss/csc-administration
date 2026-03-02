@@ -26,6 +26,14 @@ class Profile(models.Model):
     is_verified = models.BooleanField(default=False)
 
     balance = models.DecimalField(max_digits=10, decimal_places=2, default=Decimal("0.00"))
+    sepa_mandate = models.OneToOneField(
+        "finance.SepaMandate",
+        on_delete=models.SET_NULL,
+        related_name="active_for_profile",
+        null=True,
+        blank=True,
+    )
+    is_locked_for_orders = models.BooleanField(default=False)
 
     daily_used = models.DecimalField(max_digits=6, decimal_places=2, default=Decimal("0.00"))
     monthly_used = models.DecimalField(max_digits=6, decimal_places=2, default=Decimal("0.00"))

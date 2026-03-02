@@ -1,0 +1,10 @@
+{% extends 'base.html' %}
+{% block title %}SEPA-Mandat{% endblock %}
+{% block content %}
+<h1 class="mb-4 text-2xl font-bold">SEPA-Mandat anlegen</h1>
+<form method="post" class="card space-y-3">
+  {% csrf_token %}
+  {{ form.as_p }}
+  <button type="submit" class="rounded bg-csc-800 px-4 py-2 text-white">Speichern</button>
+</form>
+{% endblock %}

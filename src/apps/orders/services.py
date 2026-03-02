@@ -10,6 +10,7 @@ from apps.compliance.services import (
     detect_suspicious_activity_for_profile,
     ensure_prevention_info_for_first_dispense,
 )
+from apps.finance.services import create_invoice_for_order
 from apps.inventory.models import Strain
 from apps.members.models import Profile
 
@@ -31,6 +32,8 @@ def create_reserved_order(*, user, cart_lines: list[CartLine]) -> Order:
     profile.reset_limits_if_due()
     if not profile.is_verified or profile.status != Profile.STATUS_ACTIVE:
         raise ValidationError("Mitglied ist nicht verifiziert")
+    if profile.is_locked_for_orders:
+        raise ValidationError("Mitglied ist fuer Bestellungen gesperrt")
 
     total_grams = Decimal("0.00")
     total_price = Decimal("0.00")
@@ -81,6 +84,7 @@ def create_reserved_order(*, user, cart_lines: list[CartLine]) -> Order:
     profile.save(update_fields=["balance", "daily_used", "monthly_used", "updated_at"])
     detect_suspicious_activity_for_profile(profile=profile)
     ensure_prevention_info_for_first_dispense(user=user, order=order)
+    create_invoice_for_order(order=order)
 
     return order
 

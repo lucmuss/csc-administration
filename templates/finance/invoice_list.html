@@ -1,0 +1,31 @@
+{% extends 'base.html' %}
+{% block title %}Rechnungen{% endblock %}
+{% block content %}
+<h1 class="mb-4 text-2xl font-bold">Rechnungen</h1>
+<div class="card overflow-x-auto">
+  <table class="w-full text-left text-sm">
+    <thead>
+      <tr>
+        <th>Rechnung</th>
+        <th>Betrag</th>
+        <th>Faellig</th>
+        <th>Status</th>
+        <th>Mahnstufe</th>
+      </tr>
+    </thead>
+    <tbody>
+    {% for invoice in invoices %}
+      <tr>
+        <td>{{ invoice.invoice_number }}</td>
+        <td>{{ invoice.amount }} EUR</td>
+        <td>{{ invoice.due_date }}</td>
+        <td>{{ invoice.get_status_display }}</td>
+        <td>{{ invoice.reminder_level }}</td>
+      </tr>
+    {% empty %}
+      <tr><td colspan="5">Keine Rechnungen vorhanden.</td></tr>
+    {% endfor %}
+    </tbody>
+  </table>
+</div>
+{% endblock %}

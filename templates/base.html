@@ -17,6 +17,7 @@
             <a href="{% url 'inventory:strain_list' %}">Sorten</a>
             <a href="{% url 'orders:shop' %}">Shop</a>
             <a href="{% url 'orders:cart' %}">Warenkorb</a>
+            <a href="{% url 'finance:dashboard' %}">Finanzen</a>
             <a href="{% url 'members:profile' %}">Profil</a>
             {% if user.role == 'board' %}
               <a href="{% url 'compliance:dashboard' %}">Compliance</a>

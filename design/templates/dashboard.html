@@ -1,0 +1,171 @@
+{% extends "base.html" %}
+
+{% block title %}Dashboard - CSC Administration{% endblock %}
+
+{% block content %}
+<div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <!-- Willkommen -->
+    <div class="mb-8">
+        <h1 class="text-3xl font-bold text-gray-900">Hallo {{ user.first_name|default:user.username }}! 👋</h1>
+        <p class="text-gray-600 mt-2">Willkommen im CSC Administration Dashboard.</p>
+    </div>
+    
+    <!-- Stats Grid -->
+    <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+        <!-- Guthaben -->
+        <div class="bg-white rounded-lg shadow p-6 border-l-4 border-csc-green">
+            <div class="flex items-center justify-between">
+                <div>
+                    <p class="text-sm font-medium text-gray-600">Guthaben</p>
+                    <p class="text-3xl font-bold text-gray-900">€ {{ user.profile.balance|default:"0,00" }}</p>
+                </div>
+                <div class="text-4xl">💳</div>
+            </div>
+            <a href="{% url 'finance:deposit' %}" class="mt-4 inline-block text-csc-green hover:text-csc-green-dark font-medium text-sm">
+                + Guthaben aufladen →
+            </a>
+        </div>
+        
+        <!-- Monatslimit -->
+        <div class="bg-white rounded-lg shadow p-6 border-l-4 border-blue-500">
+            <div class="flex items-center justify-between">
+                <div>
+                    <p class="text-sm font-medium text-gray-600">Monatslimit</p>
+                    <p class="text-3xl font-bold text-gray-900">{{ user.profile.used_monthly|default:"0" }}g / 50g</p>
+                </div>
+                <div class="text-4xl">📊</div>
+            </div>
+            <div class="mt-4 w-full bg-gray-200 rounded-full h-2">
+                <div class="bg-blue-500 h-2 rounded-full" style="width: {{ user.profile.monthly_percentage|default:"0" }}%"></div>
+            </div>
+        </div>
+        
+        <!-- Tageslimit -->
+        <div class="bg-white rounded-lg shadow p-6 border-l-4 border-purple-500">
+            <div class="flex items-center justify-between">
+                <div>
+                    <p class="text-sm font-medium text-gray-600">Tageslimit</p>
+                    <p class="text-3xl font-bold text-gray-900">{{ user.profile.used_daily|default:"0" }}g / 25g</p>
+                </div>
+                <div class="text-4xl">📅</div>
+            </div>
+            <div class="mt-4 w-full bg-gray-200 rounded-full h-2">
+                <div class="bg-purple-500 h-2 rounded-full" style="width: {{ user.profile.daily_percentage|default:"0" }}%"></div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Schnellaktionen -->
+    <div class="bg-white rounded-lg shadow mb-8">
+        <div class="px-6 py-4 border-b border-gray-200">
+            <h2 class="text-lg font-semibold text-gray-900">Schnellaktionen</h2>
+        </div>
+        <div class="p-6 grid grid-cols-2 md:grid-cols-4 gap-4">
+            <a href="{% url 'orders:list' %}" class="flex flex-col items-center p-4 bg-csc-green/10 rounded-lg hover:bg-csc-green/20 transition">
+                <span class="text-3xl mb-2">🛒</span>
+                <span class="text-sm font-medium text-gray-900">Bestellen</span>
+            </a>
+            <a href="{% url 'orders:history' %}" class="flex flex-col items-center p-4 bg-gray-100 rounded-lg hover:bg-gray-200 transition">
+                <span class="text-3xl mb-2">📦</span>
+                <span class="text-sm font-medium text-gray-900">Historie</span>
+            </a>
+            <a href="{% url 'accounts:profile' %}" class="flex flex-col items-center p-4 bg-gray-100 rounded-lg hover:bg-gray-200 transition">
+                <span class="text-3xl mb-2">👤</span>
+                <span class="text-sm font-medium text-gray-900">Profil</span>
+            </a>
+            <a href="{% url 'accounts:settings' %}" class="flex flex-col items-center p-4 bg-gray-100 rounded-lg hover:bg-gray-200 transition">
+                <span class="text-3xl mb-2">⚙️</span>
+                <span class="text-sm font-medium text-gray-900">Einstellungen</span>
+            </a>
+        </div>
+    </div>
+    
+    {% if user.is_staff %}
+    <!-- Admin Widgets -->
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
+        <!-- Neueste Mitglieder -->
+        <div class="bg-white rounded-lg shadow">
+            <div class="px-6 py-4 border-b border-gray-200 flex justify-between items-center">
+                <h2 class="text-lg font-semibold text-gray-900">Neueste Mitglieder</h2>
+                <a href="{% url 'members:list' %}" class="text-csc-green hover:text-csc-green-dark text-sm">Alle →</a>
+            </div>
+            <div class="p-6">
+                {% if latest_members %}
+                <ul class="divide-y divide-gray-200">
+                    {% for member in latest_members %}
+                    <li class="py-3 flex justify-between items-center">
+                        <div>
+                            <p class="font-medium text-gray-900">{{ member.get_full_name|default:member.username }}</p>
+                            <p class="text-sm text-gray-500">#{{ member.profile.member_number }}</p>
+                        </div>
+                        <span class="px-2 py-1 text-xs rounded-full {% if member.profile.is_verified %}bg-green-100 text-green-800{% else %}bg-yellow-100 text-yellow-800{% endif %}">
+                            {% if member.profile.is_verified %}✓ Verifiziert{% else %}⏳ Ausstehend{% endif %}
+                        </span>
+                    </li>
+                    {% endfor %}
+                </ul>
+                {% else %}
+                <p class="text-gray-500 text-center py-4">Keine Mitglieder vorhanden.</p>
+                {% endif %}
+            </div>
+        </div>
+        
+        <!-- Warnungen -->
+        <div class="bg-white rounded-lg shadow">
+            <div class="px-6 py-4 border-b border-gray-200">
+                <h2 class="text-lg font-semibold text-gray-900">⚠️ Warnungen</h2>
+            </div>
+            <div class="p-6">
+                {% if alerts %}
+                <ul class="space-y-3">
+                    {% for alert in alerts %}
+                    <li class="flex items-start p-3 rounded-lg {% if alert.level == 'critical' %}bg-red-50 border border-red-200{% elif alert.level == 'warning' %}bg-yellow-50 border border-yellow-200{% else %}bg-blue-50 border border-blue-200{% endif %}">
+                        <span class="mr-2">{{ alert.icon }}</span>
+                        <div>
+                            <p class="font-medium {% if alert.level == 'critical' %}text-red-800{% elif alert.level == 'warning' %}text-yellow-800{% else %}text-blue-800{% endif %}">{{ alert.title }}</p>
+                            <p class="text-sm {% if alert.level == 'critical' %}text-red-600{% elif alert.level == 'warning' %}text-yellow-600{% else %}text-blue-600{% endif %}">{{ alert.message }}</p>
+                        </div>
+                    </li>
+                    {% endfor %}
+                </ul>
+                {% else %}
+                <p class="text-gray-500 text-center py-4">Keine Warnungen. Alles bestens! ✅</p>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+    {% endif %}
+    
+    <!-- Letzte Bestellung -->
+    <div class="bg-white rounded-lg shadow">
+        <div class="px-6 py-4 border-b border-gray-200">
+            <h2 class="text-lg font-semibold text-gray-900">Letzte Bestellung</h2>
+        </div>
+        <div class="p-6">
+            {% if last_order %}
+            <div class="flex justify-between items-center">
+                <div>
+                    <p class="font-medium text-gray-900">Bestellung #{{ last_order.id }}</p>
+                    <p class="text-sm text-gray-500">{{ last_order.created_at|date:"d.m.Y H:i" }}</p>
+                    <p class="text-sm text-gray-600 mt-1">{{ last_order.items.count }} Artikel - € {{ last_order.total }}</p>
+                </div>
+                <span class="px-3 py-1 rounded-full text-sm font-medium
+                    {% if last_order.status == 'completed' %}bg-green-100 text-green-800
+                    {% elif last_order.status == 'pending' %}bg-yellow-100 text-yellow-800
+                    {% elif last_order.status == 'cancelled' %}bg-red-100 text-red-800
+                    {% else %}bg-gray-100 text-gray-800{% endif %}">
+                    {{ last_order.get_status_display }}
+                </span>
+            </div>
+            {% else %}
+            <p class="text-gray-500 text-center py-4">Noch keine Bestellungen vorhanden.</p>
+            <div class="text-center mt-4">
+                <a href="{% url 'orders:list' %}" class="inline-block bg-csc-green text-white px-6 py-2 rounded-md hover:bg-csc-green-dark transition">
+                    Jetzt bestellen
+                </a>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+{% endblock %}

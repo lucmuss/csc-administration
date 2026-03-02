@@ -1,0 +1,274 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="CSC Administration - Cannabis Social Club Verwaltungssystem">
+    <meta name="theme-color" content="#10B981">
+    
+    <title>{% block title %}CSC Administration{% endblock %}</title>
+    
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        'csc-green': '#10B981',
+                        'csc-green-dark': '#059669',
+                        'csc-brown': '#92400E',
+                    }
+                }
+            }
+        }
+    </script>
+    
+    <!-- HTMX -->
+    <script src="https://unpkg.com/htmx.org@1.9.10"></script>
+    
+    <!-- Alpine.js -->
+    <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
+    
+    {% block extra_head %}{% endblock %}
+</head>
+<body class="bg-gray-50 min-h-screen flex flex-col">
+    <!-- Navigation -->
+    <nav class="bg-white shadow-sm border-b border-gray-200 fixed top-0 left-0 right-0 z-50">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex justify-between h-16 items-center">
+                <!-- Logo -->
+                <div class="flex items-center min-w-0">
+                    <a href="{% url 'dashboard' %}" class="text-lg sm:text-2xl font-bold text-csc-green flex items-center gap-1 min-w-0">
+                        <span aria-hidden="true">🌿</span>
+                        <span class="leading-tight pb-0.5 truncate">
+                            CSC <span class="hidden sm:inline">Administration</span>
+                        </span>
+                    </a>
+                </div>
+                
+                <!-- Mobile: Guthaben + Hamburger -->
+                <div class="md:hidden flex items-center space-x-2 shrink-0">
+                    {% if user.is_authenticated %}
+                    <a href="{% url 'orders:list' %}" class="flex items-center bg-csc-green/10 text-csc-green px-3 py-1 rounded-full text-sm font-medium">
+                        <span class="mr-1">🛒</span>
+                        <span>Bestellen</span>
+                    </a>
+                    <button id="mobile-menu-button" class="text-gray-700 hover:text-csc-green p-2">
+                        <svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"/>
+                        </svg>
+                    </button>
+                    {% else %}
+                    <a href="{% url 'login' %}" class="text-gray-700 hover:text-csc-green text-xs font-medium px-1 py-2">Login</a>
+                    {% endif %}
+                </div>
+                
+                <!-- Desktop Menu -->
+                <div class="hidden md:flex items-center space-x-4">
+                    {% if user.is_authenticated %}
+                        <!-- Member Actions -->
+                        <a href="{% url 'orders:list' %}" class="text-gray-700 hover:text-csc-green px-3 py-2 rounded-md text-sm font-medium">
+                            🛒 Bestellen
+                        </a>
+                        <a href="{% url 'orders:history' %}" class="text-gray-700 hover:text-csc-green px-3 py-2 rounded-md text-sm font-medium">
+                            📦 Historie
+                        </a>
+                        
+                        {% if user.is_staff %}
+                        <!-- Admin Actions -->
+                        <a href="{% url 'members:list' %}" class="text-gray-700 hover:text-csc-green px-3 py-2 rounded-md text-sm font-medium">
+                            👥 Mitglieder
+                        </a>
+                        <a href="{% url 'inventory:list' %}" class="text-gray-700 hover:text-csc-green px-3 py-2 rounded-md text-sm font-medium">
+                            🌱 Inventar
+                        </a>
+                        <a href="{% url 'finance:dashboard' %}" class="text-gray-700 hover:text-csc-green px-3 py-2 rounded-md text-sm font-medium">
+                            💰 Finanzen
+                        </a>
+                        {% endif %}
+                        
+                        <!-- Account Dropdown -->
+                        <div class="relative" x-data="{ open: false }">
+                            <button @click="open = !open" class="flex items-center text-gray-700 hover:text-csc-green px-3 py-2 rounded-md text-sm font-medium">
+                                <span class="mr-1">👤</span>
+                                <span>Account</span>
+                                <svg class="w-4 h-4 ml-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/>
+                                </svg>
+                            </button>
+                            
+                            <div x-show="open" @click.away="open = false" x-transition class="absolute right-0 mt-2 w-56 bg-white rounded-lg shadow-xl border border-gray-200 py-2 z-50">
+                                <a href="{% url 'accounts:profile' %}" class="flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-csc-green/10 hover:text-csc-green">
+                                    <span class="mr-3">👤</span>
+                                    <span>Profil</span>
+                                </a>
+                                <a href="{% url 'accounts:settings' %}" class="flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-csc-green/10 hover:text-csc-green">
+                                    <span class="mr-3">⚙️</span>
+                                    <span>Einstellungen</span>
+                                </a>
+                                {% if user.is_staff %}
+                                <div class="border-t border-gray-200 my-2"></div>
+                                <a href="{% url 'admin_panel:dashboard' %}" class="flex items-center px-4 py-2 text-sm text-purple-700 hover:bg-purple-50">
+                                    <span class="mr-3">⚙️</span>
+                                    <span>Admin</span>
+                                </a>
+                                {% endif %}
+                            </div>
+                        </div>
+                        
+                        <a href="{% url 'logout' %}" class="bg-gray-200 hover:bg-gray-300 px-4 py-2 rounded-md text-sm font-medium">
+                            Logout
+                        </a>
+                    {% else %}
+                        <a href="{% url 'login' %}" class="text-gray-700 hover:text-csc-green px-3 py-2 rounded-md text-sm font-medium">
+                            Login
+                        </a>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Mobile Slide-out Menu -->
+    {% if user.is_authenticated %}
+    <div id="mobile-menu" class="fixed inset-0 bg-black bg-opacity-50 z-40 hidden">
+        <div class="fixed right-0 top-0 bottom-0 w-80 bg-white shadow-xl transform transition-transform duration-300 translate-x-full overflow-y-auto" id="mobile-menu-panel">
+            <div class="p-6">
+                <div class="flex justify-between items-center mb-6 sticky top-0 bg-white pb-4 border-b">
+                    <h2 class="text-xl font-bold text-gray-900">Menü</h2>
+                    <button id="mobile-menu-close" class="text-gray-600 hover:text-csc-green">
+                        <svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
+                        </svg>
+                    </button>
+                </div>
+                
+                <nav class="space-y-1">
+                    <div class="mb-4">
+                        <p class="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2">Hauptmenü</p>
+                        <a href="{% url 'dashboard' %}" class="flex items-center px-4 py-3 text-gray-700 hover:bg-csc-green/10 hover:text-csc-green rounded-lg transition">
+                            <span class="text-2xl mr-3">🏠</span>
+                            <span class="font-medium">Dashboard</span>
+                        </a>
+                        <a href="{% url 'orders:list' %}" class="flex items-center px-4 py-3 text-gray-700 hover:bg-csc-green/10 hover:text-csc-green rounded-lg transition">
+                            <span class="text-2xl mr-3">🛒</span>
+                            <span class="font-medium">Bestellen</span>
+                        </a>
+                        <a href="{% url 'orders:history' %}" class="flex items-center px-4 py-3 text-gray-700 hover:bg-csc-green/10 hover:text-csc-green rounded-lg transition">
+                            <span class="text-2xl mr-3">📦</span>
+                            <span class="font-medium">Bestellhistorie</span>
+                        </a>
+                    </div>
+                    
+                    {% if user.is_staff %}
+                    <div class="mb-4">
+                        <p class="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2">Administration</p>
+                        <a href="{% url 'members:list' %}" class="flex items-center px-4 py-3 text-gray-700 hover:bg-csc-green/10 hover:text-csc-green rounded-lg transition">
+                            <span class="text-2xl mr-3">👥</span>
+                            <span class="font-medium">Mitglieder</span>
+                        </a>
+                        <a href="{% url 'inventory:list' %}" class="flex items-center px-4 py-3 text-gray-700 hover:bg-csc-green/10 hover:text-csc-green rounded-lg transition">
+                            <span class="text-2xl mr-3">🌱</span>
+                            <span class="font-medium">Inventar</span>
+                        </a>
+                        <a href="{% url 'finance:dashboard' %}" class="flex items-center px-4 py-3 text-gray-700 hover:bg-csc-green/10 hover:text-csc-green rounded-lg transition">
+                            <span class="text-2xl mr-3">💰</span>
+                            <span class="font-medium">Finanzen</span>
+                        </a>
+                    </div>
+                    {% endif %}
+                    
+                    <div class="mb-4">
+                        <p class="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2">Account</p>
+                        <a href="{% url 'accounts:profile' %}" class="flex items-center px-4 py-3 text-gray-700 hover:bg-csc-green/10 hover:text-csc-green rounded-lg transition">
+                            <span class="text-2xl mr-3">👤</span>
+                            <span class="font-medium">Profil</span>
+                        </a>
+                        <a href="{% url 'accounts:settings' %}" class="flex items-center px-4 py-3 text-gray-700 hover:bg-csc-green/10 hover:text-csc-green rounded-lg transition">
+                            <span class="text-2xl mr-3">⚙️</span>
+                            <span class="font-medium">Einstellungen</span>
+                        </a>
+                    </div>
+                    
+                    <div class="pt-4 border-t border-gray-200">
+                        <a href="{% url 'logout' %}" class="flex items-center px-4 py-3 text-red-600 hover:bg-red-50 rounded-lg transition font-medium">
+                            <svg class="w-6 h-6 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"/>
+                            </svg>
+                            <span>Logout</span>
+                        </a>
+                    </div>
+                </nav>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+
+    <!-- Main Content -->
+    <main class="flex-grow pt-16">
+        {% block flash_messages %}
+        {% if messages %}
+            <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-4">
+                {% include "partials/messages.html" %}
+            </div>
+        {% endif %}
+        {% endblock %}
+        {% block content %}{% endblock %}
+    </main>
+
+    <!-- Footer -->
+    <footer class="bg-white border-t border-gray-200 mt-12 pb-8">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+            <div class="text-center text-gray-600 text-sm">
+                <p>&copy; {% now "Y" %} CSC Administration</p>
+                <p class="mt-2">
+                    <a href="{% url 'legal:datenschutz' %}" class="text-csc-green hover:underline">Datenschutz</a> • 
+                    <a href="{% url 'legal:impressum' %}" class="text-csc-green hover:underline">Impressum</a> • 
+                    <a href="{% url 'legal:satzung' %}" class="text-csc-green hover:underline">Satzung</a>
+                </p>
+            </div>
+        </div>
+    </footer>
+
+    <script>
+    // Mobile Menu Handling
+    window.addEventListener('DOMContentLoaded', function() {
+        const menuButton = document.getElementById('mobile-menu-button');
+        const menu = document.getElementById('mobile-menu');
+        const menuPanel = document.getElementById('mobile-menu-panel');
+        const closeButton = document.getElementById('mobile-menu-close');
+        
+        if (menuButton) {
+            menuButton.addEventListener('click', function() {
+                menu.classList.remove('hidden');
+                setTimeout(() => {
+                    menuPanel.classList.remove('translate-x-full');
+                }, 10);
+            });
+        }
+        
+        if (closeButton) {
+            closeButton.addEventListener('click', closeMenu);
+        }
+        
+        if (menu) {
+            menu.addEventListener('click', function(e) {
+                if (e.target === menu) {
+                    closeMenu();
+                }
+            });
+        }
+        
+        function closeMenu() {
+            menuPanel.classList.add('translate-x-full');
+            setTimeout(() => {
+                menu.classList.add('hidden');
+            }, 300);
+        }
+    });
+    </script>
+    
+    {% block extra_js %}{% endblock %}
+</body>
+</html>

@@ -1,0 +1,223 @@
+{% extends "base.html" %}
+
+{% block title %}Mitglieder - CSC Administration{% endblock %}
+
+{% block content %}
+<div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <!-- Header -->
+    <div class="mb-8 flex flex-col sm:flex-row sm:items-center sm:justify-between">
+        <div>
+            <h1 class="text-3xl font-bold text-gray-900">Mitglieder</h1>
+            <p class="text-gray-600 mt-1">{{ total_members }} Mitglieder insgesamt</p>
+        </div>
+        <div class="mt-4 sm:mt-0">
+            <a href="{% url 'members:create' %}" class="inline-flex items-center px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-csc-green hover:bg-csc-green-dark focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-csc-green">
+                <svg class="-ml-1 mr-2 h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/>
+                </svg>
+                Neues Mitglied
+            </a>
+        </div>
+    </div>
+    
+    <!-- Filter & Suche -->
+    <div class="bg-white rounded-lg shadow mb-6">
+        <div class="p-4 sm:p-6">
+            <form method="GET" class="space-y-4">
+                <div class="grid grid-cols-1 sm:grid-cols-4 gap-4">
+                    <!-- Suche -->
+                    <div class="sm:col-span-2">
+                        <label for="search" class="sr-only">Suchen</label>
+                        <div class="relative">
+                            <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                                <svg class="h-5 w-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/>
+                                </svg>
+                            </div>
+                            <input type="text" name="search" id="search" value="{{ request.GET.search }}"
+                                   class="block w-full pl-10 pr-3 py-2 border border-gray-300 rounded-md leading-5 bg-white placeholder-gray-500 focus:outline-none focus:placeholder-gray-400 focus:ring-1 focus:ring-csc-green focus:border-csc-green sm:text-sm"
+                                   placeholder="Name, E-Mail oder Mitgliedsnummer...">
+                        </div>
+                    </div>
+                    
+                    <!-- Status Filter -->
+                    <div>
+                        <label for="status" class="sr-only">Status</label>
+                        <select name="status" id="status" class="block w-full pl-3 pr-10 py-2 text-base border-gray-300 focus:outline-none focus:ring-csc-green focus:border-csc-green sm:text-sm rounded-md">
+                            <option value="">Alle Status</option>
+                            <option value="active" {% if request.GET.status == 'active' %}selected{% endif %}>✅ Aktiv</option>
+                            <option value="pending" {% if request.GET.status == 'pending' %}selected{% endif %}>⏳ Ausstehend</option>
+                            <option value="verified" {% if request.GET.status == 'verified' %}selected{% endif %}>🆕 Neu (unverifiziert)</option>
+                            <option value="suspended" {% if request.GET.status == 'suspended' %}selected{% endif %}>🔴 Gesperrt</option>
+                        </select>
+                    </div>
+                    
+                    <!-- Aktionen -->
+                    <div class="flex space-x-2">
+                        <button type="submit" class="flex-1 inline-flex justify-center py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-csc-green hover:bg-csc-green-dark focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-csc-green">
+                            Filtern
+                        </button>
+                        <a href="{% url 'members:list' %}" class="inline-flex justify-center py-2 px-4 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-csc-green">
+                            Reset
+                        </a>
+                    </div>
+                </div>
+            </form>
+        </div>
+    </div>
+    
+    <!-- Bulk Actions -->
+    <div class="mb-4 flex items-center justify-between">
+        <div class="flex items-center">
+            <input type="checkbox" id="select-all" class="h-4 w-4 text-csc-green focus:ring-csc-green border-gray-300 rounded">
+            <label for="select-all" class="ml-2 text-sm text-gray-700">Alle auswählen</label>
+        </div>
+        <div class="flex items-center space-x-2">
+            <select name="bulk_action" class="block w-full pl-3 pr-10 py-2 text-base border-gray-300 focus:outline-none focus:ring-csc-green focus:border-csc-green sm:text-sm rounded-md">
+                <option value="">Massenaktion...</option>
+                <option value="verify">✅ Als verifiziert markieren</option>
+                <option value="suspend">🔴 Sperren</option>
+                <option value="activate">🟢 Aktivieren</option>
+                <option value="export">📤 Exportieren (CSV)</option>
+            </select>
+            <button type="button" class="inline-flex items-center px-4 py-2 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-csc-green">
+                Ausführen
+            </button>
+        </div>
+    </div>
+    
+    <!-- Mitglieder-Tabelle -->
+    <div class="bg-white rounded-lg shadow overflow-hidden">
+        <div class="overflow-x-auto">
+            <table class="min-w-full divide-y divide-gray-200">
+                <thead class="bg-gray-50">
+                    <tr>
+                        <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                            <input type="checkbox" class="h-4 w-4 text-csc-green focus:ring-csc-green border-gray-300 rounded">
+                        </th>
+                        <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                            Mitglied
+                        </th>
+                        <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                            Status
+                        </th>
+                        <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                            Limits
+                        </th>
+                        <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                            Guthaben
+                        </th>
+                        <th scope="col" class="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
+                            Aktionen
+                        </th>
+                    </tr>
+                </thead>
+                <tbody class="bg-white divide-y divide-gray-200">
+                    {% for member in members %}
+                    <tr class="hover:bg-gray-50">
+                        <td class="px-6 py-4 whitespace-nowrap">
+                            <input type="checkbox" name="selected_members" value="{{ member.id }}" class="h-4 w-4 text-csc-green focus:ring-csc-green border-gray-300 rounded">
+                        </td>
+                        <td class="px-6 py-4 whitespace-nowrap">
+                            <div class="flex items-center">
+                                <div class="flex-shrink-0 h-10 w-10 rounded-full bg-csc-green/10 flex items-center justify-center text-lg">
+                                    👤
+                                </div>
+                                <div class="ml-4">
+                                    <div class="text-sm font-medium text-gray-900">
+                                        {{ member.get_full_name|default:member.username }}
+                                    </div>
+                                    <div class="text-sm text-gray-500">
+                                        #{{ member.profile.member_number }} • {{ member.email }}
+                                    </div>
+                                </div>
+                            </div>
+                        </td>
+                        <td class="px-6 py-4 whitespace-nowrap">
+                            <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full
+                                {% if member.profile.status == 'active' %}bg-green-100 text-green-800
+                                {% elif member.profile.status == 'pending' %}bg-yellow-100 text-yellow-800
+                                {% elif member.profile.status == 'verified' %}bg-blue-100 text-blue-800
+                                {% elif member.profile.status == 'suspended' %}bg-red-100 text-red-800
+                                {% else %}bg-gray-100 text-gray-800{% endif %}">
+                                {{ member.profile.get_status_display }}
+                            </span>
+                        </td>
+                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                            <div class="text-xs">
+                                <div>Monat: {{ member.profile.used_monthly|default:"0" }}g / 50g</div>
+                                <div>Tag: {{ member.profile.used_daily|default:"0" }}g / 25g</div>
+                            </div>
+                        </td>
+                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                            € {{ member.profile.balance|default:"0,00" }}
+                        </td>
+                        <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
+                            <a href="{% url 'members:detail' member.id %}" class="text-csc-green hover:text-csc-green-dark mr-3" title="Ansehen">
+                                👁
+                            </a>
+                            <a href="{% url 'members:edit' member.id %}" class="text-blue-600 hover:text-blue-900 mr-3" title="Bearbeiten">
+                                ✏️
+                            </a>
+                            <a href="{% url 'members:delete' member.id %}" class="text-red-600 hover:text-red-900" title="Löschen" onclick="return confirm('Möchten Sie dieses Mitglied wirklich löschen?')">
+                                🗑️
+                            </a>
+                        </td>
+                    </tr>
+                    {% empty %}
+                    <tr>
+                        <td colspan="6" class="px-6 py-10 text-center text-gray-500">
+                            Keine Mitglieder gefunden.
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        
+        <!-- Pagination -->
+        {% if members.has_other_pages %}
+        <div class="bg-white px-4 py-3 border-t border-gray-200 sm:px-6">
+            <div class="flex items-center justify-between">
+                <div class="hidden sm:flex-1 sm:flex sm:items-center sm:justify-between">
+                    <div>
+                        <p class="text-sm text-gray-700">
+                            Zeige <span class="font-medium">{{ members.start_index }}</span> bis <span class="font-medium">{{ members.end_index }}</span> von <span class="font-medium">{{ members.paginator.count }}</span> Mitgliedern
+                        </p>
+                    </div>
+                    <div>
+                        <nav class="relative z-0 inline-flex rounded-md shadow-sm -space-x-px" aria-label="Pagination">
+                            {% if members.has_previous %}
+                            <a href="?page={{ members.previous_page_number }}{% if request.GET.search %}&search={{ request.GET.search }}{% endif %}{% if request.GET.status %}&status={{ request.GET.status }}{% endif %}" class="relative inline-flex items-center px-2 py-2 rounded-l-md border border-gray-300 bg-white text-sm font-medium text-gray-500 hover:bg-gray-50">
+                                <span class="sr-only">Zurück</span>
+                                ←
+                            </a>
+                            {% endif %}
+                            
+                            {% for num in members.paginator.page_range %}
+                                {% if members.number == num %}
+                                <span class="relative inline-flex items-center px-4 py-2 border border-csc-green bg-csc-green text-sm font-medium text-white">
+                                    {{ num }}
+                                </span>
+                                {% else %}
+                                <a href="?page={{ num }}{% if request.GET.search %}&search={{ request.GET.search }}{% endif %}{% if request.GET.status %}&status={{ request.GET.status }}{% endif %}" class="relative inline-flex items-center px-4 py-2 border border-gray-300 bg-white text-sm font-medium text-gray-700 hover:bg-gray-50">
+                                    {{ num }}
+                                </a>
+                                {% endif %}
+                            {% endfor %}
+                            
+                            {% if members.has_next %}
+                            <a href="?page={{ members.next_page_number }}{% if request.GET.search %}&search={{ request.GET.search }}{% endif %}{% if request.GET.status %}&status={{ request.GET.status }}{% endif %}" class="relative inline-flex items-center px-2 py-2 rounded-r-md border border-gray-300 bg-white text-sm font-medium text-gray-500 hover:bg-gray-50">
+                                <span class="sr-only">Weiter</span>
+                                →
+                            </a>
+                            {% endif %}
+                        </nav>
+                    </div>
+                </div>
+            </div>
+        </div>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}

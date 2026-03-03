@@ -1,0 +1,16 @@
+Hallo {{ user.email }},
+
+wir haben einen neuen Login in deinem Account erkannt.
+
+Zeit: {{ login_time|date:"Y-m-d H:i" }}
+IP: {{ ip_address }}
+Geraet: {{ user_agent }}
+
+Zum Dashboard:
+{{ dashboard_url }}
+
+Falls das nicht du warst, aendere dein Passwort:
+{{ password_change_url }}
+
+Viele Gruesse
+CSC Administration

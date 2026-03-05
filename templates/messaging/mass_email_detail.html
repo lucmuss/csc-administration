@@ -112,7 +112,7 @@
                             {% for log in logs %}
                             <tr>
                                 <td class="px-4 py-2 text-sm">
-                                    {{ log.member.first_name }} {{ log.member.last_name }}
+                                    {{ log.member.user.first_name }} {{ log.member.user.last_name }}
                                     <br><span class="text-gray-500 text-xs">{{ log.recipient_email }}</span>
                                 </td>
                                 <td class="px-4 py-2">

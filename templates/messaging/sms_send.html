@@ -1,0 +1,109 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}SMS senden - CSC Administration{% endblock %}
+
+{% block content %}
+<div class="container mx-auto px-4 py-8">
+    <div class="mb-8">
+        <h1 class="text-3xl font-bold text-gray-800 mb-2">SMS senden</h1>
+        <p class="text-gray-600">Bestätigen Sie den Versand der SMS</p>
+    </div>
+
+    <div class="max-w-2xl mx-auto">
+        <!-- Warnung -->
+        <div class="bg-yellow-50 border-l-4 border-yellow-400 p-4 mb-6">
+            <div class="flex">
+                <div class="flex-shrink-0">
+                    <svg class="h-5 w-5 text-yellow-400" fill="currentColor" viewBox="0 0 20 20">
+                        <path fill-rule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clip-rule="evenodd"/>
+                    </svg>
+                </div>
+                <div class="ml-3">
+                    <p class="text-sm text-yellow-700">
+                        <strong>Achtung:</strong> Der Versand von SMS verursacht Kosten. 
+                        {% if total_recipients > 1 %}
+                        Bei {{ total_recipients }} Empfängern und {{ sms.sms_count }} SMS pro Nachricht entstehen Kosten von ca. 
+                        <strong>{{ estimated_cost|floatformat:2 }} €</strong>.
+                        {% else %}
+                        Diese Nachricht besteht aus {{ sms.sms_count }} SMS.
+                        {% endif %}
+                    </p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Zusammenfassung -->
+        <div class="bg-white shadow-md rounded-lg p-6 mb-6">
+            <h2 class="text-lg font-semibold text-gray-800 mb-4">Zusammenfassung</h2>
+            
+            <div class="space-y-3">
+                <div class="flex justify-between">
+                    <span class="text-gray-600">Empfänger:</span>
+                    <span class="font-medium">
+                        {% if sms.recipient_member %}
+                            {{ sms.recipient_member.user.first_name }} {{ sms.recipient_member.user.last_name }}
+                        {% elif sms.recipient_group %}
+                            Gruppe: {{ sms.recipient_group.name }} ({{ total_recipients }} Mitglieder)
+                        {% else %}
+                            {{ sms.recipient_phone }}
+                        {% endif %}
+                    </span>
+                </div>
+                <div class="flex justify-between">
+                    <span class="text-gray-600">Nachricht:</span>
+                    <span class="font-medium max-w-md text-right">{{ sms.content|truncatechars:50 }}</span>
+                </div>
+                <div class="flex justify-between">
+                    <span class="text-gray-600">Zeichen:</span>
+                    <span class="font-medium">{{ sms.character_count }}</span>
+                </div>
+                <div class="flex justify-between">
+                    <span class="text-gray-600">SMS-Anzahl:</span>
+                    <span class="font-medium">{{ sms.sms_count }} pro Empfänger</span>
+                </div>
+                {% if total_recipients > 1 %}
+                <div class="flex justify-between">
+                    <span class="text-gray-600">Gesamt-SMS:</span>
+                    <span class="font-medium">{{ total_recipients }} × {{ sms.sms_count }} = {{ total_recipients|multiply:sms.sms_count }} SMS</span>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+
+        <!-- Formular -->
+        <div class="bg-white shadow-md rounded-lg p-6">
+            <form method="post">
+                {% csrf_token %}
+                
+                <div class="mb-6">
+                    <label class="block text-sm font-medium text-gray-700 mb-2">SMS-Provider auswählen</label>
+                    {{ form.provider }}
+                    {% if form.provider.errors %}
+                    <p class="mt-1 text-sm text-red-600">{{ form.provider.errors.0 }}</p>
+                    {% endif %}
+                </div>
+                
+                <div class="mb-6">
+                    <label class="flex items-center">
+                        {{ form.confirm_send }}
+                        <span class="ml-2 text-sm text-gray-700">{{ form.confirm_send.label }}</span>
+                    </label>
+                    {% if form.confirm_send.errors %}
+                    <p class="mt-1 text-sm text-red-600">{{ form.confirm_send.errors.0 }}</p>
+                    {% endif %}
+                </div>
+                
+                <div class="flex justify-end space-x-3">
+                    <a href="{% url 'messaging:sms_preview' sms.pk %}" class="px-4 py-2 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50">
+                        Zurück
+                    </a>
+                    <button type="submit" class="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700">
+                        SMS senden
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}

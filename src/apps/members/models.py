@@ -47,6 +47,21 @@ class Profile(models.Model):
 
     class Meta:
         ordering = ["member_number", "id"]
+        constraints = [
+            models.CheckConstraint(
+                check=models.Q(daily_used__lte=25),
+                name="daily_limit_25g_check"
+            ),
+            models.CheckConstraint(
+                check=models.Q(monthly_used__lte=50),
+                name="monthly_limit_50g_check"
+            ),
+        ]
+        indexes = [
+            models.Index(fields=["status", "is_verified"]),
+            models.Index(fields=["daily_counter_date"]),
+            models.Index(fields=["monthly_counter_key"]),
+        ]
 
     def __str__(self):
         return f"{self.user.email} ({self.member_number or 'neu'})"

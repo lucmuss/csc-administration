@@ -7,11 +7,16 @@ from django.http import JsonResponse, HttpResponse
 from django.views.decorators.http import require_POST
 from django.core.paginator import Paginator
 from django.utils import timezone
+from django.db.models import Sum, Count, Avg
 import uuid
 
 from .models import EmailGroup, EmailGroupMember, MassEmail, EmailLog
-from .forms import EmailGroupForm, EmailGroupMemberForm, MassEmailForm, MassEmailSendForm
-from apps.members.models import Member
+from .models import SmsProviderConfig, SmsMessage, SmsTemplate, SmsCostLog
+from .forms import (
+    EmailGroupForm, EmailGroupMemberForm, MassEmailForm, MassEmailSendForm,
+    SmsMessageForm, SmsTemplateForm, SmsSendForm, SmsProviderConfigForm
+)
+from apps.members.models import Profile
 
 
 # ==================== DASHBOARD ====================
@@ -20,14 +25,24 @@ from apps.members.models import Member
 @permission_required("messaging.view_massemail", raise_exception=True)
 def messaging_dashboard(request):
     """Messaging Dashboard mit Übersicht"""
-    from django.db.models import Count, Sum
-    
     context = {
         "total_groups": EmailGroup.objects.filter(is_active=True).count(),
         "total_emails": MassEmail.objects.exclude(status="draft").count(),
         "total_recipients": MassEmail.objects.aggregate(
             total=Sum("total_recipients")
         )["total"] or 0,
+        # SMS Stats
+        "total_sms": SmsMessage.objects.exclude(status="draft").count(),
+        "sms_this_month": SmsMessage.objects.filter(
+            sent_at__year=timezone.now().year,
+            sent_at__month=timezone.now().month,
+            status="sent"
+        ).count(),
+        "sms_costs": SmsMessage.objects.filter(
+            sent_at__year=timezone.now().year,
+            sent_at__month=timezone.now().month
+        ).aggregate(total=Sum("cost"))["total"] or 0,
+        "active_providers": SmsProviderConfig.objects.filter(is_active=True).count(),
     }
     return render(request, "messaging/dashboard.html", context)
 
@@ -68,9 +83,9 @@ def email_group_create(request):
 def email_group_detail(request, pk):
     """Detailansicht einer E-Mail-Gruppe"""
     group = get_object_or_404(EmailGroup.objects.prefetch_related("members__member"), pk=pk)
-    available_members = Member.objects.filter(status="active").exclude(
+    available_members = Profile.objects.filter(status="active").exclude(
         id__in=group.members.values_list("member_id", flat=True)
-    ).order_by("last_name", "first_name")
+    ).order_by("user__last_name", "user__first_name")
     
     return render(request, "messaging/email_group_detail.html", {
         "group": group,
@@ -248,7 +263,7 @@ def mass_email_send(request, pk):
                     EmailLog.objects.create(
                         mass_email=email,
                         member=member,
-                        recipient_email=member.email,
+                        recipient_email=member.user.email,
                         tracking_id=str(uuid.uuid4()).replace("-", "")
                     )
             
@@ -308,28 +323,438 @@ def mass_email_delete(request, pk):
     return render(request, "messaging/mass_email_confirm_delete.html", {"email": email})
 
 
+# ==================== SMS VIEWS ====================
+
+@login_required
+@permission_required("messaging.view_smsmessage", raise_exception=True)
+def sms_list(request):
+    """Liste aller SMS"""
+    sms_list = SmsMessage.objects.select_related(
+        "recipient_member", "recipient_group", "provider", "created_by"
+    ).all()
+    
+    # Filter
+    status_filter = request.GET.get("status")
+    if status_filter:
+        sms_list = sms_list.filter(status=status_filter)
+    
+    paginator = Paginator(sms_list, 25)
+    page = request.GET.get("page")
+    sms_page = paginator.get_page(page)
+    
+    return render(request, "messaging/sms_list.html", {
+        "sms_list": sms_page,
+        "status_choices": SmsMessage.STATUS_CHOICES
+    })
+
+
+@login_required
+@permission_required("messaging.add_smsmessage", raise_exception=True)
+def sms_create(request):
+    """Neue SMS erstellen"""
+    if request.method == "POST":
+        form = SmsMessageForm(request.POST)
+        if form.is_valid():
+            sms = form.save(commit=False)
+            sms.created_by = request.user
+            
+            # Wenn Template verwendet wird
+            template = form.cleaned_data.get("template")
+            use_template = form.cleaned_data.get("use_template")
+            if use_template and template:
+                sms.template_used = template
+                # Render Template mit Kontext
+                context = {}
+                if sms.recipient_member:
+                    context = {
+                        "first_name": sms.recipient_member.user.first_name,
+                        "last_name": sms.recipient_member.user.last_name,
+                        "member_number": sms.recipient_member.member_number,
+                    }
+                sms.content = template.render(context)
+            
+            sms.save()
+            messages.success(request, "SMS-Entwurf wurde gespeichert.")
+            return redirect("messaging:sms_preview", pk=sms.pk)
+    else:
+        form = SmsMessageForm()
+    
+    return render(request, "messaging/sms_form.html", {
+        "form": form,
+        "title": "Neue SMS"
+    })
+
+
+@login_required
+@permission_required("messaging.view_smsmessage", raise_exception=True)
+def sms_preview(request, pk):
+    """Vorschau einer SMS"""
+    sms = get_object_or_404(SmsMessage, pk=pk)
+    
+    # Berechne Empfänger
+    recipients = get_sms_recipients(sms)
+    
+    return render(request, "messaging/sms_preview.html", {
+        "sms": sms,
+        "recipients": recipients[:10],
+        "total_recipients": len(recipients)
+    })
+
+
+@login_required
+@permission_required("messaging.change_smsmessage", raise_exception=True)
+def sms_edit(request, pk):
+    """SMS bearbeiten"""
+    sms = get_object_or_404(SmsMessage, pk=pk)
+    
+    if sms.status != "draft":
+        messages.error(request, "Nur Entwürfe können bearbeitet werden.")
+        return redirect("messaging:sms_preview", pk=sms.pk)
+    
+    if request.method == "POST":
+        form = SmsMessageForm(request.POST, instance=sms)
+        if form.is_valid():
+            form.save()
+            messages.success(request, "SMS wurde aktualisiert.")
+            return redirect("messaging:sms_preview", pk=sms.pk)
+    else:
+        form = SmsMessageForm(instance=sms)
+    
+    return render(request, "messaging/sms_form.html", {
+        "form": form,
+        "sms": sms,
+        "title": "SMS bearbeiten"
+    })
+
+
+@login_required
+@permission_required("messaging.change_smsmessage", raise_exception=True)
+def sms_send(request, pk):
+    """SMS versenden"""
+    sms = get_object_or_404(SmsMessage, pk=pk)
+    
+    if sms.status != "draft":
+        messages.error(request, "Diese SMS wurde bereits versendet.")
+        return redirect("messaging:sms_detail", pk=sms.pk)
+    
+    # Prüfe ob Provider verfügbar
+    providers = SmsProviderConfig.objects.filter(is_active=True)
+    if not providers.exists():
+        messages.error(request, "Kein aktiver SMS-Provider konfiguriert.")
+        return redirect("messaging:sms_preview", pk=sms.pk)
+    
+    recipients = get_sms_recipients(sms)
+    
+    if request.method == "POST":
+        form = SmsSendForm(request.POST)
+        if form.is_valid():
+            provider = form.cleaned_data["provider"]
+            
+            if sms.recipient_type == "group":
+                # Erstelle einzelne SMS für jedes Gruppenmitglied
+                with transaction.atomic():
+                    sms.status = "queued"
+                    sms.provider = provider
+                    sms.sent_by = request.user
+                    sms.save()
+                    
+                    # Für Gruppen: Erstelle individuelle SMS-Einträge
+                    for member in recipients:
+                        SmsMessage.objects.create(
+                            recipient_type="individual",
+                            recipient_member=member,
+                            recipient_phone=getattr(member, "phone", None) or "",
+                            content=sms.content,
+                            template_used=sms.template_used,
+                            provider=provider,
+                            status="queued",
+                            created_by=request.user,
+                            sent_by=request.user
+                        )
+            else:
+                # Einzelne SMS
+                sms.status = "queued"
+                sms.provider = provider
+                sms.sent_by = request.user
+                sms.save()
+            
+            # Starte Celery Task
+            from .tasks import send_sms_task, send_bulk_sms_task
+            
+            if sms.recipient_type == "group":
+                # Sende alle neu erstellten SMS
+                new_sms_ids = SmsMessage.objects.filter(
+                    content=sms.content,
+                    status="queued",
+                    created_by=request.user
+                ).values_list("id", flat=True)
+                send_bulk_sms_task.delay(list(new_sms_ids))
+                messages.success(request, f"SMS wurden an {len(recipients)} Empfänger in die Warteschlange gestellt.")
+            else:
+                send_sms_task.delay(str(sms.pk))
+                messages.success(request, "SMS wurde in die Warteschlange gestellt.")
+            
+            return redirect("messaging:sms_detail", pk=sms.pk)
+    else:
+        form = SmsSendForm()
+    
+    return render(request, "messaging/sms_send.html", {
+        "sms": sms,
+        "form": form,
+        "recipients": recipients[:10],
+        "total_recipients": len(recipients)
+    })
+
+
+@login_required
+@permission_required("messaging.view_smsmessage", raise_exception=True)
+def sms_detail(request, pk):
+    """Detailansicht einer SMS"""
+    sms = get_object_or_404(
+        SmsMessage.objects.select_related("recipient_member", "provider", "created_by"),
+        pk=pk
+    )
+    return render(request, "messaging/sms_detail.html", {"sms": sms})
+
+
+@login_required
+@permission_required("messaging.delete_smsmessage", raise_exception=True)
+def sms_delete(request, pk):
+    """SMS löschen"""
+    sms = get_object_or_404(SmsMessage, pk=pk)
+    
+    if request.method == "POST":
+        sms.delete()
+        messages.success(request, "SMS wurde gelöscht.")
+        return redirect("messaging:sms_list")
+    
+    return render(request, "messaging/sms_confirm_delete.html", {"sms": sms})
+
+
+# ==================== SMS TEMPLATES ====================
+
+@login_required
+@permission_required("messaging.view_smstemplate", raise_exception=True)
+def sms_template_list(request):
+    """Liste aller SMS-Vorlagen"""
+    templates = SmsTemplate.objects.all()
+    return render(request, "messaging/sms_template_list.html", {"templates": templates})
+
+
+@login_required
+@permission_required("messaging.add_smstemplate", raise_exception=True)
+def sms_template_create(request):
+    """Neue SMS-Vorlage erstellen"""
+    if request.method == "POST":
+        form = SmsTemplateForm(request.POST)
+        if form.is_valid():
+            template = form.save(commit=False)
+            template.created_by = request.user
+            template.save()
+            messages.success(request, f"Vorlage '{template.name}' wurde erstellt.")
+            return redirect("messaging:sms_template_list")
+    else:
+        form = SmsTemplateForm()
+    
+    return render(request, "messaging/sms_template_form.html", {
+        "form": form,
+        "title": "Neue SMS-Vorlage"
+    })
+
+
+@login_required
+@permission_required("messaging.change_smstemplate", raise_exception=True)
+def sms_template_edit(request, pk):
+    """SMS-Vorlage bearbeiten"""
+    template = get_object_or_404(SmsTemplate, pk=pk)
+    
+    if request.method == "POST":
+        form = SmsTemplateForm(request.POST, instance=template)
+        if form.is_valid():
+            form.save()
+            messages.success(request, f"Vorlage '{template.name}' wurde aktualisiert.")
+            return redirect("messaging:sms_template_list")
+    else:
+        form = SmsTemplateForm(instance=template)
+    
+    return render(request, "messaging/sms_template_form.html", {
+        "form": form,
+        "template": template,
+        "title": "Vorlage bearbeiten"
+    })
+
+
+@login_required
+@permission_required("messaging.delete_smstemplate", raise_exception=True)
+def sms_template_delete(request, pk):
+    """SMS-Vorlage löschen"""
+    template = get_object_or_404(SmsTemplate, pk=pk)
+    
+    if request.method == "POST":
+        name = template.name
+        template.delete()
+        messages.success(request, f"Vorlage '{name}' wurde gelöscht.")
+        return redirect("messaging:sms_template_list")
+    
+    return render(request, "messaging/sms_template_confirm_delete.html", {"template": template})
+
+
+# ==================== SMS PROVIDERS ====================
+
+@login_required
+@permission_required("messaging.view_smsproviderconfig", raise_exception=True)
+def sms_provider_list(request):
+    """Liste aller SMS-Provider"""
+    providers = SmsProviderConfig.objects.all()
+    return render(request, "messaging/sms_provider_list.html", {"providers": providers})
+
+
+@login_required
+@permission_required("messaging.add_smsproviderconfig", raise_exception=True)
+def sms_provider_create(request):
+    """Neuen SMS-Provider erstellen"""
+    if request.method == "POST":
+        form = SmsProviderConfigForm(request.POST)
+        if form.is_valid():
+            provider = form.save(commit=False)
+            provider.created_by = request.user
+            provider.save()
+            messages.success(request, f"Provider '{provider.name}' wurde erstellt.")
+            return redirect("messaging:sms_provider_list")
+    else:
+        form = SmsProviderConfigForm()
+    
+    return render(request, "messaging/sms_provider_form.html", {
+        "form": form,
+        "title": "Neuer SMS-Provider"
+    })
+
+
+@login_required
+@permission_required("messaging.change_smsproviderconfig", raise_exception=True)
+def sms_provider_edit(request, pk):
+    """SMS-Provider bearbeiten"""
+    provider = get_object_or_404(SmsProviderConfig, pk=pk)
+    
+    if request.method == "POST":
+        form = SmsProviderConfigForm(request.POST, instance=provider)
+        if form.is_valid():
+            form.save()
+            messages.success(request, f"Provider '{provider.name}' wurde aktualisiert.")
+            return redirect("messaging:sms_provider_list")
+    else:
+        form = SmsProviderConfigForm(instance=provider)
+    
+    return render(request, "messaging/sms_provider_form.html", {
+        "form": form,
+        "provider": provider,
+        "title": "Provider bearbeiten"
+    })
+
+
+@login_required
+@permission_required("messaging.delete_smsproviderconfig", raise_exception=True)
+def sms_provider_delete(request, pk):
+    """SMS-Provider löschen"""
+    provider = get_object_or_404(SmsProviderConfig, pk=pk)
+    
+    if request.method == "POST":
+        name = provider.name
+        provider.delete()
+        messages.success(request, f"Provider '{name}' wurde gelöscht.")
+        return redirect("messaging:sms_provider_list")
+    
+    return render(request, "messaging/sms_provider_confirm_delete.html", {"provider": provider})
+
+
+# ==================== SMS STATISTICS ====================
+
+@login_required
+@permission_required("messaging.view_smsmessage", raise_exception=True)
+def sms_stats(request):
+    """SMS-Statistiken"""
+    from django.db.models import Sum, Count, Avg
+    
+    # Gesamtstatistiken
+    total_stats = SmsMessage.objects.aggregate(
+        total=Count("id"),
+        sent=Count("id", filter=models.Q(status="sent")),
+        failed=Count("id", filter=models.Q(status="failed")),
+        total_cost=Sum("cost")
+    )
+    
+    # Monatliche Statistiken
+    monthly_stats = SmsMessage.objects.filter(
+        status="sent"
+    ).extra(
+        select={"month": "strftime('%Y-%m', sent_at)"}
+    if "sqlite" in settings.DATABASES["default"]["ENGINE"] else
+        {"month": "TO_CHAR(sent_at, 'YYYY-MM')"}
+    ).values("month").annotate(
+        count=Count("id"),
+        cost=Sum("cost")
+    ).order_by("-month")[:12]
+    
+    # Provider-Statistiken
+    provider_stats = SmsMessage.objects.filter(
+        status="sent"
+    ).values("provider__name").annotate(
+        count=Count("id"),
+        cost=Sum("cost")
+    ).order_by("-count")
+    
+    # Status-Verteilung
+    status_stats = SmsMessage.objects.values("status").annotate(
+        count=Count("id")
+    ).order_by("-count")
+    
+    context = {
+        "total_stats": total_stats,
+        "monthly_stats": monthly_stats,
+        "provider_stats": provider_stats,
+        "status_stats": status_stats,
+    }
+    return render(request, "messaging/sms_stats.html", context)
+
+
 # ==================== HELPER FUNCTIONS ====================
 
 def get_recipients_for_email(email):
     """Holt alle Empfänger für eine Massen-E-Mail"""
     if email.recipient_type == "all":
-        return list(Member.objects.filter(
+        return list(Profile.objects.filter(
             status="active",
-            email__isnull=False
-        ).exclude(email=""))
+            user__email__isnull=False
+        ).exclude(user__email=""))
     
     elif email.recipient_type == "group" and email.recipient_group:
-        return list(Member.objects.filter(
+        return list(Profile.objects.filter(
             email_groups__group=email.recipient_group,
             status="active",
-            email__isnull=False
-        ).exclude(email=""))
+            user__email__isnull=False
+        ).exclude(user__email=""))
     
     elif email.recipient_type == "individual":
         return list(email.individual_recipients.filter(
             status="active",
-            email__isnull=False
-        ).exclude(email=""))
+            user__email__isnull=False
+        ).exclude(user__email=""))
+    
+    return []
+
+
+def get_sms_recipients(sms):
+    """Holt alle Empfänger für eine SMS"""
+    if sms.recipient_type == "individual":
+        if sms.recipient_member:
+            return [sms.recipient_member]
+        return []
+    
+    elif sms.recipient_type == "group" and sms.recipient_group:
+        return list(Profile.objects.filter(
+            email_groups__group=sms.recipient_group,
+            status="active"
+        ).distinct())
     
     return []
 
@@ -344,8 +769,8 @@ def api_group_members(request, pk):
     
     data = [{
         "id": m.member.id,
-        "name": f"{m.member.first_name} {m.member.last_name}",
-        "email": m.member.email
+        "name": f"{m.member.user.first_name} {m.member.user.last_name}",
+        "email": m.member.user.email
     } for m in members]
     
     return JsonResponse({"members": data})
@@ -366,6 +791,45 @@ def api_email_stats(request, pk):
     }
     
     return JsonResponse(data)
+
+
+@login_required
+def api_sms_character_count(request):
+    """API: Zeichenzähler für SMS"""
+    text = request.GET.get("text", "")
+    chars = len(text)
+    sms_count = 1 if chars <= 160 else (chars + 153 - 1) // 153
+    
+    return JsonResponse({
+        "characters": chars,
+        "sms_count": sms_count,
+        "remaining": 160 if sms_count == 1 else (sms_count * 153) - chars
+    })
+
+
+@login_required
+def api_render_sms_template(request):
+    """API: Rendert eine SMS-Vorlage mit Beispieldaten"""
+    template_id = request.GET.get("template_id")
+    
+    try:
+        template = SmsTemplate.objects.get(pk=template_id)
+        # Beispiel-Kontext
+        context = {
+            "first_name": "Max",
+            "last_name": "Mustermann",
+            "member_number": "123456"
+        }
+        rendered = template.render(context)
+        
+        return JsonResponse({
+            "success": True,
+            "rendered": rendered,
+            "characters": len(rendered),
+            "sms_count": 1 if len(rendered) <= 160 else (len(rendered) + 153 - 1) // 153
+        })
+    except SmsTemplate.DoesNotExist:
+        return JsonResponse({"success": False, "error": "Template nicht gefunden"})
 
 
 # ==================== TRACKING ====================

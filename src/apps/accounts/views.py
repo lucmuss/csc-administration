@@ -27,13 +27,22 @@ class UserLogoutView(LogoutView):
 
 
 def dev_login(request):
-    """Dev-Login fuer lokale GUI-Tests - nur bei DEBUG=True"""
+    """Dev-Login fuer lokale GUI-Tests - nur bei DEBUG=True und localhost"""
     if not settings.DEBUG:
         return HttpResponseForbidden("Dev-Login nur im Debug-Modus verfuegbar.")
+    
+    # Zusaetzlicher IP-Check fuer extra Sicherheit
+    remote_addr = request.META.get('REMOTE_ADDR', '')
+    if remote_addr not in ['127.0.0.1', '::1']:
+        return HttpResponseForbidden("Dev-Login nur von localhost erlaubt.")
     
     test_email = getattr(settings, 'TEST_USER_EMAIL', None)
     if not test_email:
         return HttpResponseForbidden("TEST_USER_EMAIL nicht konfiguriert.")
+    
+    # Optional: Test-User muss bestimmtes Suffix haben
+    if not test_email.endswith('@test.local'):
+        return HttpResponseForbidden("Ungueltiger Test-User. Muss @test.local Domain haben.")
     
     try:
         user = User.objects.get(email=test_email)

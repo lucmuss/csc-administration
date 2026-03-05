@@ -1,51 +1,182 @@
-{% extends 'base.html' %}
-{% block title %}Pflanze #{{ plant.id }}{% endblock %}
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}{{ plant }} - CSC Administration{% endblock %}
+
 {% block content %}
-<div class="card mb-4">
-  <h1 class="text-xl font-semibold">Pflanze #{{ plant.id }}</h1>
-  <p>Sorte: {{ plant.cutting.mother_plant.strain.name }}</p>
-  <p>Raum: {{ plant.room }}</p>
-  <p>Status: {{ plant.get_growth_stage_display }}</p>
-  <p>Pflanzdatum: {{ plant.planting_date }}</p>
-  {% if plant.growth_stage != 'harvested' %}
-    <p class="mt-2"><a class="underline" href="{% url 'cultivation:harvest_form' plant.id %}">Ernte dokumentieren</a></p>
-  {% endif %}
-</div>
-
-<div class="card mb-4">
-  <h2 class="text-lg font-semibold mb-2">Growtagebuch hinzufügen</h2>
-  <form method="post" class="space-y-2">
-    {% csrf_token %}
-    <input type="hidden" name="action" value="add_log">
-    <div><label>Datum <input type="date" name="date" required class="w-full border p-2"></label></div>
-    <div>
-      <label>Aktivität
-        <select name="activity_type" class="w-full border p-2" required>
-          <option value="watering">Bewässerung</option>
-          <option value="nutrients">Düngung</option>
-          <option value="pruning">Schnitt</option>
-          <option value="health">Gesundheitscheck</option>
-        </select>
-      </label>
+<div class="container mx-auto px-4 py-8">
+    <div class="flex justify-between items-start mb-8">
+        <div>
+            <div class="flex items-center gap-3 mb-2">
+                <h1 class="text-3xl font-bold text-gray-800">
+                    Pflanze #{{ plant.plant_number|default:plant.id.hex|slice:":8" }}
+                </h1>
+                <span class="px-3 py-1 text-sm font-semibold rounded-full 
+                    {% if plant.status == 'growing' %}bg-green-100 text-green-800
+                    {% elif plant.status == 'vegetative' %}bg-blue-100 text-blue-800
+                    {% elif plant.status == 'flowering' %}bg-purple-100 text-purple-800
+                    {% elif plant.status == 'harvested' %}bg-yellow-100 text-yellow-800
+                    {% elif plant.status == 'drying' %}bg-orange-100 text-orange-800
+                    {% elif plant.status == 'curing' %}bg-indigo-100 text-indigo-800
+                    {% else %}bg-gray-100 text-gray-800{% endif %}">
+                    {{ plant.get_status_display }}
+                </span>
+            </div>
+            <p class="text-gray-600">{{ plant.strain.name }} | {{ plant.grow_cycle.name }}</p>
+        </div>
+        <div class="flex space-x-3">
+            <a href="{% url 'cultivation:plant_qr_code' plant.pk %}" target="_blank" class="bg-gray-100 text-gray-700 px-4 py-2 rounded-lg hover:bg-gray-200">
+                QR-Code
+            </a>
+            <a href="{% url 'cultivation:plant_edit' plant.pk %}" class="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700">
+                Bearbeiten
+            </a>
+        </div>
     </div>
-    <div><label>Nährstoffe <input type="text" name="nutrients" class="w-full border p-2"></label></div>
-    <div><label>Notizen <textarea name="notes" class="w-full border p-2"></textarea></label></div>
-    <button class="bg-csc-900 text-white px-3 py-2" type="submit">Eintrag speichern</button>
-  </form>
+
+    <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+        <!-- Details -->
+        <div class="lg:col-span-1 space-y-6">
+            <!-- QR-Code -->
+            <div class="bg-white shadow-md rounded-lg p-6 text-center">
+                <img src="{% url 'cultivation:plant_qr_code' plant.pk %}" alt="QR Code" class="mx-auto mb-4">
+                <p class="text-sm text-gray-500">{{ plant.qr_code_id }}</p>
+            </div>
+
+            <!-- Info -->
+            <div class="bg-white shadow-md rounded-lg p-6">
+                <h2 class="text-lg font-semibold text-gray-800 mb-4">Informationen</h2>
+                
+                <div class="space-y-3">
+                    <div>
+                        <label class="block text-sm font-medium text-gray-500">Strain</label>
+                        <p class="text-gray-900">{{ plant.strain.name }}</p>
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-500">Grow Cycle</label>
+                        <p class="text-gray-900">{{ plant.grow_cycle.name }}</p>
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-500">Pflanzdatum</label>
+                        <p class="text-gray-900">{{ plant.planting_date|date:"d.m.Y" }}</p>
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-500">Alter</label>
+                        <p class="text-gray-900">{{ plant.age_days }} Tage</p>
+                    </div>
+                    {% if plant.harvest_date %}
+                    <div>
+                        <label class="block text-sm font-medium text-gray-500">Erntedatum</label>
+                        <p class="text-gray-900">{{ plant.harvest_date|date:"d.m.Y" }}</p>
+                    </div>
+                    {% endif %}
+                    <div>
+                        <label class="block text-sm font-medium text-gray-500">Erwarteter Ertrag</label>
+                        <p class="text-gray-900">{{ plant.expected_yield_grams|floatformat:0 }}g</p>
+                    </div>
+                    {% if plant.actual_yield_grams > 0 %}
+                    <div>
+                        <label class="block text-sm font-medium text-gray-500">Tatsächlicher Ertrag</label>
+                        <p class="text-gray-900">{{ plant.actual_yield_grams|floatformat:0 }}g</p>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+
+            <!-- Status-Update -->
+            {% if plant.is_active %}
+            <div class="bg-white shadow-md rounded-lg p-6">
+                <h2 class="text-lg font-semibold text-gray-800 mb-4">Status ändern</h2>
+                <form method="post" action="{% url 'cultivation:plant_update_status' plant.pk %}">
+                    {% csrf_token %}
+                    <div class="space-y-3">
+                        <select name="status" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500">
+                            {% for value, label in plant.STATUS_CHOICES %}
+                            {% if value != plant.status %}
+                            <option value="{{ value }}">{{ label }}</option>
+                            {% endif %}
+                            {% endfor %}
+                        </select>
+                        
+                        <div id="harvest-fields" class="hidden">
+                            <input type="date" name="harvest_date" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 mb-2" placeholder="Erntedatum">
+                            <input type="number" name="actual_yield_grams" step="0.01" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500" placeholder="Ertrag in Gramm">
+                        </div>
+                        
+                        <button type="submit" class="w-full px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700">
+                            Status aktualisieren
+                        </button>
+                    </div>
+                </form>
+            </div>
+            {% endif %}
+        </div>
+
+        <!-- Logs -->
+        <div class="lg:col-span-2">
+            <div class="bg-white shadow-md rounded-lg p-6">
+                <div class="flex justify-between items-center mb-4">
+                    <h2 class="text-lg font-semibold text-gray-800">Pflege-Logs</h2>
+                    <a href="{% url 'cultivation:plant_log_create' plant.pk %}" class="bg-green-600 text-white px-3 py-1 rounded-lg text-sm hover:bg-green-700">
+                        + Log hinzufügen
+                    </a>
+                </div>
+                
+                {% if logs %}
+                <div class="space-y-4">
+                    {% for log in logs %}
+                    <div class="border-l-4 
+                        {% if log.log_type == 'watering' %}border-blue-400 bg-blue-50
+                        {% elif log.log_type == 'fertilizing' %}border-green-400 bg-green-50
+                        {% elif log.log_type == 'pruning' %}border-yellow-400 bg-yellow-50
+                        {% elif log.log_type == 'harvest' %}border-purple-400 bg-purple-50
+                        {% else %}border-gray-400 bg-gray-50{% endif %} 
+                        p-4 rounded-r-lg">
+                        <div class="flex justify-between items-start">
+                            <div>
+                                <span class="font-medium text-gray-900">{{ log.get_log_type_display }}</span>
+                                {% if log.performed_by %}
+                                <span class="text-sm text-gray-500">von {{ log.performed_by }}</span>
+                                {% endif %}
+                            </div>
+                            <span class="text-sm text-gray-500">{{ log.date|date:"d.m.Y H:i" }}</span>
+                        </div>
+                        {% if log.notes %}
+                        <p class="mt-2 text-gray-700">{{ log.notes }}</p>
+                        {% endif %}
+                        {% if log.products_used %}
+                        <p class="mt-1 text-sm text-gray-500">Produkte: {{ log.products_used }}</p>
+                        {% endif %}
+                    </div>
+                    {% endfor %}
+                </div>
+                
+                <a href="{% url 'cultivation:plant_log_list' plant.pk %}" class="mt-4 block text-center text-green-600 hover:text-green-800">
+                    Alle Logs anzeigen →
+                </a>
+                {% else %}
+                <p class="text-gray-500 text-center py-8">Noch keine Logs vorhanden.</p>
+                {% endif %}
+            </div>
+
+            {% if plant.notes %}
+            <div class="mt-6 bg-white shadow-md rounded-lg p-6">
+                <h2 class="text-lg font-semibold text-gray-800 mb-4">Notizen</h2>
+                <p class="text-gray-700 whitespace-pre-wrap">{{ plant.notes }}</p>
+            </div>
+            {% endif %}
+        </div>
+    </div>
 </div>
 
-<div class="card">
-  <h2 class="text-lg font-semibold mb-2">Growtagebuch</h2>
-  <ul class="space-y-2">
-    {% for log in logs %}
-      <li>
-        <strong>{{ log.date }}</strong> - {{ log.get_activity_type_display }}
-        {% if log.nutrients %}<span>(Nährstoffe: {{ log.nutrients }})</span>{% endif %}
-        <div>{{ log.notes|default:'-' }}</div>
-      </li>
-    {% empty %}
-      <li>Keine Einträge vorhanden.</li>
-    {% endfor %}
-  </ul>
-</div>
+<script>
+document.querySelector('select[name="status"]').addEventListener('change', function() {
+    const harvestFields = document.getElementById('harvest-fields');
+    if (this.value === 'harvested') {
+        harvestFields.classList.remove('hidden');
+    } else {
+        harvestFields.classList.add('hidden');
+    }
+});
+</script>
 {% endblock %}

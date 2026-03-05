@@ -1,0 +1,122 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}SMS-Statistiken - CSC Administration{% endblock %}
+
+{% block content %}
+<div class="container mx-auto px-4 py-8">
+    <div class="mb-8">
+        <h1 class="text-3xl font-bold text-gray-800 mb-2">SMS-Statistiken</h1>
+        <p class="text-gray-600">Übersicht über SMS-Versand und Kosten</p>
+    </div>
+
+    <!-- Gesamtstatistiken -->
+    <div class="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
+        <div class="bg-white shadow-md rounded-lg p-6 text-center">
+            <p class="text-4xl font-bold text-purple-600">{{ total_stats.total|default:"0" }}</p>
+            <p class="text-sm text-gray-600 mt-1">Gesamt SMS</p>
+        </div>
+        <div class="bg-white shadow-md rounded-lg p-6 text-center">
+            <p class="text-4xl font-bold text-green-600">{{ total_stats.sent|default:"0" }}</p>
+            <p class="text-sm text-gray-600 mt-1">Erfolgreich gesendet</p>
+        </div>
+        <div class="bg-white shadow-md rounded-lg p-6 text-center">
+            <p class="text-4xl font-bold text-red-600">{{ total_stats.failed|default:"0" }}</p>
+            <p class="text-sm text-gray-600 mt-1">Fehlgeschlagen</p>
+        </div>
+        <div class="bg-white shadow-md rounded-lg p-6 text-center">
+            <p class="text-4xl font-bold text-blue-600">{{ total_stats.total_cost|floatformat:2|default:"0,00" }} €</p>
+            <p class="text-sm text-gray-600 mt-1">Gesamtkosten</p>
+        </div>
+    </div>
+
+    <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
+        <!-- Monatliche Statistiken -->
+        <div class="bg-white shadow-md rounded-lg p-6">
+            <h2 class="text-xl font-semibold text-gray-800 mb-4">Monatliche Übersicht</h2>
+            <div class="overflow-x-auto">
+                <table class="min-w-full">
+                    <thead class="bg-gray-50">
+                        <tr>
+                            <th class="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">Monat</th>
+                            <th class="px-4 py-2 text-right text-xs font-medium text-gray-500 uppercase">Anzahl</th>
+                            <th class="px-4 py-2 text-right text-xs font-medium text-gray-500 uppercase">Kosten</th>
+                        </tr>
+                    </thead>
+                    <tbody class="divide-y divide-gray-200">
+                        {% for stat in monthly_stats %}
+                        <tr>
+                            <td class="px-4 py-3 text-sm text-gray-900">{{ stat.month }}</td>
+                            <td class="px-4 py-3 text-sm text-gray-900 text-right">{{ stat.count }}</td>
+                            <td class="px-4 py-3 text-sm text-gray-900 text-right">{{ stat.cost|floatformat:2 }} €</td>
+                        </tr>
+                        {% empty %}
+                        <tr>
+                            <td colspan="3" class="px-4 py-8 text-center text-gray-500">
+                                Keine Daten vorhanden
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- Provider-Statistiken -->
+        <div class="bg-white shadow-md rounded-lg p-6">
+            <h2 class="text-xl font-semibold text-gray-800 mb-4">Nach Provider</h2>
+            <div class="overflow-x-auto">
+                <table class="min-w-full">
+                    <thead class="bg-gray-50">
+                        <tr>
+                            <th class="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">Provider</th>
+                            <th class="px-4 py-2 text-right text-xs font-medium text-gray-500 uppercase">Anzahl</th>
+                            <th class="px-4 py-2 text-right text-xs font-medium text-gray-500 uppercase">Kosten</th>
+                        </tr>
+                    </thead>
+                    <tbody class="divide-y divide-gray-200">
+                        {% for stat in provider_stats %}
+                        <tr>
+                            <td class="px-4 py-3 text-sm text-gray-900">{{ stat.provider__name }}</td>
+                            <td class="px-4 py-3 text-sm text-gray-900 text-right">{{ stat.count }}</td>
+                            <td class="px-4 py-3 text-sm text-gray-900 text-right">{{ stat.cost|floatformat:2 }} €</td>
+                        </tr>
+                        {% empty %}
+                        <tr>
+                            <td colspan="3" class="px-4 py-8 text-center text-gray-500">
+                                Keine Daten vorhanden
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <!-- Status-Verteilung -->
+    <div class="mt-8 bg-white shadow-md rounded-lg p-6">
+        <h2 class="text-xl font-semibold text-gray-800 mb-4">Status-Verteilung</h2>
+        <div class="grid grid-cols-2 md:grid-cols-6 gap-4">
+            {% for stat in status_stats %}
+            <div class="text-center p-4 rounded-lg 
+                {% if stat.status == 'sent' %}bg-green-50{% elif stat.status == 'failed' %}bg-red-50{% elif stat.status == 'queued' %}bg-yellow-50{% elif stat.status == 'sending' %}bg-blue-50{% else %}bg-gray-50{% endif %}">
+                <p class="text-2xl font-bold 
+                    {% if stat.status == 'sent' %}text-green-600{% elif stat.status == 'failed' %}text-red-600{% elif stat.status == 'queued' %}text-yellow-600{% elif stat.status == 'sending' %}text-blue-600{% else %}text-gray-600{% endif %}">
+                    {{ stat.count }}
+                </p>
+                <p class="text-sm text-gray-600">
+                    {% if stat.status == 'draft' %}Entwürfe
+                    {% elif stat.status == 'queued' %}In Warteschlange
+                    {% elif stat.status == 'sending' %}Wird gesendet
+                    {% elif stat.status == 'sent' %}Gesendet
+                    {% elif stat.status == 'delivered' %}Zugestellt
+                    {% elif stat.status == 'failed' %}Fehlgeschlagen
+                    {% else %}{{ stat.status }}{% endif %}
+                </p>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+</div>
+{% endblock %}

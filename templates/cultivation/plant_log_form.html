@@ -1,0 +1,68 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}{{ title }} - CSC Administration{% endblock %}
+
+{% block content %}
+<div class="container mx-auto px-4 py-8">
+    <div class="mb-8">
+        <h1 class="text-3xl font-bold text-gray-800 mb-2">{{ title }}</h1>
+        <p class="text-gray-600">Fügen Sie einen neuen Log-Eintrag für {{ plant }} hinzu</p>
+    </div>
+
+    <div class="max-w-2xl bg-white shadow-md rounded-lg p-6">
+        <form method="post">
+            {% csrf_token %}
+            
+            <div class="mb-6">
+                <label class="block text-sm font-medium text-gray-700 mb-2">{{ form.log_type.label }}</label>
+                {{ form.log_type }}
+                {% if form.log_type.errors %}
+                <p class="mt-1 text-sm text-red-600">{{ form.log_type.errors.0 }}</p>
+                {% endif %}
+            </div>
+
+            <div class="mb-6">
+                <label class="block text-sm font-medium text-gray-700 mb-2">{{ form.date.label }}</label>
+                {{ form.date }}
+                {% if form.date.errors %}
+                <p class="mt-1 text-sm text-red-600">{{ form.date.errors.0 }}</p>
+                {% endif %}
+            </div>
+
+            <div class="mb-6">
+                <label class="block text-sm font-medium text-gray-700 mb-2">{{ form.notes.label }}</label>
+                {{ form.notes }}
+                {% if form.notes.errors %}
+                <p class="mt-1 text-sm text-red-600">{{ form.notes.errors.0 }}</p>
+                {% endif %}
+            </div>
+
+            <div class="mb-6">
+                <label class="block text-sm font-medium text-gray-700 mb-2">{{ form.products_used.label }}</label>
+                {{ form.products_used }}
+                {% if form.products_used.errors %}
+                <p class="mt-1 text-sm text-red-600">{{ form.products_used.errors.0 }}</p>
+                {% endif %}
+            </div>
+
+            <div class="mb-6">
+                <label class="block text-sm font-medium text-gray-700 mb-2">{{ form.performed_by.label }}</label>
+                {{ form.performed_by }}
+                {% if form.performed_by.errors %}
+                <p class="mt-1 text-sm text-red-600">{{ form.performed_by.errors.0 }}</p>
+                {% endif %}
+            </div>
+
+            <div class="flex justify-end space-x-3">
+                <a href="{% url 'cultivation:plant_detail' plant.pk %}" class="px-4 py-2 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50">
+                    Abbrechen
+                </a>
+                <button type="submit" class="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700">
+                    Speichern
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+{% endblock %}

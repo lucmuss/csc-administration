@@ -1,42 +1,116 @@
+# cultivation/admin.py
 from django.contrib import admin
-
-from .models import BatchConnection, Cutting, GrowthLog, Harvest, MotherPlant, Plant
-
-
-@admin.register(MotherPlant)
-class MotherPlantAdmin(admin.ModelAdmin):
-    list_display = ("id", "strain", "planted_date", "status", "genetics")
-    list_filter = ("status", "strain")
-    search_fields = ("strain__name", "genetics")
+from .models import GrowCycle, Plant, PlantLog, HarvestBatch
 
 
-@admin.register(Cutting)
-class CuttingAdmin(admin.ModelAdmin):
-    list_display = ("id", "mother_plant", "planted_date", "rooting_date", "status")
-    list_filter = ("status",)
-    search_fields = ("mother_plant__strain__name",)
-
-
-class GrowthLogInline(admin.TabularInline):
-    model = GrowthLog
-    extra = 0
+@admin.register(GrowCycle)
+class GrowCycleAdmin(admin.ModelAdmin):
+    list_display = [
+        "name", "status", "start_date", "expected_harvest_date",
+        "plant_count", "responsible_member", "created_at"
+    ]
+    list_filter = ["status", "start_date", "expected_harvest_date"]
+    search_fields = ["name", "description", "location"]
+    readonly_fields = ["id", "created_at", "updated_at"]
+    date_hierarchy = "start_date"
+    fieldsets = (
+        (None, {
+            "fields": ("id", "name", "description", "status")
+        }),
+        ("Zeitraum", {
+            "fields": ("start_date", "expected_harvest_date", "actual_harvest_date", "completion_date")
+        }),
+        ("Zuordnung", {
+            "fields": ("responsible_member", "location")
+        }),
+        ("Notizen", {
+            "fields": ("notes", "compliance_notes")
+        }),
+        ("Meta", {
+            "fields": ("created_at", "updated_at", "created_by"),
+            "classes": ("collapse",)
+        }),
+    )
 
 
 @admin.register(Plant)
 class PlantAdmin(admin.ModelAdmin):
-    list_display = ("id", "cutting", "room", "planting_date", "growth_stage")
-    list_filter = ("growth_stage", "room")
-    search_fields = ("cutting__mother_plant__strain__name", "room")
-    inlines = [GrowthLogInline]
+    list_display = [
+        "plant_number", "strain", "grow_cycle", "status",
+        "planting_date", "expected_yield_grams", "actual_yield_grams"
+    ]
+    list_filter = ["status", "strain", "grow_cycle"]
+    search_fields = ["plant_number", "qr_code_id", "notes"]
+    readonly_fields = ["id", "qr_code_id", "created_at", "updated_at"]
+    date_hierarchy = "planting_date"
+    fieldsets = (
+        (None, {
+            "fields": ("id", "grow_cycle", "strain", "status")
+        }),
+        ("Identifikation", {
+            "fields": ("plant_number", "qr_code_id")
+        }),
+        ("Zeitraum", {
+            "fields": ("planting_date", "harvest_date")
+        }),
+        ("Ertrag", {
+            "fields": ("expected_yield_grams", "actual_yield_grams")
+        }),
+        ("Notizen", {
+            "fields": ("notes", "compliance_notes")
+        }),
+        ("Meta", {
+            "fields": ("created_at", "updated_at", "created_by"),
+            "classes": ("collapse",)
+        }),
+    )
 
 
-@admin.register(Harvest)
-class HarvestAdmin(admin.ModelAdmin):
-    list_display = ("id", "plant", "harvest_date", "wet_weight", "dry_weight")
-    search_fields = ("plant__cutting__mother_plant__strain__name",)
+@admin.register(PlantLog)
+class PlantLogAdmin(admin.ModelAdmin):
+    list_display = ["plant", "log_type", "date", "performed_by", "created_at"]
+    list_filter = ["log_type", "date", "performed_by"]
+    search_fields = ["plant__plant_number", "notes", "products_used"]
+    readonly_fields = ["id", "created_at", "updated_at"]
+    date_hierarchy = "date"
 
 
-@admin.register(BatchConnection)
-class BatchConnectionAdmin(admin.ModelAdmin):
-    list_display = ("harvest", "batch", "created_at")
-    search_fields = ("batch__code",)
+@admin.register(HarvestBatch)
+class HarvestBatchAdmin(admin.ModelAdmin):
+    list_display = [
+        "batch_number", "name", "harvest_date", "plant_count",
+        "total_weight_fresh", "total_weight_dried", "quality_grade",
+        "assigned_to_inventory"
+    ]
+    list_filter = ["quality_grade", "assigned_to_inventory", "harvest_date"]
+    search_fields = ["batch_number", "name", "notes"]
+    readonly_fields = ["id", "batch_number", "created_at", "updated_at"]
+    date_hierarchy = "harvest_date"
+    filter_horizontal = ["plants"]
+    fieldsets = (
+        (None, {
+            "fields": ("id", "batch_number", "name", "harvest_date")
+        }),
+        ("Pflanzen", {
+            "fields": ("plants",)
+        }),
+        ("Gewichte", {
+            "fields": ("total_weight_fresh", "total_weight_dried", "quality_grade")
+        }),
+        ("Trocknung & Aushärtung", {
+            "fields": (
+                "drying_start_date", "drying_end_date",
+                "curing_start_date", "curing_end_date"
+            )
+        }),
+        ("Inventar", {
+            "fields": ("assigned_to_inventory", "inventory_item")
+        }),
+        ("Notizen", {
+            "fields": ("notes", "compliance_notes")
+        }),
+        ("Meta", {
+            "fields": ("created_at", "updated_at", "created_by"),
+            "classes": ("collapse",)
+        }),
+    )

@@ -1,0 +1,37 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}Pflanze löschen - CSC Administration{% endblock %}
+
+{% block content %}
+<div class="container mx-auto px-4 py-8">
+    <div class="max-w-md mx-auto bg-white shadow-md rounded-lg p-6">
+        <h1 class="text-2xl font-bold text-gray-800 mb-4">Pflanze löschen</h1>
+        
+        <p class="text-gray-600 mb-6">
+            Sind Sie sicher, dass Sie diese Pflanze löschen möchten?
+        </p>
+        
+        <div class="bg-gray-50 rounded-lg p-4 mb-6">
+            <p class="text-sm text-gray-500 mb-1">Pflanzen-Nummer:</p>
+            <p class="font-medium">{{ plant.plant_number|default:"-" }}</p>
+            <p class="text-sm text-gray-500 mt-3 mb-1">Strain:</p>
+            <p class="font-medium">{{ plant.strain.name }}</p>
+            <p class="text-sm text-gray-500 mt-3 mb-1">Grow Cycle:</p>
+            <p class="font-medium">{{ plant.grow_cycle.name }}</p>
+        </div>
+        
+        <form method="post">
+            {% csrf_token %}
+            <div class="flex justify-end space-x-3">
+                <a href="{% url 'cultivation:plant_list' %}" class="px-4 py-2 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50">
+                    Abbrechen
+                </a>
+                <button type="submit" class="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700">
+                    Löschen
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,141 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}SMS-Details - CSC Administration{% endblock %}
+
+{% block content %}
+<div class="container mx-auto px-4 py-8">
+    <div class="flex justify-between items-center mb-8">
+        <div>
+            <h1 class="text-3xl font-bold text-gray-800 mb-2">SMS-Details</h1>
+            <p class="text-gray-600">Details zur SMS-Nachricht</p>
+        </div>
+        <div class="flex space-x-3">
+            <a href="{% url 'messaging:sms_list' %}" class="bg-gray-100 text-gray-700 px-4 py-2 rounded-lg hover:bg-gray-200">
+                Zurück zur Liste
+            </a>
+            {% if sms.status == 'draft' %}
+            <a href="{% url 'messaging:sms_send' sms.pk %}" class="bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700">
+                Senden
+            </a>
+            {% endif %}
+        </div>
+    </div>
+
+    <div class="bg-white shadow-md rounded-lg p-6">
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <!-- Linke Spalte -->
+            <div class="space-y-6">
+                <div>
+                    <label class="block text-sm font-medium text-gray-500">Status</label>
+                    <span class="mt-1 inline-flex px-3 py-1 text-sm font-semibold rounded-full 
+                        {% if sms.status == 'sent' %}bg-green-100 text-green-800
+                        {% elif sms.status == 'failed' %}bg-red-100 text-red-800
+                        {% elif sms.status == 'queued' %}bg-yellow-100 text-yellow-800
+                        {% elif sms.status == 'sending' %}bg-blue-100 text-blue-800
+                        {% else %}bg-gray-100 text-gray-800{% endif %}">
+                        {{ sms.get_status_display }}
+                    </span>
+                </div>
+                
+                <div>
+                    <label class="block text-sm font-medium text-gray-500">Empfänger-Typ</label>
+                    <p class="mt-1 text-gray-900">{{ sms.get_recipient_type_display }}</p>
+                </div>
+                
+                {% if sms.recipient_member %}
+                <div>
+                    <label class="block text-sm font-medium text-gray-500">Empfänger</label>
+                    <p class="mt-1 text-gray-900">
+                        {{ sms.recipient_member.user.first_name }} {{ sms.recipient_member.user.last_name }}
+                    </p>
+                    <p class="text-gray-500">{{ sms.recipient_member.user.email }}</p>
+                </div>
+                {% endif %}
+                
+                <div>
+                    <label class="block text-sm font-medium text-gray-500">Telefonnummer</label>
+                    <p class="mt-1 text-gray-900">{{ sms.recipient_phone|default:"-" }}</p>
+                </div>
+                
+                {% if sms.template_used %}
+                <div>
+                    <label class="block text-sm font-medium text-gray-500">Verwendete Vorlage</label>
+                    <p class="mt-1 text-gray-900">{{ sms.template_used.name }}</p>
+                </div>
+                {% endif %}
+            </div>
+            
+            <!-- Rechte Spalte -->
+            <div class="space-y-6">
+                <div>
+                    <label class="block text-sm font-medium text-gray-500">Provider</label>
+                    <p class="mt-1 text-gray-900">{{ sms.provider.name|default:"-" }}</p>
+                </div>
+                
+                <div>
+                    <label class="block text-sm font-medium text-gray-500">Externe ID</label>
+                    <p class="mt-1 text-gray-900 font-mono text-sm">{{ sms.external_id|default:"-" }}</p>
+                </div>
+                
+                <div>
+                    <label class="block text-sm font-medium text-gray-500">Kosten</label>
+                    <p class="mt-1 text-gray-900">{% if sms.cost %}{{ sms.cost|floatformat:4 }} €{% else %}-{% endif %}</p>
+                </div>
+                
+                <div>
+                    <label class="block text-sm font-medium text-gray-500">Erstellt am</label>
+                    <p class="mt-1 text-gray-900">{{ sms.created_at|date:"d.m.Y H:i" }}</p>
+                </div>
+                
+                {% if sms.sent_at %}
+                <div>
+                    <label class="block text-sm font-medium text-gray-500">Gesendet am</label>
+                    <p class="mt-1 text-gray-900">{{ sms.sent_at|date:"d.m.Y H:i" }}</p>
+                </div>
+                {% endif %}
+                
+                {% if sms.delivered_at %}
+                <div>
+                    <label class="block text-sm font-medium text-gray-500">Zugestellt am</label>
+                    <p class="mt-1 text-gray-900">{{ sms.delivered_at|date:"d.m.Y H:i" }}</p>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+        
+        <!-- Nachricht -->
+        <div class="mt-8 pt-6 border-t">
+            <label class="block text-sm font-medium text-gray-500 mb-2">Nachricht</label>
+            <div class="bg-gray-50 rounded-lg p-4">
+                <p class="text-gray-900 whitespace-pre-wrap">{{ sms.content }}</p>
+            </div>
+            <div class="mt-2 flex justify-between text-sm text-gray-500">
+                <span>{{ sms.character_count }} Zeichen</span>
+                <span>{{ sms.sms_count }} SMS</span>
+            </div>
+        </div>
+        
+        {% if sms.error_message %}
+        <div class="mt-6 pt-6 border-t">
+            <label class="block text-sm font-medium text-red-600 mb-2">Fehlermeldung</label>
+            <div class="bg-red-50 border border-red-200 rounded-lg p-4">
+                <p class="text-red-700">{{ sms.error_message }}</p>
+            </div>
+        </div>
+        {% endif %}
+        
+        <!-- Aktionen -->
+        <div class="mt-8 pt-6 border-t flex justify-end space-x-3">
+            {% if sms.status == 'draft' %}
+            <a href="{% url 'messaging:sms_edit' sms.pk %}" class="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700">
+                Bearbeiten
+            </a>
+            {% endif %}
+            <a href="{% url 'messaging:sms_delete' sms.pk %}" class="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700">
+                Löschen
+            </a>
+        </div>
+    </div>
+</div>
+{% endblock %}

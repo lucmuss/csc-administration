@@ -6,7 +6,8 @@ from django.utils import timezone
 from django.conf import settings
 import time
 
-from .models import MassEmail, EmailLog
+from .models import MassEmail, EmailLog, SmsMessage, SmsCostLog
+from .services import send_sms_message
 
 
 @shared_task
@@ -36,9 +37,9 @@ def send_mass_email_task(email_id):
         try:
             # Personalisiere Inhalt
             context = {
-                "first_name": log.member.first_name,
-                "last_name": log.member.last_name,
-                "email": log.member.email,
+                "first_name": log.member.user.first_name,
+                "last_name": log.member.user.last_name,
+                "email": log.member.user.email,
                 "member_number": log.member.member_number,
             }
             
@@ -92,4 +93,97 @@ def send_mass_email_task(email_id):
         "sent": sent,
         "failed": failed,
         "status": email.status
+    }
+
+
+# ==================== SMS TASKS ====================
+
+@shared_task
+def send_sms_task(sms_id):
+    """Sendet eine einzelne SMS"""
+    try:
+        sms = SmsMessage.objects.get(pk=sms_id)
+    except SmsMessage.DoesNotExist:
+        return {"error": "SMS not found"}
+    
+    if sms.status not in ["queued", "draft"]:
+        return {"error": f"Invalid status: {sms.status}"}
+    
+    sms.status = "sending"
+    sms.save()
+    
+    success = send_sms_message(sms)
+    
+    return {
+        "sms_id": str(sms_id),
+        "success": success,
+        "status": sms.status,
+        "external_id": sms.external_id
+    }
+
+
+@shared_task
+def send_bulk_sms_task(sms_ids, group_id=None):
+    """Sendet mehrere SMS (z.B. an eine Gruppe)"""
+    results = []
+    
+    for sms_id in sms_ids:
+        result = send_sms_task.delay(sms_id)
+        results.append(str(sms_id))
+    
+    return {
+        "queued": len(results),
+        "sms_ids": results
+    }
+
+
+@shared_task
+def update_sms_cost_log():
+    """Aktualisiert die monatlichen SMS-Kosten"""
+    from django.db.models import Sum, Count
+    
+    current_month = timezone.now().strftime("%Y-%m")
+    
+    # Aggregiere Kosten für den aktuellen Monat
+    stats = SmsMessage.objects.filter(
+        sent_at__year=timezone.now().year,
+        sent_at__month=timezone.now().month,
+        status="sent"
+    ).aggregate(
+        total_messages=Count("id"),
+        total_cost=Sum("cost")
+    )
+    
+    # Provider-Breakdown
+    provider_stats = SmsMessage.objects.filter(
+        sent_at__year=timezone.now().year,
+        sent_at__month=timezone.now().month,
+        status="sent"
+    ).values("provider__name").annotate(
+        count=Count("id"),
+        cost=Sum("cost")
+    )
+    
+    provider_breakdown = {
+        stat["provider__name"]: {
+            "count": stat["count"],
+            "cost": float(stat["cost"]) if stat["cost"] else 0
+        }
+        for stat in provider_stats
+    }
+    
+    # Update oder erstelle Log-Eintrag
+    SmsCostLog.objects.update_or_create(
+        month=current_month,
+        defaults={
+            "total_messages": stats["total_messages"] or 0,
+            "total_cost": stats["total_cost"] or 0,
+            "provider_breakdown": provider_breakdown
+        }
+    )
+    
+    return {
+        "month": current_month,
+        "total_messages": stats["total_messages"] or 0,
+        "total_cost": float(stats["total_cost"]) if stats["total_cost"] else 0
     }

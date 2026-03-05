@@ -4,71 +4,196 @@
 {% block title %}Messaging - CSC Administration{% endblock %}
 
 {% block content %}
-<div class="container mx-auto px-4 py-8">
-    <div class="mb-8">
-        <h1 class="text-3xl font-bold text-gray-800 mb-2">Messaging</h1>
-        <p class="text-gray-600">Massen-E-Mails und Gruppenverwaltung</p>
+<div class="page-header flex flex-col sm:flex-row sm:items-center sm:justify-between">
+  <div>
+    <h1 class="page-title">Messaging</h1>
+    <p class="page-subtitle">Massen-E-Mails und Gruppenverwaltung</p>
+  </div>
+  <div class="page-actions flex flex-col sm:flex-row gap-3">
+    <a href="{% url 'messaging:email_group_create' %}" class="btn-secondary">
+      <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z"/></svg>
+      <span>Neue Gruppe</span>
+    </a>
+    <a href="{% url 'messaging:mass_email_create' %}" class="btn-primary">
+      <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"/></svg>
+      <span>Neue E-Mail</span>
+    </a>
+  </div>
+</div>
+
+<!-- Stats Grid -->
+<div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+  <div class="stat-card card-hover">
+    <div class="flex items-center">
+      <div class="p-3 bg-blue-100 rounded-xl">
+        <svg class="w-6 h-6 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z"/></svg>
+      </div>
+      <div class="ml-4">
+        <p class="stat-value">{{ total_groups|default:"0" }}</p>
+        <p class="stat-label">E-Mail-Gruppen</p>
+      </div>
     </div>
+  </div>
 
-    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-        <!-- E-Mail-Gruppen Card -->
-        <a href="{% url 'messaging:email_group_list' %}" 
-           class="block bg-white shadow-md rounded-lg p-6 hover:shadow-lg transition-shadow">
-            <div class="flex items-center mb-4">
-                <div class="bg-blue-100 rounded-full p-3 mr-4">
-                    <svg class="w-6 h-6 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" 
-                              d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z"/>
-                    </svg>
-                </div>
-                <div>
-                    <h2 class="text-xl font-semibold text-gray-800">E-Mail-Gruppen</h2>
-                    <p class="text-sm text-gray-500">Verwalten Sie Empfängergruppen</p>
-                </div>
-            </div>
-            <p class="text-gray-600 text-sm">
-                Erstellen und verwalten Sie Gruppen von Mitgliedern für gezielte E-Mail-Kampagnen.
-            </p>
-        </a>
-
-        <!-- Massen-E-Mails Card -->
-        <a href="{% url 'messaging:mass_email_list' %}" 
-           class="block bg-white shadow-md rounded-lg p-6 hover:shadow-lg transition-shadow">
-            <div class="flex items-center mb-4">
-                <div class="bg-green-100 rounded-full p-3 mr-4">
-                    <svg class="w-6 h-6 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" 
-                              d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"/>
-                    </svg>
-                </div>
-                <div>
-                    <h2 class="text-xl font-semibold text-gray-800">Massen-E-Mails</h2>
-                    <p class="text-sm text-gray-500">E-Mails an Gruppen senden</p>
-                </div>
-            </div>
-            <p class="text-gray-600 text-sm">
-                Erstellen und versenden Sie E-Mails an alle Mitglieder oder ausgewählte Gruppen.
-            </p>
-        </a>
+  <div class="stat-card card-hover">
+    <div class="flex items-center">
+      <div class="p-3 bg-green-100 rounded-xl">
+        <svg class="w-6 h-6 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"/></svg>
+      </div>
+      <div class="ml-4">
+        <p class="stat-value">{{ total_emails|default:"0" }}</p>
+        <p class="stat-label">Gesendete E-Mails</p>
+      </div>
     </div>
+  </div>
 
-    <!-- Statistiken -->
-    <div class="mt-8 bg-white shadow-md rounded-lg p-6">
-        <h2 class="text-lg font-semibold text-gray-800 mb-4">Übersicht</h2>
-        <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
-            <div class="bg-gray-50 rounded-lg p-4 text-center">
-                <p class="text-3xl font-bold text-blue-600">{{ total_groups|default:"0" }}</p>
-                <p class="text-sm text-gray-600">E-Mail-Gruppen</p>
-            </div>
-            <div class="bg-gray-50 rounded-lg p-4 text-center">
-                <p class="text-3xl font-bold text-green-600">{{ total_emails|default:"0" }}</p>
-                <p class="text-sm text-gray-600">Gesendete E-Mails</p>
-            </div>
-            <div class="bg-gray-50 rounded-lg p-4 text-center">
-                <p class="text-3xl font-bold text-purple-600">{{ total_recipients|default:"0" }}</p>
-                <p class="text-sm text-gray-600">Empfänger gesamt</p>
-            </div>
+  <div class="stat-card card-hover">
+    <div class="flex items-center">
+      <div class="p-3 bg-purple-100 rounded-xl">
+        <svg class="w-6 h-6 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z"/></svg>
+      </div>
+      <div class="ml-4">
+        <p class="stat-value">{{ total_recipients|default:"0" }}</p>
+        <p class="stat-label">Empfänger gesamt</p>
+      </div>
+    </div>
+  </div>
+
+  <div class="stat-card card-hover">
+    <div class="flex items-center">
+      <div class="p-3 bg-yellow-100 rounded-xl">
+        <svg class="w-6 h-6 text-yellow-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/></svg>
+      </div>
+      <div class="ml-4">
+        <p class="stat-value">{{ open_rate|default:"0" }}%</p>
+        <p class="stat-label">Öffnungsrate</p>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Feature Cards -->
+<div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+  <!-- Email Groups Card -->
+  <a href="{% url 'messaging:email_group_list' %}" class="card card-hover group">
+    <div class="card-body">
+      <div class="flex items-start justify-between">
+        <div class="flex items-center">
+          <div class="p-3 bg-gradient-to-br from-blue-500 to-blue-600 rounded-xl shadow-lg group-hover:shadow-xl transition-shadow">
+            <svg class="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z"/></svg>
+          </div>
+          <div class="ml-4">
+            <h2 class="text-lg font-semibold text-slate-900">E-Mail-Gruppen</h2>
+            <p class="text-sm text-slate-500 mt-1">Verwalten Sie Empfängergruppen für gezielte Kampagnen</p>
+          </div>
         </div>
+        <svg class="w-5 h-5 text-slate-400 group-hover:text-blue-500 transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/></svg>
+      </div>
+      
+      <div class="mt-6 flex items-center justify-between text-sm">
+        <span class="text-slate-600">Aktive Gruppen</span>
+        <span class="font-semibold text-slate-900">{{ active_groups|default:"0" }}</span>
+      </div>
     </div>
+  </a>
+
+  <!-- Mass Emails Card -->
+  <a href="{% url 'messaging:mass_email_list' %}" class="card card-hover group">
+    <div class="card-body">
+      <div class="flex items-start justify-between">
+        <div class="flex items-center">
+          <div class="p-3 bg-gradient-to-br from-green-500 to-green-600 rounded-xl shadow-lg group-hover:shadow-xl transition-shadow">
+            <svg class="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"/></svg>
+          </div>
+          <div class="ml-4">
+            <h2 class="text-lg font-semibold text-slate-900">Massen-E-Mails</h2>
+            <p class="text-sm text-slate-500 mt-1">E-Mails an alle Mitglieder oder ausgewählte Gruppen senden</p>
+          </div>
+        </div>
+        <svg class="w-5 h-5 text-slate-400 group-hover:text-green-500 transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/></svg>
+      </div>
+      
+      <div class="mt-6 flex items-center justify-between text-sm">
+        <span class="text-slate-600">Letzte 30 Tage</span>
+        <span class="font-semibold text-slate-900">{{ emails_last_month|default:"0" }} E-Mails</span>
+      </div>
+    </div>
+  </a>
+</div>
+
+<!-- Recent Activity -->
+{% if recent_emails %}
+<div class="mt-8">
+  <h2 class="text-lg font-semibold text-slate-900 mb-4">Letzte E-Mails</h2>
+  <div class="card">
+    <div class="table-container">
+      <table class="table">
+        <thead>
+          <tr>
+            <th>Betreff</th>
+            <th>Empfänger</th>
+            <th>Status</th>
+            <th>Datum</th>
+            <th></th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for email in recent_emails %}
+          <tr>
+            <td>
+              <div class="flex items-center">
+                <div class="flex-shrink-0 h-8 w-8 rounded-lg bg-slate-100 flex items-center justify-center">
+                  <svg class="h-4 w-4 text-slate-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"/></svg>
+                </div>
+                <div class="ml-3">
+                  <p class="text-sm font-medium text-slate-900">{{ email.subject }}</p>
+                </div>
+              </div>
+            </td>
+            <td class="text-sm text-slate-500">{{ email.get_recipient_type_display }}</td>
+            <td>
+              {% if email.status == 'sent' %}
+                <span class="badge-green">Gesendet</span>
+              {% elif email.status == 'draft' %}
+                <span class="badge-gray">Entwurf</span>
+              {% elif email.status == 'sending' %}
+                <span class="badge-blue">Wird gesendet</span>
+              {% else %}
+                <span class="badge-yellow">{{ email.get_status_display }}</span>
+              {% endif %}
+            </td>
+            <td class="text-sm text-slate-500">{{ email.created_at|date:"d.m.Y" }}</td>
+            <td class="text-right">
+              <a href="{% url 'messaging:mass_email_detail' email.pk %}" class="text-blue-600 hover:text-blue-800 text-sm font-medium">Details</a>
+            </td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
+{% endif %}
+
+<!-- Quick Tips -->
+<div class="mt-8 card bg-gradient-to-r from-blue-50 to-indigo-50 border-blue-100">
+  <div class="card-body">
+    <div class="flex items-start">
+      <div class="flex-shrink-0">
+        <svg class="h-6 w-6 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+      </div>
+      <div class="ml-3">
+        <h3 class="text-sm font-medium text-blue-900">Tipps für erfolgreiche E-Mail-Kampagnen</h3>
+        <div class="mt-2 text-sm text-blue-700">
+          <ul class="list-disc list-inside space-y-1">
+            <li>Verwenden Sie Personalisierung mit <code class="bg-blue-100 px-1 rounded">{{ first_name }}</code></li>
+            <li>Testen Sie E-Mails immer mit einer Vorschau</li>
+            <li>Senden Sie zu optimalen Zeiten (werktags 10-14 Uhr)</li>
+            <li>Beachten Sie die DSGVO bei der Verwendung von Tracking</li>
+          </ul>
+        </div>
+      </div>
+    </div>
+  </div>
 </div>
 {% endblock %}

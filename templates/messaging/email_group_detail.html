@@ -48,10 +48,10 @@
                         {% for membership in group.members.select_related %}
                         <tr>
                             <td class="px-6 py-4 whitespace-nowrap">
-                                {{ membership.member.first_name }} {{ membership.member.last_name }}
+                                {{ membership.member.user.first_name }} {{ membership.member.user.last_name }}
                             </td>
                             <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                                {{ membership.member.email }}
+                                {{ membership.member.user.email }}
                             </td>
                             <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                                 {{ membership.member.member_number }}
@@ -90,7 +90,7 @@
                                 class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500">
                             {% for member in available_members %}
                             <option value="{{ member.pk }}">
-                                {{ member.last_name }}, {{ member.first_name }} ({{ member.member_number }})
+                                {{ member.user.last_name }}, {{ member.user.first_name }} ({{ member.member_number }})
                             </option>
                             {% endfor %}
                         </select>

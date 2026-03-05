@@ -1,0 +1,146 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}{{ batch.batch_number }} - CSC Administration{% endblock %}
+
+{% block content %}
+<div class="container mx-auto px-4 py-8">
+    <div class="flex justify-between items-start mb-8">
+        <div>
+            <div class="flex items-center gap-3 mb-2">
+                <h1 class="text-3xl font-bold text-gray-800">{{ batch.batch_number }}</h1>
+                {% if batch.name %}
+                <span class="text-xl text-gray-600">- {{ batch.name }}</span>
+                {% endif %}
+            </div>
+            <div class="flex items-center gap-2">
+                <span class="px-3 py-1 text-sm font-semibold rounded-full 
+                    {% if batch.quality_grade == 'A+' %}bg-purple-100 text-purple-800
+                    {% elif batch.quality_grade == 'A' %}bg-green-100 text-green-800
+                    {% elif batch.quality_grade == 'B' %}bg-yellow-100 text-yellow-800
+                    {% else %}bg-gray-100 text-gray-800{% endif %}">
+                    {{ batch.get_quality_grade_display }}
+                </span>
+                {% if batch.assigned_to_inventory %}
+                <span class="px-3 py-1 text-sm font-semibold rounded-full bg-green-100 text-green-800">
+                    Im Inventar
+                </span>
+                {% else %}
+                <span class="px-3 py-1 text-sm font-semibold rounded-full bg-yellow-100 text-yellow-800">
+                    In Verarbeitung
+                </span>
+                {% endif %}
+            </div>
+        </div>
+        <div class="flex space-x-3">
+            <a href="{% url 'cultivation:harvest_edit' batch.pk %}" class="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700">
+                Bearbeiten
+            </a>
+            {% if can_assign_to_inventory %}
+            <a href="{% url 'cultivation:harvest_assign_inventory' batch.pk %}" class="bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700">
+                Zu Inventar
+            </a>
+            {% endif %}
+        </div>
+    </div>
+
+    <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+        <!-- Gewichte -->
+        <div class="bg-white shadow-md rounded-lg p-6">
+            <h2 class="text-lg font-semibold text-gray-800 mb-4">Gewichte</h2>
+            
+            <div class="space-y-4">
+                <div class="flex justify-between items-center p-3 bg-blue-50 rounded-lg">
+                    <span class="text-gray-700">Frischgewicht</span>
+                    <span class="text-xl font-bold text-blue-600">{{ batch.total_weight_fresh|floatformat:0 }}g</span>
+                </div>
+                <div class="flex justify-between items-center p-3 bg-green-50 rounded-lg">
+                    <span class="text-gray-700">Trockengewicht</span>
+                    <span class="text-xl font-bold text-green-600">{{ batch.total_weight_dried|floatformat:0 }}g</span>
+                </div>
+                {% if batch.total_weight_fresh > 0 %}
+                <div class="flex justify-between items-center p-3 bg-gray-50 rounded-lg">
+                    <span class="text-gray-700">Trocknungsverlust</span>
+                    <span class="text-xl font-bold text-gray-600">{{ batch.drying_loss_percentage|floatformat:1 }}%</span>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+
+        <!-- Zeitplan -->
+        <div class="bg-white shadow-md rounded-lg p-6">
+            <h2 class="text-lg font-semibold text-gray-800 mb-4">Zeitplan</h2>
+            
+            <div class="space-y-4">
+                <div>
+                    <label class="block text-sm font-medium text-gray-500">Erntedatum</label>
+                    <p class="text-gray-900">{{ batch.harvest_date|date:"d.m.Y" }}</p>
+                </div>
+                {% if batch.drying_start_date %}
+                <div>
+                    <label class="block text-sm font-medium text-gray-500">Trocknungsstart</label>
+                    <p class="text-gray-900">{{ batch.drying_start_date|date:"d.m.Y" }}</p>
+                </div>
+                {% endif %}
+                {% if batch.drying_end_date %}
+                <div>
+                    <label class="block text-sm font-medium text-gray-500">Trocknungsende</label>
+                    <p class="text-gray-900">{{ batch.drying_end_date|date:"d.m.Y" }}</p>
+                </div>
+                {% endif %}
+                {% if batch.curing_start_date %}
+                <div>
+                    <label class="block text-sm font-medium text-gray-500">Aushärtungsstart</label>
+                    <p class="text-gray-900">{{ batch.curing_start_date|date:"d.m.Y" }}</p>
+                </div>
+                {% endif %}
+                {% if batch.curing_end_date %}
+                <div>
+                    <label class="block text-sm font-medium text-gray-500">Aushärtungsende</label>
+                    <p class="text-gray-900">{{ batch.curing_end_date|date:"d.m.Y" }}</p>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+
+        <!-- Pflanzen -->
+        <div class="bg-white shadow-md rounded-lg p-6">
+            <h2 class="text-lg font-semibold text-gray-800 mb-4">Pflanzen ({{ batch.plant_count }})</h2>
+            
+            <div class="space-y-2 max-h-64 overflow-y-auto">
+                {% for plant in batch.plants.all %}
+                <a href="{% url 'cultivation:plant_detail' plant.pk %}" class="block p-2 hover:bg-gray-50 rounded-lg">
+                    <div class="flex justify-between items-center">
+                        <span class="font-medium text-gray-900">{{ plant.plant_number|default:plant.id.hex|slice:":8" }}</span>
+                        <span class="text-sm text-gray-500">{{ plant.strain.name }}</span>
+                    </div>
+                </a>
+                {% endfor %}
+            </div>
+        </div>
+    </div>
+
+    <!-- Strains -->
+    <div class="mt-8 bg-white shadow-md rounded-lg p-6">
+        <h2 class="text-lg font-semibold text-gray-800 mb-4">Enthaltene Strains</h2>
+        <p class="text-gray-700">{{ batch.strain_display }}</p>
+    </div>
+
+    {% if batch.notes %}
+    <div class="mt-8 bg-white shadow-md rounded-lg p-6">
+        <h2 class="text-lg font-semibold text-gray-800 mb-4">Notizen</h2>
+        <p class="text-gray-700 whitespace-pre-wrap">{{ batch.notes }}</p>
+    </div>
+    {% endif %}
+
+    {% if batch.assigned_to_inventory and batch.inventory_item %}
+    <div class="mt-8 bg-green-50 border border-green-200 rounded-lg p-6">
+        <h2 class="text-lg font-semibold text-green-800 mb-2">Inventar-Zuweisung</h2>
+        <p class="text-green-700">
+            Dieser Batch wurde dem Inventar zugewiesen: 
+            <a href="#" class="underline">{{ batch.inventory_item }}</a>
+        </p>
+    </div>
+    {% endif %}
+</div>
+{% endblock %}

@@ -3,9 +3,27 @@ import os
 
 BASE_DIR = Path(__file__).resolve().parent.parent.parent
 
-SECRET_KEY = os.getenv("DJANGO_SECRET_KEY", "dev-secret-key")
+# SECURITY WARNING: keep the secret key used in production secret!
+# In production, DJANGO_SECRET_KEY must be set and DJANGO_DEBUG must be "0"
+SECRET_KEY = os.getenv("DJANGO_SECRET_KEY")
+if not SECRET_KEY:
+    if os.getenv("DJANGO_DEBUG", "1") == "1":
+        # Only use fallback in development
+        SECRET_KEY = "dev-secret-key-not-for-production"
+    else:
+        raise ValueError("DJANGO_SECRET_KEY environment variable must be set in production!")
+
 DEBUG = os.getenv("DJANGO_DEBUG", "1") == "1"
-ALLOWED_HOSTS = ["*"]
+
+# SECURITY WARNING: don't run with debug turned on in production!
+if DEBUG:
+    ALLOWED_HOSTS = ["localhost", "127.0.0.1", "[::1]"]
+else:
+    allowed_hosts_env = os.getenv("ALLOWED_HOSTS", "")
+    if allowed_hosts_env:
+        ALLOWED_HOSTS = [host.strip() for host in allowed_hosts_env.split(",") if host.strip()]
+    else:
+        raise ValueError("ALLOWED_HOSTS environment variable must be set in production!")
 
 INSTALLED_APPS = [
     "django.contrib.admin",
@@ -70,7 +88,7 @@ DATABASES = {
     }
 }
 
-if os.getenv("USE_SQLITE_FOR_TESTS", "0") == "1":
+if os.getenv("USE_SQLITE", "0") == "1" or os.getenv("USE_SQLITE_FOR_TESTS", "0") == "1":
     DATABASES["default"] = {
         "ENGINE": "django.db.backends.sqlite3",
         "NAME": BASE_DIR / "db.sqlite3",

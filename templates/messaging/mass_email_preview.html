@@ -67,7 +67,7 @@
                     <span class="text-sm text-gray-500">Erste Empfänger:</span>
                     <ul class="mt-2 space-y-1 text-sm">
                         {% for member in recipients %}
-                        <li class="text-gray-700">{{ member.first_name }} {{ member.last_name }}</li>
+                        <li class="text-gray-700">{{ member.user.first_name }} {{ member.user.last_name }}</li>
                         {% endfor %}
                         {% if total_recipients > 10 %}
                         <li class="text-gray-500 italic">... und {{ total_recipients|add:"-10" }} weitere</li>

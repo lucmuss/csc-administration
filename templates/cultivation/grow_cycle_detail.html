@@ -1,0 +1,167 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}{{ cycle.name }} - CSC Administration{% endblock %}
+
+{% block content %}
+<div class="container mx-auto px-4 py-8">
+    <div class="flex justify-between items-start mb-8">
+        <div>
+            <div class="flex items-center gap-3 mb-2">
+                <h1 class="text-3xl font-bold text-gray-800">{{ cycle.name }}</h1>
+                <span class="px-3 py-1 text-sm font-semibold rounded-full 
+                    {% if cycle.status == 'active' %}bg-green-100 text-green-800
+                    {% elif cycle.status == 'harvested' %}bg-yellow-100 text-yellow-800
+                    {% elif cycle.status == 'completed' %}bg-gray-100 text-gray-800
+                    {% elif cycle.status == 'planned' %}bg-blue-100 text-blue-800
+                    {% else %}bg-red-100 text-red-800{% endif %}">
+                    {{ cycle.get_status_display }}
+                </span>
+            </div>
+            <p class="text-gray-600">{{ cycle.description|default:"" }}</p>
+        </div>
+        <div class="flex space-x-3">
+            <a href="{% url 'cultivation:grow_cycle_edit' cycle.pk %}" class="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700">
+                Bearbeiten
+            </a>
+            <a href="{% url 'cultivation:plant_create' %}?cycle={{ cycle.pk }}" class="bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700">
+                + Pflanze
+            </a>
+        </div>
+    </div>
+
+    <!-- Statistiken -->
+    <div class="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
+        <div class="bg-white shadow-md rounded-lg p-4 text-center">
+            <p class="text-3xl font-bold text-green-600">{{ cycle.plant_count }}</p>
+            <p class="text-sm text-gray-600">Pflanzen</p>
+        </div>
+        <div class="bg-white shadow-md rounded-lg p-4 text-center">
+            <p class="text-3xl font-bold text-blue-600">{{ cycle.days_active }}</p>
+            <p class="text-sm text-gray-600">Tage aktiv</p>
+        </div>
+        <div class="bg-white shadow-md rounded-lg p-4 text-center">
+            <p class="text-3xl font-bold text-yellow-600">{{ cycle.days_until_harvest }}</p>
+            <p class="text-sm text-gray-600">Tage bis Ernte</p>
+        </div>
+        <div class="bg-white shadow-md rounded-lg p-4 text-center">
+            <p class="text-3xl font-bold text-purple-600">{{ cycle.total_expected_yield|floatformat:0 }}g</p>
+            <p class="text-sm text-gray-600">Erwarteter Ertrag</p>
+        </div>
+    </div>
+
+    <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+        <!-- Details -->
+        <div class="lg:col-span-1 bg-white shadow-md rounded-lg p-6">
+            <h2 class="text-xl font-semibold text-gray-800 mb-4">Details</h2>
+            
+            <div class="space-y-4">
+                <div>
+                    <label class="block text-sm font-medium text-gray-500">Startdatum</label>
+                    <p class="text-gray-900">{{ cycle.start_date|date:"d.m.Y" }}</p>
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-gray-500">Erwartete Ernte</label>
+                    <p class="text-gray-900">{{ cycle.expected_harvest_date|date:"d.m.Y" }}</p>
+                </div>
+                {% if cycle.actual_harvest_date %}
+                <div>
+                    <label class="block text-sm font-medium text-gray-500">Tatsächliche Ernte</label>
+                    <p class="text-gray-900">{{ cycle.actual_harvest_date|date:"d.m.Y" }}</p>
+                </div>
+                {% endif %}
+                {% if cycle.responsible_member %}
+                <div>
+                    <label class="block text-sm font-medium text-gray-500">Verantwortlich</label>
+                    <p class="text-gray-900">{{ cycle.responsible_member }}</p>
+                </div>
+                {% endif %}
+                {% if cycle.location %}
+                <div>
+                    <label class="block text-sm font-medium text-gray-500">Standort</label>
+                    <p class="text-gray-900">{{ cycle.location }}</p>
+                </div>
+                {% endif %}
+            </div>
+
+            {% if cycle.notes %}
+            <div class="mt-6 pt-6 border-t">
+                <label class="block text-sm font-medium text-gray-500 mb-2">Notizen</label>
+                <p class="text-gray-900 whitespace-pre-wrap">{{ cycle.notes }}</p>
+            </div>
+            {% endif %}
+
+            <!-- Status-Update -->
+            {% if cycle.status != 'completed' and cycle.status != 'cancelled' %}
+            <div class="mt-6 pt-6 border-t">
+                <h3 class="text-sm font-medium text-gray-700 mb-3">Status ändern</h3>
+                <form method="post" action="{% url 'cultivation:grow_cycle_update_status' cycle.pk %}" class="space-y-2">
+                    {% csrf_token %}
+                    <select name="status" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500">
+                        {% for value, label in cycle.STATUS_CHOICES %}
+                        {% if value != cycle.status %}
+                        <option value="{{ value }}">{{ label }}</option>
+                        {% endif %}
+                        {% endfor %}
+                    </select>
+                    <button type="submit" class="w-full px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700">
+                        Status aktualisieren
+                    </button>
+                </form>
+            </div>
+            {% endif %}
+        </div>
+
+        <!-- Pflanzen -->
+        <div class="lg:col-span-2 bg-white shadow-md rounded-lg p-6">
+            <div class="flex justify-between items-center mb-4">
+                <h2 class="text-xl font-semibold text-gray-800">Pflanzen</h2>
+                <span class="text-sm text-gray-500">{{ plant_stats.active }} aktiv / {{ plant_stats.total }} gesamt</span>
+            </div>
+            
+            {% if plants %}
+            <div class="overflow-x-auto">
+                <table class="min-w-full">
+                    <thead class="bg-gray-50">
+                        <tr>
+                            <th class="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">#</th>
+                            <th class="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">Strain</th>
+                            <th class="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">Status</th>
+                            <th class="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">Alter</th>
+                            <th class="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">Ertrag</th>
+                            <th class="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">Aktionen</th>
+                        </tr>
+                    </thead>
+                    <tbody class="divide-y divide-gray-200">
+                        {% for plant in plants %}
+                        <tr class="hover:bg-gray-50">
+                            <td class="px-4 py-3 text-sm font-medium text-gray-900">{{ plant.plant_number|default:plant.id.hex|slice:":8" }}</td>
+                            <td class="px-4 py-3 text-sm text-gray-900">{{ plant.strain.name }}</td>
+                            <td class="px-4 py-3">
+                                <span class="px-2 py-1 text-xs rounded-full 
+                                    {% if plant.status == 'growing' %}bg-green-100 text-green-800
+                                    {% elif plant.status == 'flowering' %}bg-purple-100 text-purple-800
+                                    {% elif plant.status == 'harvested' %}bg-yellow-100 text-yellow-800
+                                    {% else %}bg-gray-100 text-gray-800{% endif %}">
+                                    {{ plant.get_status_display }}
+                                </span>
+                            </td>
+                            <td class="px-4 py-3 text-sm text-gray-500">{{ plant.age_days }} Tage</td>
+                            <td class="px-4 py-3 text-sm text-gray-500">
+                                {{ plant.expected_yield_grams|floatformat:0 }}g
+                            </td>
+                            <td class="px-4 py-3 text-sm font-medium">
+                                <a href="{% url 'cultivation:plant_detail' plant.pk %}" class="text-green-600 hover:text-green-900">Details</a>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+            {% else %}
+            <p class="text-gray-500 text-center py-8">Noch keine Pflanzen in diesem Cycle.</p>
+            {% endif %}
+        </div>
+    </div>
+</div>
+{% endblock %}

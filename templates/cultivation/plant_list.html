@@ -1,0 +1,136 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}Pflanzen - CSC Administration{% endblock %}
+
+{% block content %}
+<div class="container mx-auto px-4 py-8">
+    <div class="flex justify-between items-center mb-8">
+        <div>
+            <h1 class="text-3xl font-bold text-gray-800 mb-2">Pflanzen</h1>
+            <p class="text-gray-600">Verwalten Sie Ihre Cannabis-Pflanzen</p>
+        </div>
+        <a href="{% url 'cultivation:plant_create' %}" class="bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700">
+            + Neue Pflanze
+        </a>
+    </div>
+
+    <!-- Filter -->
+    <div class="bg-white shadow-md rounded-lg p-4 mb-6">
+        <form method="get" class="flex flex-wrap gap-4 items-end">
+            <div>
+                <label class="block text-sm font-medium text-gray-700 mb-1">Status</label>
+                <select name="status" class="border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-green-500">
+                    <option value="">Alle</option>
+                    {% for value, label in status_choices %}
+                    <option value="{{ value }}" {% if request.GET.status == value %}selected{% endif %}>{{ label }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div>
+                <label class="block text-sm font-medium text-gray-700 mb-1">Strain</label>
+                <select name="strain" class="border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-green-500">
+                    <option value="">Alle</option>
+                    {% for strain in strains %}
+                    <option value="{{ strain.pk }}" {% if request.GET.strain == strain.pk|stringformat:"s" %}selected{% endif %}>{{ strain.name }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div>
+                <label class="block text-sm font-medium text-gray-700 mb-1">Grow Cycle</label>
+                <select name="cycle" class="border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-green-500">
+                    <option value="">Alle</option>
+                    {% for cycle in cycles %}
+                    <option value="{{ cycle.pk }}" {% if request.GET.cycle == cycle.pk|stringformat:"s" %}selected{% endif %}>{{ cycle.name }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <button type="submit" class="bg-gray-100 text-gray-700 px-4 py-2 rounded-lg hover:bg-gray-200">
+                Filtern
+            </button>
+        </form>
+    </div>
+
+    <!-- Liste -->
+    <div class="bg-white shadow-md rounded-lg overflow-hidden">
+        <table class="min-w-full">
+            <thead class="bg-gray-50">
+                <tr>
+                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">#</th>
+                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Strain</th>
+                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Grow Cycle</th>
+                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
+                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Alter</th>
+                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Ertrag</th>
+                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Aktionen</th>
+                </tr>
+            </thead>
+            <tbody class="bg-white divide-y divide-gray-200">
+                {% for plant in plants %}
+                <tr class="hover:bg-gray-50">
+                    <td class="px-6 py-4 whitespace-nowrap">
+                        <div class="text-sm font-medium text-gray-900">{{ plant.plant_number|default:"-" }}</div>
+                        <div class="text-xs text-gray-500">{{ plant.qr_code_id }}</div>
+                    </td>
+                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{{ plant.strain.name }}</td>
+                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{{ plant.grow_cycle.name }}</td>
+                    <td class="px-6 py-4 whitespace-nowrap">
+                        <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full 
+                            {% if plant.status == 'growing' %}bg-green-100 text-green-800
+                            {% elif plant.status == 'vegetative' %}bg-blue-100 text-blue-800
+                            {% elif plant.status == 'flowering' %}bg-purple-100 text-purple-800
+                            {% elif plant.status == 'harvested' %}bg-yellow-100 text-yellow-800
+                            {% elif plant.status == 'drying' %}bg-orange-100 text-orange-800
+                            {% elif plant.status == 'curing' %}bg-indigo-100 text-indigo-800
+                            {% else %}bg-gray-100 text-gray-800{% endif %}">
+                            {{ plant.get_status_display }}
+                        </span>
+                    </td>
+                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{{ plant.age_days }} Tage</td>
+                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                        {{ plant.expected_yield_grams|floatformat:0 }}g
+                        {% if plant.actual_yield_grams > 0 %}
+                        <span class="text-green-600">/ {{ plant.actual_yield_grams|floatformat:0 }}g</span>
+                        {% endif %}
+                    </td>
+                    <td class="px-6 py-4 whitespace-nowrap text-sm font-medium">
+                        <a href="{% url 'cultivation:plant_detail' plant.pk %}" class="text-green-600 hover:text-green-900 mr-3">Details</a>
+                        <a href="{% url 'cultivation:plant_edit' plant.pk %}" class="text-blue-600 hover:text-blue-900">Bearbeiten</a>
+                    </td>
+                </tr>
+                {% empty %}
+                <tr>
+                    <td colspan="7" class="px-6 py-8 text-center text-gray-500">
+                        Keine Pflanzen vorhanden.
+                        <a href="{% url 'cultivation:plant_create' %}" class="text-green-600 hover:text-green-900 ml-2">Erste erstellen</a>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+
+    <!-- Pagination -->
+    {% if plants.has_other_pages %}
+    <div class="mt-6 flex justify-center">
+        <nav class="flex space-x-2">
+            {% if plants.has_previous %}
+            <a href="?page={{ plants.previous_page_number }}" class="px-3 py-2 bg-white border border-gray-300 rounded-lg hover:bg-gray-50">←</a>
+            {% endif %}
+            
+            {% for num in plants.paginator.page_range %}
+                {% if plants.number == num %}
+                <span class="px-3 py-2 bg-green-600 text-white rounded-lg">{{ num }}</span>
+                {% else %}
+                <a href="?page={{ num }}" class="px-3 py-2 bg-white border border-gray-300 rounded-lg hover:bg-gray-50">{{ num }}</a>
+                {% endif %}
+            {% endfor %}
+            
+            {% if plants.has_next %}
+            <a href="?page={{ plants.next_page_number }}" class="px-3 py-2 bg-white border border-gray-300 rounded-lg hover:bg-gray-50">→</a>
+            {% endif %}
+        </nav>
+    </div>
+    {% endif %}
+</div>
+{% endblock %}

@@ -5,7 +5,7 @@
 set -e
 
 REPOS=(
-    "/home/node/.openclaw/workspace/projects/personal-agent-rules"
+    "/home/node/.openclaw/workspace/projects/agent-policies"
     "/home/node/.openclaw/workspace/projects/csc-administration"
     # Weitere Repos hier hinzufügen
 )

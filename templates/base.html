@@ -14,6 +14,20 @@
     <link rel="apple-touch-icon" href="{% static 'manifest/icon-192x192.png' %}">
     <link rel="stylesheet" href="{% static 'dist/styles.css' %}">
     <noscript><style>#main-nav{display:flex;flex-direction:column;}</style></noscript>
+    
+    <!-- Google Analytics -->
+    {% if ga_tracking_id %}
+    <script async src="https://www.googletagmanager.com/gtag/js?id={{ ga_tracking_id }}"></script>
+    <script>
+      window.dataLayer = window.dataLayer || [];
+      function gtag(){dataLayer.push(arguments);}
+      gtag('js', new Date());
+      gtag('config', '{{ ga_tracking_id }}', {
+        'anonymize_ip': true,
+        'cookie_flags': 'SameSite=None;Secure'
+      });
+    </script>
+    {% endif %}
   </head>
   <body class="min-h-screen bg-slate-100 text-slate-900">
     <a href="#main-content" class="skip-link">Direkt zum Inhalt</a>
@@ -45,6 +59,7 @@
             <a class="touch-target" href="{% url 'participation:shift_calendar' %}">Schichten</a>
             <a class="touch-target" href="{% url 'members:profile' %}">Profil</a>
             {% if user.role == 'board' %}
+              <a class="touch-target" href="{% url 'messaging:dashboard' %}">Messaging</a>
               <a class="touch-target" href="{% url 'compliance:dashboard' %}">Regeln &amp; Meldungen</a>
               <a class="touch-target" href="{% url 'participation:admin_hours' %}">Stunden-Verwaltung</a>
               <a class="touch-target" href="{% url 'cultivation:dashboard' %}">Anbau</a>

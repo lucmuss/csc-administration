@@ -1,8 +1,13 @@
 from django.contrib.auth.views import LoginView, LogoutView
+from django.contrib.auth import login
+from django.http import HttpResponseForbidden
+from django.shortcuts import redirect
+from django.conf import settings
 from django.urls import reverse_lazy
 
 from .emails import send_login_alert_email
 from .forms import EmailAuthenticationForm
+from .models import User
 
 
 class EmailLoginView(LoginView):
@@ -19,3 +24,20 @@ class EmailLoginView(LoginView):
 
 class UserLogoutView(LogoutView):
     next_page = reverse_lazy("accounts:login")
+
+
+def dev_login(request):
+    """Dev-Login fuer lokale GUI-Tests - nur bei DEBUG=True"""
+    if not settings.DEBUG:
+        return HttpResponseForbidden("Dev-Login nur im Debug-Modus verfuegbar.")
+    
+    test_email = getattr(settings, 'TEST_USER_EMAIL', None)
+    if not test_email:
+        return HttpResponseForbidden("TEST_USER_EMAIL nicht konfiguriert.")
+    
+    try:
+        user = User.objects.get(email=test_email)
+        login(request, user)
+        return redirect('core:dashboard')
+    except User.DoesNotExist:
+        return HttpResponseForbidden(f"Testuser {test_email} nicht gefunden.")

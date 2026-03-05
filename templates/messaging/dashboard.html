@@ -1,0 +1,74 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}Messaging - CSC Administration{% endblock %}
+
+{% block content %}
+<div class="container mx-auto px-4 py-8">
+    <div class="mb-8">
+        <h1 class="text-3xl font-bold text-gray-800 mb-2">Messaging</h1>
+        <p class="text-gray-600">Massen-E-Mails und Gruppenverwaltung</p>
+    </div>
+
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+        <!-- E-Mail-Gruppen Card -->
+        <a href="{% url 'messaging:email_group_list' %}" 
+           class="block bg-white shadow-md rounded-lg p-6 hover:shadow-lg transition-shadow">
+            <div class="flex items-center mb-4">
+                <div class="bg-blue-100 rounded-full p-3 mr-4">
+                    <svg class="w-6 h-6 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" 
+                              d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z"/>
+                    </svg>
+                </div>
+                <div>
+                    <h2 class="text-xl font-semibold text-gray-800">E-Mail-Gruppen</h2>
+                    <p class="text-sm text-gray-500">Verwalten Sie Empfängergruppen</p>
+                </div>
+            </div>
+            <p class="text-gray-600 text-sm">
+                Erstellen und verwalten Sie Gruppen von Mitgliedern für gezielte E-Mail-Kampagnen.
+            </p>
+        </a>
+
+        <!-- Massen-E-Mails Card -->
+        <a href="{% url 'messaging:mass_email_list' %}" 
+           class="block bg-white shadow-md rounded-lg p-6 hover:shadow-lg transition-shadow">
+            <div class="flex items-center mb-4">
+                <div class="bg-green-100 rounded-full p-3 mr-4">
+                    <svg class="w-6 h-6 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" 
+                              d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"/>
+                    </svg>
+                </div>
+                <div>
+                    <h2 class="text-xl font-semibold text-gray-800">Massen-E-Mails</h2>
+                    <p class="text-sm text-gray-500">E-Mails an Gruppen senden</p>
+                </div>
+            </div>
+            <p class="text-gray-600 text-sm">
+                Erstellen und versenden Sie E-Mails an alle Mitglieder oder ausgewählte Gruppen.
+            </p>
+        </a>
+    </div>
+
+    <!-- Statistiken -->
+    <div class="mt-8 bg-white shadow-md rounded-lg p-6">
+        <h2 class="text-lg font-semibold text-gray-800 mb-4">Übersicht</h2>
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <div class="bg-gray-50 rounded-lg p-4 text-center">
+                <p class="text-3xl font-bold text-blue-600">{{ total_groups|default:"0" }}</p>
+                <p class="text-sm text-gray-600">E-Mail-Gruppen</p>
+            </div>
+            <div class="bg-gray-50 rounded-lg p-4 text-center">
+                <p class="text-3xl font-bold text-green-600">{{ total_emails|default:"0" }}</p>
+                <p class="text-sm text-gray-600">Gesendete E-Mails</p>
+            </div>
+            <div class="bg-gray-50 rounded-lg p-4 text-center">
+                <p class="text-3xl font-bold text-purple-600">{{ total_recipients|default:"0" }}</p>
+                <p class="text-sm text-gray-600">Empfänger gesamt</p>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

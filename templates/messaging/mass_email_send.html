@@ -1,0 +1,74 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}Senden: {{ email.subject }} - CSC Administration{% endblock %}
+
+{% block content %}
+<div class="container mx-auto px-4 py-8 max-w-2xl">
+    <h1 class="text-3xl font-bold text-gray-800 mb-6">E-Mail senden</h1>
+
+    <div class="bg-white shadow-md rounded-lg p-6">
+        <div class="mb-6">
+            <h2 class="text-lg font-semibold text-gray-700">{{ email.subject }}</h2>
+            <p class="text-gray-500 mt-1">{{ email.get_recipient_type_display }}</p>
+        </div>
+
+        <div class="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-6">
+            <div class="flex items-center justify-between">
+                <span class="text-blue-800 font-medium">Empfängeranzahl:</span>
+                <span class="text-2xl font-bold text-blue-600">{{ total_recipients }}</span>
+            </div>
+        </div>
+
+        {% if recipients %}
+        <div class="mb-6">
+            <h3 class="text-sm font-medium text-gray-700 mb-2">Empfänger-Vorschau:</h3>
+            <div class="bg-gray-50 rounded-lg p-3 max-h-32 overflow-y-auto">
+                <ul class="text-sm text-gray-600 space-y-1">
+                    {% for member in recipients %}
+                    <li>{{ member.first_name }} {{ member.last_name }} &lt;{{ member.email }}&gt;</li>
+                    {% endfor %}
+                    {% if total_recipients > 10 %}
+                    <li class="italic text-gray-400">... und {{ total_recipients|add:"-10" }} weitere</li>
+                    {% endif %}
+                </ul>
+            </div>
+        </div>
+        {% endif %}
+
+        <form method="post" class="space-y-6">
+            {% csrf_token %}
+            
+            <div class="flex items-start">
+                {{ form.confirm_send }}
+                <label for="{{ form.confirm_send.id_for_label }}" class="ml-2 text-sm text-gray-700">
+                    {{ form.confirm_send.label }}
+                </label>
+            </div>
+            {% if form.confirm_send.errors %}
+            <p class="text-sm text-red-600">{{ form.confirm_send.errors.0 }}</p>
+            {% endif %}
+
+            <div class="flex justify-between pt-4 border-t">
+                <a href="{% url 'messaging:mass_email_preview' email.pk %}" 
+                   class="bg-gray-300 hover:bg-gray-400 text-gray-800 font-bold py-2 px-4 rounded-lg">
+                    Zurück zur Vorschau
+                </a>
+                <button type="submit" 
+                        class="bg-green-600 hover:bg-green-700 text-white font-bold py-2 px-4 rounded-lg">
+                    E-Mail senden
+                </button>
+            </div>
+        </form>
+    </div>
+
+    <div class="bg-red-50 border border-red-200 rounded-lg p-4 mt-4">
+        <h3 class="text-sm font-semibold text-red-800 mb-2">⚠️ Achtung</h3>
+        <ul class="text-sm text-red-700 list-disc list-inside">
+            <li>Diese Aktion kann nicht rückgängig gemacht werden</li>
+            <li>Alle Empfänger erhalten die E-Mail sofort</li>
+            <li>Stelle sicher, dass der Inhalt korrekt ist</li>
+        </ul>
+    </div>
+</div>
+{% endblock %}

@@ -23,6 +23,7 @@ INSTALLED_APPS = [
     "apps.finance",
     "apps.participation",
     "apps.cultivation",
+    "apps.messaging",
 ]
 
 MIDDLEWARE = [
@@ -49,6 +50,7 @@ TEMPLATES = [
                 "django.template.context_processors.request",
                 "django.contrib.auth.context_processors.auth",
                 "django.contrib.messages.context_processors.messages",
+                "config.context_processors.ga_tracking_id",
             ],
         },
     },
@@ -99,3 +101,9 @@ AUTH_USER_MODEL = "accounts.User"
 LOGIN_URL = "accounts:login"
 LOGIN_REDIRECT_URL = "core:dashboard"
 LOGOUT_REDIRECT_URL = "accounts:login"
+
+# Google Analytics
+GA_TRACKING_ID = os.getenv("GA_TRACKING_ID", "")
+
+# Test User fuer Dev-Login / GUI-Tests
+TEST_USER_EMAIL = os.getenv("TEST_USER_EMAIL", "")

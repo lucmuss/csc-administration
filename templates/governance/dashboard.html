@@ -1,0 +1,163 @@
+{% extends 'base.html' %}
+{% block title %}Governance{% endblock %}
+{% block content %}
+  <section class="page-shell">
+    <div class="page-heading">
+      <div>
+        <p class="eyebrow">Governance</p>
+        <h1>Vorstandsbetrieb, Nachweise, Ausweise und Integrationen an einem Ort.</h1>
+      </div>
+      <div class="hero-actions">
+        <a href="{% url 'governance:meetings' %}" class="btn-primary">Versammlungen</a>
+        <a href="{% url 'governance:tasks' %}" class="btn-ghost">Aufgabenboard</a>
+      </div>
+    </div>
+
+    <section class="kpi-grid">
+      <article class="kpi-card kpi-card--forest">
+        <span class="kpi-card__label">Offene Aufgaben</span>
+        <strong class="kpi-card__value">{{ task_counts.todo|default:0 }}</strong>
+        <small class="kpi-card__detail">{{ task_counts.in_progress|default:0 }} in Arbeit</small>
+      </article>
+      <article class="kpi-card kpi-card--sand">
+        <span class="kpi-card__label">Geplante Sitzungen</span>
+        <strong class="kpi-card__value">{{ meeting_counts.planned|default:0 }}</strong>
+        <small class="kpi-card__detail">{{ meeting_counts.completed|default:0 }} abgeschlossen</small>
+      </article>
+      <article class="kpi-card kpi-card--ink">
+        <span class="kpi-card__label">Offene Nachweise</span>
+        <strong class="kpi-card__value">{{ pending_records|length }}</strong>
+        <small class="kpi-card__detail">Transport und Vernichtung</small>
+      </article>
+    </section>
+
+    <section class="module-grid module-grid--three">
+      <a href="{% url 'governance:meetings' %}" class="module-tile module-tile--forest">
+        <strong>Versammlungen</strong>
+        <span>Tagesordnung, Protokolle, Beschlusshistorie und Einladungslauf.</span>
+      </a>
+      <a href="{% url 'governance:records' %}" class="module-tile module-tile--sand">
+        <strong>PDF-Nachweise</strong>
+        <span>Transport- und Vernichtungsnachweise mit Freigabe und PDF-Abruf.</span>
+      </a>
+      <a href="{% url 'governance:integrations' %}" class="module-tile module-tile--ink">
+        <strong>APIs & Webhooks</strong>
+        <span>Exportschnittstellen fuer Buchhaltung, Drucker und externe Club-Apps.</span>
+      </a>
+    </section>
+
+    <section class="board-grid">
+      <article class="panel panel--span-2">
+        <div class="panel__header">
+          <div>
+            <p class="panel__eyebrow">Naechste Termine</p>
+            <h2>Versammlungen und Sitzungen</h2>
+          </div>
+          <a href="{% url 'governance:meetings' %}" class="text-link">Alle Sitzungen</a>
+        </div>
+        {% if upcoming_meetings %}
+          <div class="table-card">
+            <table class="table">
+              <thead>
+                <tr>
+                  <th>Titel</th>
+                  <th>Typ</th>
+                  <th>Termin</th>
+                  <th>Status</th>
+                </tr>
+              </thead>
+              <tbody>
+                {% for meeting in upcoming_meetings %}
+                  <tr>
+                    <td><a href="{% url 'governance:meeting_detail' meeting.pk %}" class="text-link">{{ meeting.title }}</a></td>
+                    <td>{{ meeting.get_meeting_type_display }}</td>
+                    <td>{{ meeting.scheduled_for|date:"d.m.Y H:i" }}</td>
+                    <td><span class="status-pill status-pill--ink">{{ meeting.get_status_display }}</span></td>
+                  </tr>
+                {% endfor %}
+              </tbody>
+            </table>
+          </div>
+        {% else %}
+          <p class="empty-copy">Noch keine Sitzungen geplant.</p>
+        {% endif %}
+      </article>
+
+      <article class="panel">
+        <div class="panel__header">
+          <div>
+            <p class="panel__eyebrow">Ausweise</p>
+            <h2>Bald ablaufend</h2>
+          </div>
+          <a href="{% url 'governance:cards' %}" class="text-link">Alle Karten</a>
+        </div>
+        {% if expiring_cards %}
+          <ul class="stack-list">
+            {% for card in expiring_cards %}
+              <li class="stack-list__item">
+                <div>
+                  <strong>{{ card.profile.user.full_name }}</strong>
+                  <small>{{ card.card_number }}</small>
+                </div>
+                <span class="status-pill status-pill--sand">{{ card.expires_at|date:"d.m.Y" }}</span>
+              </li>
+            {% endfor %}
+          </ul>
+        {% else %}
+          <p class="empty-copy">Keine Karten laufen in den naechsten 30 Tagen ab.</p>
+        {% endif %}
+      </article>
+
+      <article class="panel panel--span-2">
+        <div class="panel__header">
+          <div>
+            <p class="panel__eyebrow">Aufgabenboard</p>
+            <h2>Vorstand und Mitarbeitende</h2>
+          </div>
+          <a href="{% url 'governance:tasks' %}" class="text-link">Board oeffnen</a>
+        </div>
+        {% if open_tasks %}
+          <div class="task-strip">
+            {% for task in open_tasks %}
+              <article class="task-card task-card--{{ task.priority }}">
+                <strong>{{ task.title }}</strong>
+                <p>{{ task.description|default:'Ohne Zusatzbeschreibung.'|truncatechars:100 }}</p>
+                <div class="task-card__meta">
+                  <span>{{ task.owner.full_name|default:'Nicht zugewiesen' }}</span>
+                  <span>{{ task.get_status_display }}</span>
+                </div>
+              </article>
+            {% endfor %}
+          </div>
+        {% else %}
+          <p class="empty-copy">Keine offenen Aufgaben vorhanden.</p>
+        {% endif %}
+      </article>
+
+      <article class="panel">
+        <div class="panel__header">
+          <div>
+            <p class="panel__eyebrow">Audit</p>
+            <h2>Letzte revisionssichere Eintraege</h2>
+          </div>
+          <a href="{% url 'governance:audit_log' %}" class="text-link">Alle Logs</a>
+        </div>
+        {% if recent_audit_entries %}
+          <ul class="stack-list stack-list--compact">
+            {% for entry in recent_audit_entries %}
+              <li class="stack-list__item">
+                <div>
+                  <strong>{{ entry.summary }}</strong>
+                  <small>{{ entry.actor.full_name|default:entry.actor.email|default:'System' }}</small>
+                </div>
+                <span class="status-pill status-pill--ink">{{ entry.domain }}</span>
+              </li>
+            {% endfor %}
+          </ul>
+        {% else %}
+          <p class="empty-copy">Noch keine Audit-Eintraege vorhanden.</p>
+        {% endif %}
+      </article>
+    </section>
+  </section>
+{% endblock %}

@@ -42,6 +42,7 @@ INSTALLED_APPS = [
     "apps.participation",
     "apps.cultivation",
     "apps.messaging",
+    "apps.governance",
 ]
 
 MIDDLEWARE = [
@@ -109,6 +110,7 @@ USE_TZ = True
 STATIC_URL = "/static/"
 STATICFILES_DIRS = [BASE_DIR / "static"]
 STATIC_ROOT = Path(os.getenv("DJANGO_STATIC_ROOT", "/tmp/csc-staticfiles"))
+EXPORT_ROOT = Path(os.getenv("CSC_EXPORT_ROOT", "/tmp/csc-exports"))
 STORAGES = {
     "default": {"BACKEND": "django.core.files.storage.FileSystemStorage"},
     "staticfiles": {"BACKEND": "whitenoise.storage.CompressedManifestStaticFilesStorage"},

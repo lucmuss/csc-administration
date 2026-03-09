@@ -123,4 +123,15 @@ def generate_annual_report(*, year: int, generated_by=None) -> ComplianceReport:
         },
     )
 
+    from apps.governance.services import record_audit_event
+
+    record_audit_event(
+        actor=generated_by,
+        domain="compliance",
+        action="report.generated",
+        target=report,
+        summary=f"Compliance-Bericht fuer {year} erzeugt oder aktualisiert.",
+        metadata={"year": year, "suspicious_cases": suspicious_cases},
+    )
+
     return report

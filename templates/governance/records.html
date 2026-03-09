@@ -1,0 +1,96 @@
+{% extends 'base.html' %}
+{% block title %}Nachweise{% endblock %}
+{% block content %}
+  <section class="page-shell">
+    <div class="page-heading">
+      <div>
+        <p class="eyebrow">Nachweise</p>
+        <h1>Transport- und Vernichtungsnachweise mit PDF-Workflow.</h1>
+      </div>
+      <div class="hero-actions">
+        <a href="{% url 'governance:dashboard' %}" class="btn-ghost">Governance</a>
+      </div>
+    </div>
+
+    <section class="board-grid">
+      <article class="panel">
+        <div class="panel__header">
+          <div>
+            <p class="panel__eyebrow">Neuer Nachweis</p>
+            <h2>Workflow starten</h2>
+          </div>
+        </div>
+        <form method="post" class="form-stack">
+          {% csrf_token %}
+          <input type="hidden" name="action" value="create">
+          {% for field in form %}
+            <div class="field">
+              <label for="{{ field.id_for_label }}">{{ field.label }}</label>
+              {{ field }}
+              {{ field.errors }}
+            </div>
+          {% endfor %}
+          <button type="submit" class="btn-primary">Nachweis anlegen</button>
+        </form>
+      </article>
+
+      <article class="panel panel--span-2">
+        <div class="panel__header">
+          <div>
+            <p class="panel__eyebrow">Freigabe und Export</p>
+            <h2>Bestehende Nachweise</h2>
+          </div>
+        </div>
+        <div class="table-card">
+          <table class="table">
+            <thead>
+              <tr>
+                <th>Referenz</th>
+                <th>Typ</th>
+                <th>Menge</th>
+                <th>Status</th>
+                <th>Aktionen</th>
+              </tr>
+            </thead>
+            <tbody>
+              {% for record in records %}
+                <tr>
+                  <td>
+                    <strong>{{ record.reference }}</strong>
+                    <div class="table-meta">{{ record.strain.name|default:'ohne Sorte' }}</div>
+                  </td>
+                  <td>{{ record.get_record_type_display }}</td>
+                  <td>{{ record.quantity_grams }} g</td>
+                  <td><span class="status-pill status-pill--ink">{{ record.get_status_display }}</span></td>
+                  <td>
+                    <div class="inline-actions inline-actions--stacked">
+                      <a href="{% url 'governance:record_pdf' record.pk %}" class="btn-ghost btn-ghost--small">PDF</a>
+                      {% if record.status == 'draft' %}
+                        <form method="post" class="inline-actions">
+                          {% csrf_token %}
+                          <input type="hidden" name="action" value="approve">
+                          <input type="hidden" name="record_id" value="{{ record.id }}">
+                          <button type="submit" class="btn-ghost btn-ghost--small">Freigeben</button>
+                        </form>
+                      {% endif %}
+                      {% if record.status != 'executed' %}
+                        <form method="post" class="inline-actions">
+                          {% csrf_token %}
+                          <input type="hidden" name="action" value="execute">
+                          <input type="hidden" name="record_id" value="{{ record.id }}">
+                          <button type="submit" class="btn-primary btn-primary--small">Durchgefuehrt</button>
+                        </form>
+                      {% endif %}
+                    </div>
+                  </td>
+                </tr>
+              {% empty %}
+                <tr><td colspan="5">Noch keine Nachweise vorhanden.</td></tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+      </article>
+    </section>
+  </section>
+{% endblock %}

@@ -1,259 +1,124 @@
 {% load static %}
 <!doctype html>
-<html lang="de" class="scroll-smooth">
+<html lang="de">
   <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-    <meta name="theme-color" content="#0f172a">
+    <meta name="theme-color" content="#163526">
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-    <meta name="apple-mobile-web-app-title" content="CSC">
-    <meta name="description" content="CSC Verwaltung - Mitgliederverwaltung und Bestellsystem">
-    
-    <title>{% block title %}CSC Verwaltung{% endblock %}</title>
-    
+    <meta name="apple-mobile-web-app-title" content="CSC Administration">
+    <meta name="description" content="CSC Administration fuer Mitglieder, Vorstand, Finanzen, Compliance und Anbau.">
+    <title>{% block title %}CSC Administration{% endblock %}</title>
+
     <link rel="manifest" href="{% url 'manifest' %}">
     <link rel="icon" type="image/png" sizes="192x192" href="{% static 'manifest/icon-192x192.png' %}">
     <link rel="apple-touch-icon" href="{% static 'manifest/icon-192x192.png' %}">
-    <link rel="stylesheet" href="{% static 'dist/styles.css' %}">
-    
-    <!-- Preconnect für Performance -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    
-    <noscript><style>#main-nav{display:flex;flex-direction:column;}</style></noscript>
-    
-    <!-- Google Analytics - nur mit Consent -->
-    {% if ga_tracking_id %}
-    <script>
-      function loadGA() {
-        window.dataLayer = window.dataLayer || [];
-        function gtag(){dataLayer.push(arguments);}
-        gtag('js', new Date());
-        gtag('config', '{{ ga_tracking_id }}', {
-          'anonymize_ip': true,
-          'cookie_flags': 'SameSite=None;Secure'
-        });
-      }
-      
-      if (localStorage.getItem('cookie_consent_analytics') === 'true') {
-        var script = document.createElement('script');
-        script.async = true;
-        script.src = 'https://www.googletagmanager.com/gtag/js?id={{ ga_tracking_id }}';
-        script.onload = loadGA;
-        document.head.appendChild(script);
-      }
-    </script>
-    {% endif %}
-    
+    <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,600;9..144,700&family=Space+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="{% static 'dist/styles.css' %}">
+    <script src="{% static 'js/app.js' %}" defer></script>
     {% block extra_head %}{% endblock %}
   </head>
-  
-  <body class="min-h-screen bg-slate-50 text-slate-800 font-sans antialiased">
-    <!-- Skip Link für Accessibility -->
-    <a href="#main-content" class="sr-only focus:not-sr-only focus:absolute focus:top-4 focus:left-4 focus:z-50 focus:px-4 focus:py-2 focus:bg-blue-600 focus:text-white focus:rounded-lg">
-      Direkt zum Inhalt
-    </a>
-    
-    <!-- Header mit modernem Design -->
-    <header class="bg-white border-b border-slate-200 sticky top-0 z-40 shadow-sm">
-      <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div class="flex items-center justify-between h-16">
-          <!-- Logo -->
-          <a href="{% if user.is_authenticated %}{% url 'core:dashboard' %}{% else %}/{% endif %}" 
-             class="flex items-center space-x-3 group">
-            <div class="w-10 h-10 bg-gradient-to-br from-blue-600 to-blue-700 rounded-xl flex items-center justify-center shadow-lg group-hover:shadow-xl transition-shadow">
-              <span class="text-white font-bold text-lg">CSC</span>
-            </div>
-            <span class="font-semibold text-slate-900 text-lg hidden sm:block">Verwaltung</span>
-          </a>
-          
-          <!-- Desktop Navigation -->
-          <nav class="hidden lg:flex items-center space-x-1" aria-label="Hauptnavigation">
-            {% if user.is_authenticated %}
-              <a href="{% url 'core:dashboard' %}" 
-                 class="nav-link {% if request.resolver_match.url_name == 'dashboard' %}active{% endif %}">
-                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"/></svg>
-                <span>Dashboard</span>
-              </a>
-              
-              <a href="{% url 'orders:shop' %}"
-                 class="nav-link {% if request.resolver_match.url_name == 'shop' %}active{% endif %}">
-                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z"/></svg>
-                <span>Shop</span>
-              </a>
-              
-              {% if user.role == 'board' %}
-                <div class="relative group">
-                  <button class="nav-link">
-                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/></svg>
-                    <span>Verwaltung</span>
-                    <svg class="w-4 h-4 ml-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/></svg>
-                  </button>
-                  
-                  <div class="absolute top-full left-0 mt-1 w-56 bg-white rounded-xl shadow-xl border border-slate-200 opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 transform origin-top-left">
-                    <div class="py-2">
-                      <a href="{% url 'members:profile' %}" class="dropdown-item">
-                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"/></svg>
-                        Mitglieder
-                      </a>
-                      <a href="{% url 'inventory:strain_list' %}" class="dropdown-item">
-                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4"/></svg>
-                        Inventar
-                      </a>
-                      <a href="{% url 'finance:dashboard' %}" class="dropdown-item">
-                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
-                        Finanzen
-                      </a>
-                      <a href="{% url 'messaging:dashboard' %}" class="dropdown-item">
-                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"/></svg>
-                        Messaging
-                      </a>
-                      <div class="border-t border-slate-100 my-2"></div>
-                      <a href="{% url 'compliance:dashboard' %}" class="dropdown-item">
-                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"/></svg>
-                        Compliance
-                      </a>
-                    </div>
-                  </div>
-                </div>
-              {% endif %}
-              
-              <!-- User Menu -->
-              <div class="relative group ml-4 pl-4 border-l border-slate-200">
-                <button class="flex items-center space-x-3 hover:bg-slate-100 rounded-lg p-2 transition-colors">
-                  <div class="w-8 h-8 bg-gradient-to-br from-slate-700 to-slate-800 rounded-full flex items-center justify-center text-white font-medium text-sm">
-                    {{ user.first_name|first|default:user.email|first|upper }}
-                  </div>
-                  <span class="text-sm font-medium text-slate-700">{{ user.first_name|default:user.email }}</span>
-                </button>
-                
-                <div class="absolute top-full right-0 mt-1 w-48 bg-white rounded-xl shadow-xl border border-slate-200 opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 origin-top-right">
-                  <div class="py-2">
-                    <a href="{% url 'members:profile' %}" class="dropdown-item">Profil</a>
-                    <a href="{% url 'accounts:logout' %}" class="dropdown-item text-red-600 hover:text-red-700">Abmelden</a>
-                  </div>
-                </div>
-              </div>
-              
+  <body data-ga-tracking-id="{{ ga_tracking_id }}" class="app-shell">
+    <div class="site-backdrop" aria-hidden="true"></div>
+    <a href="#main-content" class="skip-link">Direkt zum Inhalt</a>
+
+    <header class="topbar">
+      <div class="topbar__inner container-shell">
+        <a href="{% if user.is_authenticated %}{% url 'core:dashboard' %}{% else %}/{% endif %}" class="brand-lockup">
+          <span class="brand-lockup__mark">CSC</span>
+          <span class="brand-lockup__copy">
+            <strong>Administration</strong>
+            <small>Vorstand, Mitglieder, Compliance</small>
+          </span>
+        </a>
+
+        <nav id="primary-nav" class="nav-cluster" data-mobile-nav aria-label="Hauptnavigation">
+          {% if user.is_authenticated %}
+            <a href="{% url 'core:dashboard' %}" class="nav-link{% if request.path == '/' %} is-active{% endif %}">Dashboard</a>
+            {% if user.role == 'member' %}
+              <a href="{% url 'orders:shop' %}" class="nav-link{% if '/orders/shop/' in request.path %} is-active{% endif %}">Shop</a>
+              <a href="{% url 'orders:list' %}" class="nav-link{% if '/orders/my/' in request.path %} is-active{% endif %}">Bestellungen</a>
+              <a href="{% url 'members:profile' %}" class="nav-link{% if '/members/profile/' in request.path %} is-active{% endif %}">Profil</a>
+              <a href="{% url 'finance:dashboard' %}" class="nav-link{% if '/finance/' in request.path %} is-active{% endif %}">Finanzen</a>
+              <a href="{% url 'participation:dashboard' %}" class="nav-link{% if '/participation/' in request.path %} is-active{% endif %}">Mitwirkung</a>
             {% else %}
-              <a href="{% url 'accounts:login' %}" class="nav-link">Anmelden</a>
-              <a href="{% url 'members:register' %}" class="ml-3 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white font-medium rounded-lg transition-colors">
-                Registrieren
-              </a>
+              <a href="{% url 'members:directory' %}" class="nav-link{% if '/members/admin/' in request.path %} is-active{% endif %}">Mitglieder</a>
+              <a href="{% url 'cultivation:dashboard' %}" class="nav-link{% if '/cultivation/' in request.path %} is-active{% endif %}">Anbau</a>
+              <a href="{% url 'inventory:strain_list' %}" class="nav-link{% if '/inventory/' in request.path %} is-active{% endif %}">Inventar</a>
+              <a href="{% url 'finance:dashboard' %}" class="nav-link{% if '/finance/' in request.path %} is-active{% endif %}">Finanzen</a>
+              <a href="{% url 'messaging:dashboard' %}" class="nav-link{% if '/messaging/' in request.path %} is-active{% endif %}">Messaging</a>
+              <a href="{% url 'compliance:dashboard' %}" class="nav-link{% if '/compliance/' in request.path %} is-active{% endif %}">Compliance</a>
+              <a href="{% url 'governance:dashboard' %}" class="nav-link{% if '/governance/' in request.path %} is-active{% endif %}">Governance</a>
             {% endif %}
-          </nav>
-          
-          <!-- Mobile Menu Button -->
-          <button id="mobile-menu-button" 
-                  class="lg:hidden p-2 rounded-lg text-slate-600 hover:bg-slate-100 transition-colors"
-                  type="button"
-                  aria-expanded="false"
-                  aria-controls="mobile-nav"
-                  aria-label="Navigation öffnen">
-            <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"/></svg>
+          {% else %}
+            <a href="{% url 'accounts:login' %}" class="nav-link{% if '/accounts/login/' in request.path %} is-active{% endif %}">Anmelden</a>
+            <a href="{% url 'members:register' %}" class="nav-link{% if '/members/register/' in request.path %} is-active{% endif %}">Registrieren</a>
+          {% endif %}
+        </nav>
+
+        <div class="topbar__actions">
+          {% if user.is_authenticated %}
+            <div class="user-chip">
+              <span class="role-pill role-pill--{{ user.role }}">{{ user.get_role_display }}</span>
+              <span class="user-chip__name">{{ user.first_name|default:user.email }}</span>
+            </div>
+            <a href="{% if user.role == 'member' %}{% url 'members:profile' %}{% else %}{% url 'core:feature_audit' %}{% endif %}" class="btn-ghost topbar__utility">
+              {% if user.role == 'member' %}Mein Bereich{% else %}Feature-Audit{% endif %}
+            </a>
+            <a href="{% url 'accounts:logout' %}" class="btn-ghost topbar__utility">Abmelden</a>
+          {% else %}
+            <a href="{% url 'accounts:login' %}" class="btn-ghost topbar__utility">Anmelden</a>
+            <a href="{% url 'members:register' %}" class="btn-primary topbar__utility">Konto anlegen</a>
+          {% endif %}
+          <button
+            type="button"
+            class="mobile-toggle"
+            aria-expanded="false"
+            aria-controls="primary-nav"
+            data-mobile-nav-toggle
+          >
+            <span class="mobile-toggle__bar"></span>
+            <span class="mobile-toggle__bar"></span>
+            <span class="mobile-toggle__bar"></span>
+            <span class="sr-only">Navigation oeffnen</span>
           </button>
         </div>
       </div>
-      
-      <!-- Mobile Navigation -->
-      <nav id="mobile-nav" class="lg:hidden hidden border-t border-slate-200 bg-white">
-        <div class="px-4 py-3 space-y-1">
-          {% if user.is_authenticated %}
-            <a href="{% url 'core:dashboard' %}" class="mobile-nav-link">Dashboard</a>
-            <a href="{% url 'orders:shop' %}" class="mobile-nav-link">Shop</a>
-            <a href="{% url 'members:profile' %}" class="mobile-nav-link">Profil</a>
-            {% if user.role == 'board' %}
-              <div class="pt-2 mt-2 border-t border-slate-100">
-                <p class="px-3 py-2 text-xs font-semibold text-slate-500 uppercase">Verwaltung</p>
-                <a href="{% url 'inventory:strain_list' %}" class="mobile-nav-link pl-6">Inventar</a>
-                <a href="{% url 'finance:dashboard' %}" class="mobile-nav-link pl-6">Finanzen</a>
-                <a href="{% url 'messaging:dashboard' %}" class="mobile-nav-link pl-6">Messaging</a>
-                <a href="{% url 'compliance:dashboard' %}" class="mobile-nav-link pl-6">Compliance</a>
-              </div>
-            {% endif %}
-            <a href="{% url 'accounts:logout' %}" class="mobile-nav-link text-red-600">Abmelden</a>
-          {% else %}
-            <a href="{% url 'accounts:login' %}" class="mobile-nav-link">Anmelden</a>
-            <a href="{% url 'members:register' %}" class="mobile-nav-link text-blue-600 font-medium">Registrieren</a>
-          {% endif %}
-        </div>
-      </nav>
     </header>
 
-    <!-- Main Content -->
-    <main id="main-content" class="flex-1" tabindex="-1">
-      <!-- Flash Messages -->
-      <div aria-live="polite" class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-4">
-        {% if messages %}
-          <div class="space-y-2">
-            {% for message in messages %}
-              <div class="rounded-lg p-4 flex items-start space-x-3 {% if message.tags == 'success' %}bg-green-50 text-green-800 border border-green-200{% elif message.tags == 'error' %}bg-red-50 text-red-800 border border-red-200{% elif message.tags == 'warning' %}bg-yellow-50 text-yellow-800 border border-yellow-200{% else %}bg-blue-50 text-blue-800 border border-blue-200{% endif %}" role="alert">
-                <svg class="w-5 h-5 flex-shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  {% if message.tags == 'success' %}
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/>
-                  {% elif message.tags == 'error' %}
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
-                  {% elif message.tags == 'warning' %}
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/>
-                  {% else %}
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
-                  {% endif %}
-                </svg>
-                <span class="text-sm font-medium">{{ message }}</span>
-              </div>
-            {% endfor %}
-          </div>
-        {% endif %}
-      </div>
-      
-      <!-- Page Content -->
-      <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
-        {% block content %}{% endblock %}
-      </div>
+    <main id="main-content" class="main-shell container-shell" tabindex="-1">
+      {% if messages %}
+        <section class="message-stack" aria-live="polite">
+          {% for message in messages %}
+            <article class="flash flash--{{ message.tags|default:'info' }}">
+              <strong>{{ message.tags|default:'info'|title }}</strong>
+              <span>{{ message }}</span>
+            </article>
+          {% endfor %}
+        </section>
+      {% endif %}
+
+      {% block content %}{% endblock %}
     </main>
 
-    <!-- Footer -->
-    <footer class="bg-white border-t border-slate-200 mt-auto">
-      <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
-        <div class="flex flex-col md:flex-row justify-between items-center space-y-4 md:space-y-0">
-          <p class="text-sm text-slate-500">
-            © {% now "Y" %} CSC Verwaltung
-          </p>
-          <div class="flex space-x-6 text-sm">
-            <a href="{% url 'privacy' %}" class="text-slate-500 hover:text-slate-700 transition-colors">Datenschutz</a>
-            <a href="{% url 'imprint' %}" class="text-slate-500 hover:text-slate-700 transition-colors">Impressum</a>
-          </div>
+    <footer class="site-footer">
+      <div class="container-shell site-footer__inner">
+        <div>
+          <p class="site-footer__title">CSC Administration</p>
+          <p class="site-footer__copy">Self-hosted Vereinssoftware fuer Vorstand, Mitglieder, Finanzen und Compliance.</p>
+        </div>
+        <div class="site-footer__links">
+          <a href="{% url 'core:privacy' %}">Datenschutz</a>
+          <a href="{% url 'core:imprint' %}">Impressum</a>
+          <a href="{% url 'core:health' %}">Health</a>
         </div>
       </div>
     </footer>
 
     {% include "components/cookie_consent.html" %}
-
-    <!-- Scripts -->
-    <script>
-      // Mobile Menu Toggle
-      (function() {
-        const button = document.getElementById('mobile-menu-button');
-        const nav = document.getElementById('mobile-nav');
-        
-        if (button && nav) {
-          button.addEventListener('click', function() {
-            const isHidden = nav.classList.contains('hidden');
-            nav.classList.toggle('hidden');
-            button.setAttribute('aria-expanded', isHidden ? 'true' : 'false');
-          });
-        }
-      })();
-
-      // Service Worker Registration
-      if ('serviceWorker' in navigator) {
-        window.addEventListener('load', function() {
-          navigator.serviceWorker.register('/offline.js');
-        });
-      }
-    </script>
-    
     {% block extra_js %}{% endblock %}
   </body>
 </html>

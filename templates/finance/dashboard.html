@@ -1,36 +1,95 @@
 {% extends 'base.html' %}
 {% block title %}Finanzen{% endblock %}
 {% block content %}
-<h1 class="mb-4 text-2xl font-bold">Finanzen</h1>
-<div class="mb-4 flex gap-2">
-  <a class="card" href="{% url 'finance:mandate_create' %}">SEPA-Mandat anlegen</a>
-  <a class="card" href="{% url 'finance:payment_list' %}">Zahlungen</a>
-  <a class="card" href="{% url 'finance:invoice_list' %}">Rechnungen</a>
-</div>
-<div class="grid gap-4 md:grid-cols-2">
-  <section class="card">
-    <h2 class="text-lg font-semibold">Offene Rechnungen</h2>
-    {% if open_invoices %}
-      <ul class="space-y-2">
-      {% for invoice in open_invoices %}
-        <li>{{ invoice.invoice_number }} - {{ invoice.amount }} EUR - faellig {{ invoice.due_date }}</li>
-      {% endfor %}
-      </ul>
-    {% else %}
-      <p>Keine offenen Rechnungen.</p>
+  <section class="page-shell">
+    <div class="page-heading">
+      <div>
+        <p class="eyebrow">Finanzen</p>
+        <h1>{% if board_mode %}Forderungen, SEPA und Zahlungslage des Clubs.{% else %}Rechnungen, SEPA-Mandat und Zahlungshistorie.{% endif %}</h1>
+      </div>
+      <div class="hero-actions">
+        <a href="{% url 'finance:mandate_create' %}" class="btn-primary">SEPA-Mandat anlegen</a>
+        <a href="{% url 'finance:invoice_list' %}" class="btn-ghost">Rechnungen</a>
+      </div>
+    </div>
+
+    {% if summary %}
+      <section class="kpi-grid">
+        <article class="kpi-card kpi-card--forest">
+          <span class="kpi-card__label">Offene Rechnungen</span>
+          <strong class="kpi-card__value">{{ summary.open_invoice_count }}</strong>
+          <small class="kpi-card__detail">vereinsweit offen</small>
+        </article>
+        <article class="kpi-card kpi-card--sand">
+          <span class="kpi-card__label">Ausstehende SEPA</span>
+          <strong class="kpi-card__value">{{ summary.pending_sepa_count }}</strong>
+          <small class="kpi-card__detail">noch nicht eingezogen</small>
+        </article>
+        <article class="kpi-card kpi-card--ink">
+          <span class="kpi-card__label">Offener Betrag</span>
+          <strong class="kpi-card__value">{{ summary.outstanding_total }} EUR</strong>
+          <small class="kpi-card__detail">{{ summary.returned_payment_count }} Ruecklaeufer</small>
+        </article>
+      </section>
     {% endif %}
+
+    <section class="board-grid">
+      <article class="panel">
+        <div class="panel__header">
+          <div>
+            <p class="panel__eyebrow">Rechnungen</p>
+            <h2>Offene Posten</h2>
+          </div>
+        </div>
+        {% if open_invoices %}
+          <ul class="stack-list">
+            {% for invoice in open_invoices %}
+              <li class="stack-list__item">
+                <div>
+                  <strong>{{ invoice.invoice_number }}</strong>
+                  <small>
+                    {% if board_mode %}
+                      {{ invoice.profile.user.full_name|default:invoice.profile.user.email }}
+                    {% else %}
+                      Faellig {{ invoice.due_date|date:"d.m.Y" }}
+                    {% endif %}
+                  </small>
+                </div>
+                <span class="status-pill{% if invoice.status == 'open' %} status-pill--sand{% else %} status-pill--active{% endif %}">
+                  {{ invoice.amount }} EUR
+                </span>
+              </li>
+            {% endfor %}
+          </ul>
+        {% else %}
+          <p class="empty-copy">Keine offenen Rechnungen vorhanden.</p>
+        {% endif %}
+      </article>
+
+      <article class="panel">
+        <div class="panel__header">
+          <div>
+            <p class="panel__eyebrow">Zahlungen</p>
+            <h2>Letzte Zahlungsbewegungen</h2>
+          </div>
+          <a href="{% url 'finance:payment_list' %}" class="text-link">Zahlungen</a>
+        </div>
+        {% if pending_payments %}
+          <ul class="stack-list">
+            {% for payment in pending_payments %}
+              <li class="stack-list__item">
+                <div>
+                  <strong>{{ payment.get_method_display }}</strong>
+                  <small>{{ payment.invoice.invoice_number|default:"ohne Rechnung" }}</small>
+                </div>
+                <span class="status-pill status-pill--ink">{{ payment.get_status_display }}</span>
+              </li>
+            {% endfor %}
+          </ul>
+        {% else %}
+          <p class="empty-copy">Noch keine Zahlungen erfasst.</p>
+        {% endif %}
+      </article>
+    </section>
   </section>
-  <section class="card">
-    <h2 class="text-lg font-semibold">Letzte Zahlungen</h2>
-    {% if pending_payments %}
-      <ul class="space-y-2">
-      {% for payment in pending_payments %}
-        <li>{{ payment.get_method_display }} {{ payment.amount }} EUR - {{ payment.get_status_display }}</li>
-      {% endfor %}
-      </ul>
-    {% else %}
-      <p>Keine Zahlungen vorhanden.</p>
-    {% endif %}
-  </section>
-</div>
 {% endblock %}

@@ -1,0 +1,75 @@
+{% extends 'base.html' %}
+{% block title %}Versammlungen{% endblock %}
+{% block content %}
+  <section class="page-shell">
+    <div class="page-heading">
+      <div>
+        <p class="eyebrow">Versammlungen</p>
+        <h1>Mitgliederversammlungen, Vorstandssitzungen und Beschlussvorbereitung.</h1>
+      </div>
+      <div class="hero-actions">
+        <a href="{% url 'governance:dashboard' %}" class="btn-ghost">Governance-Dashboard</a>
+      </div>
+    </div>
+
+    <section class="board-grid">
+      <article class="panel">
+        <div class="panel__header">
+          <div>
+            <p class="panel__eyebrow">Neue Sitzung</p>
+            <h2>Termin anlegen</h2>
+          </div>
+        </div>
+        <form method="post" class="form-stack">
+          {% csrf_token %}
+          {% for field in form %}
+            <div class="field">
+              <label for="{{ field.id_for_label }}">{{ field.label }}</label>
+              {{ field }}
+              {% if field.help_text %}<small class="field-hint">{{ field.help_text }}</small>{% endif %}
+              {{ field.errors }}
+            </div>
+          {% endfor %}
+          <button type="submit" class="btn-primary">Sitzung speichern</button>
+        </form>
+      </article>
+
+      <article class="panel panel--span-2">
+        <div class="panel__header">
+          <div>
+            <p class="panel__eyebrow">Planung</p>
+            <h2>Alle Sitzungen</h2>
+          </div>
+        </div>
+        {% if meetings %}
+          <div class="table-card">
+            <table class="table">
+              <thead>
+                <tr>
+                  <th>Titel</th>
+                  <th>Typ</th>
+                  <th>Termin</th>
+                  <th>Einladung</th>
+                  <th>Status</th>
+                </tr>
+              </thead>
+              <tbody>
+                {% for meeting in meetings %}
+                  <tr>
+                    <td><a href="{% url 'governance:meeting_detail' meeting.pk %}" class="text-link">{{ meeting.title }}</a></td>
+                    <td>{{ meeting.get_meeting_type_display }}</td>
+                    <td>{{ meeting.scheduled_for|date:"d.m.Y H:i" }}</td>
+                    <td>{{ meeting.invitation_sent_at|date:"d.m.Y H:i"|default:'-' }}</td>
+                    <td><span class="status-pill status-pill--ink">{{ meeting.get_status_display }}</span></td>
+                  </tr>
+                {% endfor %}
+              </tbody>
+            </table>
+          </div>
+        {% else %}
+          <p class="empty-copy">Noch keine Sitzungen vorhanden.</p>
+        {% endif %}
+      </article>
+    </section>
+  </section>
+{% endblock %}

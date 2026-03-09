@@ -14,7 +14,7 @@ class Migration(migrations.Migration):
 
     dependencies = [
         ('inventory', '0002_inventory_advanced_features'),
-        ('members', '0004_profile_members_pro_status_4af664_idx_and_more'),
+        ('members', '0003_profile_automation_fields'),
         migrations.swappable_dependency(settings.AUTH_USER_MODEL),
     ]
 

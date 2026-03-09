@@ -38,19 +38,26 @@ class MemberRegistrationForm(forms.Form):
         return password
 
     def save(self) -> User:
+        bootstrap_board = not User.objects.exists()
         user = User.objects.create_user(
             email=self.cleaned_data["email"],
             password=self.cleaned_data["password"],
             first_name=self.cleaned_data["first_name"],
             last_name=self.cleaned_data["last_name"],
-            role=User.ROLE_MEMBER,
+            role=User.ROLE_BOARD if bootstrap_board else User.ROLE_MEMBER,
+            is_staff=bootstrap_board,
+            is_superuser=bootstrap_board,
         )
         profile = Profile.objects.create(
             user=user,
             birth_date=self.cleaned_data["birth_date"],
+            status=Profile.STATUS_ACTIVE if bootstrap_board else Profile.STATUS_PENDING,
+            is_verified=bootstrap_board,
             monthly_counter_key=date.today().strftime("%Y-%m"),
         )
         profile.full_clean()
         profile.save()
+        if bootstrap_board:
+            profile.allocate_member_number()
         MemberEngagement.objects.create(profile=profile)
         return user

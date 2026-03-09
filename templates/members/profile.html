@@ -1,17 +1,63 @@
 {% extends 'base.html' %}
-{% block title %}Profil{% endblock %}
+{% block title %}Mein Profil{% endblock %}
 {% block content %}
-<div class="card">
-  <h1 class="mb-4 text-xl font-semibold">Mein Profil</h1>
-  <p>Name: {{ profile.user.full_name }}</p>
-  <p>E-Mail: {{ profile.user.email }}</p>
-  <p>Mitgliedsnummer: {{ profile.member_number|default:'-' }}</p>
-  <p>Status: {{ profile.get_status_display }}</p>
-  <p>Verifiziert: {{ profile.is_verified|yesno:'Ja,Nein' }}</p>
-  <p>Guthaben: {{ profile.balance }} EUR</p>
-  <p>Tagesverbrauch: {{ profile.daily_used }}g / 25g</p>
-  <p>Monatsverbrauch: {{ profile.monthly_used }}g / 50g</p>
-  <p>Letzte Aktivitaet: {{ profile.last_activity|date:'d.m.Y H:i'|default:'-' }}</p>
-  <p>Geleistete Pflichtstunden: {{ profile.work_hours_done }}h</p>
-</div>
+  <section class="page-shell">
+    <div class="page-heading">
+      <div>
+        <p class="eyebrow">Mitgliederprofil</p>
+        <h1>Persoenliche Daten, Limits und Aktivitaet.</h1>
+      </div>
+      <a href="{% url 'orders:shop' %}" class="btn-ghost">Zum Shop</a>
+    </div>
+
+    <div class="kpi-grid">
+      <article class="kpi-card kpi-card--forest">
+        <span class="kpi-card__label">Status</span>
+        <strong class="kpi-card__value">{{ profile.get_status_display }}</strong>
+        <small class="kpi-card__detail">Mitgliedsnummer {{ profile.member_number|default:"wird vergeben" }}</small>
+      </article>
+      <article class="kpi-card kpi-card--sand">
+        <span class="kpi-card__label">Guthaben</span>
+        <strong class="kpi-card__value">{{ profile.balance }} EUR</strong>
+        <small class="kpi-card__detail">SEPA und Rechnungen im Finanzbereich</small>
+      </article>
+      <article class="kpi-card kpi-card--ink">
+        <span class="kpi-card__label">Monatsverbrauch</span>
+        <strong class="kpi-card__value">{{ profile.monthly_used }} g</strong>
+        <small class="kpi-card__detail">von 50 g im laufenden Monat</small>
+      </article>
+    </div>
+
+    <div class="board-grid">
+      <article class="panel">
+        <div class="panel__header">
+          <div>
+            <p class="panel__eyebrow">Identitaet</p>
+            <h2>Basisdaten</h2>
+          </div>
+        </div>
+        <ul class="detail-list">
+          <li><span>Name</span><strong>{{ profile.user.full_name }}</strong></li>
+          <li><span>E-Mail</span><strong>{{ profile.user.email }}</strong></li>
+          <li><span>Verifiziert</span><strong>{{ profile.is_verified|yesno:'Ja,Nein' }}</strong></li>
+          <li><span>Letzte Aktivitaet</span><strong>{{ profile.last_activity|date:'d.m.Y H:i'|default:'-' }}</strong></li>
+        </ul>
+      </article>
+
+      <article class="panel">
+        <div class="panel__header">
+          <div>
+            <p class="panel__eyebrow">Limits</p>
+            <h2>Abgabe und Konto</h2>
+          </div>
+        </div>
+        <ul class="detail-list">
+          <li><span>Tagesverbrauch</span><strong>{{ profile.daily_used }} g / 25 g</strong></li>
+          <li><span>Monatsverbrauch</span><strong>{{ profile.monthly_used }} g / 50 g</strong></li>
+          <li><span>Bestellungen gesperrt</span><strong>{{ profile.is_locked_for_orders|yesno:'Ja,Nein' }}</strong></li>
+          <li><span>Pflichtstunden</span><strong>{{ profile.work_hours_done }} h</strong></li>
+        </ul>
+      </article>
+    </div>
+  </section>
 {% endblock %}

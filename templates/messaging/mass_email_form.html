@@ -29,8 +29,8 @@
                 </label>
                 {{ form.content }}
                 <p class="mt-1 text-sm text-gray-500">
-                    Unterstützt Markdown. Verfügbare Variablen: <code>{{ first_name }}</code>, 
-                    <code>{{ last_name }}</code>, <code>{{ email }}</code>, <code>{{ member_number }}</code>
+                    Unterstützt Markdown. Verfügbare Variablen: <code>&#123;&#123; first_name &#125;&#125;</code>, 
+                    <code>&#123;&#123; last_name &#125;&#125;</code>, <code>&#123;&#123; email &#125;&#125;</code>, <code>&#123;&#123; member_number &#125;&#125;</code>
                 </p>
                 {% if form.content.errors %}
                 <p class="mt-1 text-sm text-red-600">{{ form.content.errors.0 }}</p>

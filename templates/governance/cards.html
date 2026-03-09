@@ -1,0 +1,71 @@
+{% extends 'base.html' %}
+{% block title %}Mitgliedsausweise{% endblock %}
+{% block content %}
+  <section class="page-shell">
+    <div class="page-heading">
+      <div>
+        <p class="eyebrow">Mitgliedsausweise</p>
+        <h1>Digitale Karten mit QR-Code fuer Ausgabe, Check-in und Statuspruefung.</h1>
+      </div>
+      <div class="hero-actions">
+        <a href="{% url 'governance:dashboard' %}" class="btn-ghost">Governance</a>
+      </div>
+    </div>
+
+    <section class="board-grid">
+      <article class="panel">
+        <div class="panel__header">
+          <div>
+            <p class="panel__eyebrow">Ausweis ausgeben</p>
+            <h2>Karte erstellen</h2>
+          </div>
+        </div>
+        <form method="post" class="form-stack">
+          {% csrf_token %}
+          {% for field in form %}
+            <div class="field">
+              <label for="{{ field.id_for_label }}">{{ field.label }}</label>
+              {{ field }}
+              {% if field.help_text %}<small class="field-hint">{{ field.help_text }}</small>{% endif %}
+              {{ field.errors }}
+            </div>
+          {% endfor %}
+          <button type="submit" class="btn-primary">Ausweis ausgeben</button>
+        </form>
+      </article>
+
+      <article class="panel panel--span-2">
+        <div class="panel__header">
+          <div>
+            <p class="panel__eyebrow">Bestand</p>
+            <h2>Vorhandene Karten</h2>
+          </div>
+        </div>
+        <div class="table-card">
+          <table class="table">
+            <thead>
+              <tr>
+                <th>Karte</th>
+                <th>Mitglied</th>
+                <th>Gueltig bis</th>
+                <th>Status</th>
+              </tr>
+            </thead>
+            <tbody>
+              {% for card in cards %}
+                <tr>
+                  <td><a href="{% url 'governance:card_detail' card.pk %}" class="text-link">{{ card.card_number }}</a></td>
+                  <td>{{ card.profile.user.full_name }}<div class="table-meta">{{ card.profile.user.email }}</div></td>
+                  <td>{{ card.expires_at|date:"d.m.Y" }}</td>
+                  <td><span class="status-pill status-pill--{% if card.status == 'active' %}active{% else %}danger{% endif %}">{{ card.get_status_display }}</span></td>
+                </tr>
+              {% empty %}
+                <tr><td colspan="4">Noch keine Karten vorhanden.</td></tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+      </article>
+    </section>
+  </section>
+{% endblock %}

@@ -1,0 +1,60 @@
+{% extends 'base.html' %}
+{% block title %}Audit-Log{% endblock %}
+{% block content %}
+  <section class="page-shell">
+    <div class="page-heading">
+      <div>
+        <p class="eyebrow">Audit-Log</p>
+        <h1>Append-only Audit-Trail fuer Admin-, Finanz- und Compliance-Aktionen.</h1>
+      </div>
+      <div class="hero-actions">
+        <a href="{% url 'governance:dashboard' %}" class="btn-ghost">Governance</a>
+      </div>
+    </div>
+
+    <section class="panel">
+      <div class="panel__header">
+        <div>
+          <p class="panel__eyebrow">Filter</p>
+          <h2>Eintraege durchsuchen</h2>
+        </div>
+      </div>
+      <form method="get" class="filter-row">
+        {% for field in filter_form %}
+          <div class="field field--compact">
+            <label for="{{ field.id_for_label }}">{{ field.label }}</label>
+            {{ field }}
+          </div>
+        {% endfor %}
+        <button type="submit" class="btn-primary btn-primary--small">Filtern</button>
+      </form>
+      <div class="table-card">
+        <table class="table">
+          <thead>
+            <tr>
+              <th>Zeit</th>
+              <th>Domaene</th>
+              <th>Aktion</th>
+              <th>Zusammenfassung</th>
+              <th>Hash</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for entry in logs %}
+              <tr>
+                <td>{{ entry.created_at|date:"d.m.Y H:i:s" }}</td>
+                <td>{{ entry.domain }}</td>
+                <td>{{ entry.action }}</td>
+                <td>
+                  <strong>{{ entry.summary }}</strong>
+                  <div class="table-meta">{{ entry.actor.full_name|default:entry.actor.email|default:'System' }}</div>
+                </td>
+                <td><code>{{ entry.entry_hash|slice:":12" }}</code></td>
+              </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </section>
+  </section>
+{% endblock %}

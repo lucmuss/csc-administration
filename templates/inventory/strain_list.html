@@ -1,33 +1,60 @@
 {% extends 'base.html' %}
-{% block title %}Sorten{% endblock %}
+{% block title %}Inventar{% endblock %}
 {% block content %}
-<div class="card mb-4">
-  <h1 class="mb-4 text-xl font-semibold">Sorten</h1>
-  <p class="mb-3">
-    <a href="{% url 'inventory:location_list' %}" class="underline">Lagerorte</a> |
-    <a href="{% url 'inventory:inventory_count_form' %}" class="underline">Inventur erfassen</a> |
-    <a href="{% url 'inventory:discrepancy_report' %}" class="underline">Abweichungsbericht</a>
-  </p>
-  <table class="w-full text-left text-sm">
-    <thead>
-      <tr>
-        <th>Name</th><th>Qualität</th><th>THC</th><th>CBD</th><th>Preis/g</th><th>Bestand</th>
-      </tr>
-    </thead>
-    <tbody>
-      {% for strain in strains %}
-      <tr>
-        <td>{{ strain.name }}</td>
-        <td>{{ strain.quality_grade }}</td>
-        <td>{{ strain.thc }}%</td>
-        <td>{{ strain.cbd }}%</td>
-        <td>{{ strain.price }} EUR</td>
-        <td>{{ strain.stock }}g</td>
-      </tr>
-      {% empty %}
-      <tr><td colspan="6">Keine Sorten vorhanden.</td></tr>
-      {% endfor %}
-    </tbody>
-  </table>
-</div>
+  <section class="page-shell">
+    <div class="page-heading">
+      <div>
+        <p class="eyebrow">Inventar</p>
+        <h1>Sorten, Qualitaet und verfuergbare Mengen.</h1>
+      </div>
+      <div class="hero-actions">
+        <a href="{% url 'inventory:location_list' %}" class="btn-ghost">Lagerorte</a>
+        <a href="{% url 'inventory:inventory_count_form' %}" class="btn-primary">Inventur erfassen</a>
+      </div>
+    </div>
+
+    <section class="panel">
+      <div class="panel__header">
+        <div>
+          <p class="panel__eyebrow">Sortenkatalog</p>
+          <h2>Aktive Sorten</h2>
+        </div>
+        <a href="{% url 'inventory:discrepancy_report' %}" class="text-link">Abweichungsbericht</a>
+      </div>
+      <div class="table-card">
+        <table class="table">
+          <thead>
+            <tr>
+              <th>Name</th>
+              <th>Qualitaet</th>
+              <th>THC / CBD</th>
+              <th>Preis</th>
+              <th>Bestand</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for strain in strains %}
+              <tr>
+                <td><strong>{{ strain.name }}</strong></td>
+                <td><span class="status-pill status-pill--ink">{{ strain.quality_grade }}</span></td>
+                <td>{{ strain.thc }}% / {{ strain.cbd }}%</td>
+                <td>{{ strain.price }} EUR / g</td>
+                <td>
+                  {% if strain.stock <= 25 %}
+                    <span class="status-pill status-pill--danger">{{ strain.stock }} g</span>
+                  {% else %}
+                    <span class="status-pill status-pill--active">{{ strain.stock }} g</span>
+                  {% endif %}
+                </td>
+              </tr>
+            {% empty %}
+              <tr>
+                <td colspan="5">Keine Sorten vorhanden.</td>
+              </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </section>
+  </section>
 {% endblock %}

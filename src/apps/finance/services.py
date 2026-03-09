@@ -37,6 +37,16 @@ def create_sepa_mandate(*, user, iban: str, bic: str, account_holder: str) -> Se
     )
     profile.sepa_mandate = mandate
     profile.save(update_fields=["sepa_mandate", "updated_at"])
+    from apps.governance.services import record_audit_event
+
+    record_audit_event(
+        actor=user,
+        domain="finance",
+        action="mandate.created",
+        target=mandate,
+        summary=f"SEPA-Mandat {mandate.mandate_reference} angelegt.",
+        metadata={"profile_id": profile.id},
+    )
     return mandate
 
 
@@ -58,6 +68,16 @@ def create_invoice_for_order(*, order) -> Invoice:
         status=Payment.STATUS_COLLECTED,
         scheduled_for=timezone.localdate(),
         collected_at=timezone.now(),
+    )
+    from apps.governance.services import record_audit_event
+
+    record_audit_event(
+        actor=order.member,
+        domain="finance",
+        action="invoice.created",
+        target=invoice,
+        summary=f"Rechnung {invoice.invoice_number} fuer Bestellung {order.id} erzeugt.",
+        metadata={"order_id": order.id, "amount": str(invoice.amount)},
     )
     return invoice
 
@@ -110,6 +130,16 @@ def send_sepa_prenotifications(today: date | None = None) -> int:
         payment.status = Payment.STATUS_PRNOTIFIED
         payment.prenotified_at = timezone.now()
         payment.save(update_fields=["status", "prenotified_at", "updated_at"])
+        from apps.governance.services import record_audit_event
+
+        record_audit_event(
+            actor=None,
+            domain="finance",
+            action="payment.prenotified",
+            target=payment,
+            summary=f"Vorabankuendigung fuer {payment.invoice.invoice_number} versendet.",
+            metadata={"payment_id": payment.id, "scheduled_for": payment.scheduled_for.isoformat()},
+        )
         sent += 1
     return sent
 
@@ -130,6 +160,16 @@ def collect_due_sepa_payments(today: date | None = None) -> int:
                 payment.status = Payment.STATUS_FAILED
                 payment.failure_reason = "Kein aktives Mandat"
                 payment.save(update_fields=["status", "failure_reason", "updated_at"])
+                from apps.governance.services import record_audit_event
+
+                record_audit_event(
+                    actor=None,
+                    domain="finance",
+                    action="payment.failed",
+                    target=payment,
+                    summary=f"SEPA-Einzug fuer {payment.invoice.invoice_number} fehlgeschlagen.",
+                    metadata={"reason": payment.failure_reason},
+                )
                 continue
 
             payment.status = Payment.STATUS_COLLECTED
@@ -140,6 +180,16 @@ def collect_due_sepa_payments(today: date | None = None) -> int:
             invoice = payment.invoice
             invoice.status = Invoice.STATUS_PAID
             invoice.save(update_fields=["status", "updated_at"])
+            from apps.governance.services import record_audit_event
+
+            record_audit_event(
+                actor=None,
+                domain="finance",
+                action="payment.collected",
+                target=payment,
+                summary=f"SEPA-Einzug fuer {invoice.invoice_number} erfolgreich verbucht.",
+                metadata={"batch_id": batch_id, "amount": str(payment.amount)},
+            )
             collected += 1
     return collected
 
@@ -156,6 +206,16 @@ def handle_payment_return(*, payment: Payment, reason: str = "Ruecklaeufer") -> 
     invoice = payment.invoice
     invoice.status = Invoice.STATUS_OPEN
     invoice.save(update_fields=["status", "updated_at"])
+    from apps.governance.services import record_audit_event
+
+    record_audit_event(
+        actor=None,
+        domain="finance",
+        action="payment.returned",
+        target=payment,
+        summary=f"Ruecklaeufer fuer {invoice.invoice_number} erfasst.",
+        metadata={"reason": reason},
+    )
 
 
 def _apply_reminder_fee(invoice: Invoice, fee_amount: Decimal) -> None:
@@ -213,6 +273,16 @@ def send_due_reminders(today: date | None = None) -> int:
             recipient_list=[invoice.profile.user.email],
             fail_silently=True,
         )
+        from apps.governance.services import record_audit_event
+
+        record_audit_event(
+            actor=None,
+            domain="finance",
+            action="reminder.sent",
+            target=invoice,
+            summary=f"Mahnung Stufe {new_level} fuer {invoice.invoice_number} versendet.",
+            metadata={"level": new_level, "amount": str(invoice.amount)},
+        )
         sent += 1
 
     return sent
@@ -254,7 +324,7 @@ def generate_datev_export(*, period: str = "month", anchor: date | None = None) 
         created_at__date__lte=drange.end,
     )
 
-    export_dir = Path(settings.BASE_DIR) / "exports"
+    export_dir = Path(settings.EXPORT_ROOT)
     export_dir.mkdir(parents=True, exist_ok=True)
     filename = f"datev_{period}_{drange.start:%Y%m%d}_{drange.end:%Y%m%d}.csv"
     target = export_dir / filename

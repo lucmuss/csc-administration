@@ -1,0 +1,54 @@
+{% extends 'base.html' %}
+{% block title %}{{ card.card_number }}{% endblock %}
+{% block content %}
+  <section class="page-shell">
+    <div class="page-heading">
+      <div>
+        <p class="eyebrow">Mitgliedsausweis</p>
+        <h1>{{ card.card_number }}</h1>
+        <p class="lede">{{ card.profile.user.full_name }} · Mitglied {{ card.profile.member_number }}</p>
+      </div>
+      <div class="hero-actions">
+        <form method="post" class="inline-actions">
+          {% csrf_token %}
+          <input type="hidden" name="action" value="reissue">
+          <button type="submit" class="btn-primary">Neu ausstellen</button>
+        </form>
+        <form method="post" class="inline-actions">
+          {% csrf_token %}
+          <input type="hidden" name="action" value="revoke">
+          <button type="submit" class="btn-ghost">Entziehen</button>
+        </form>
+      </div>
+    </div>
+
+    <section class="board-grid">
+      <article class="panel qr-panel">
+        <div class="panel__header">
+          <div>
+            <p class="panel__eyebrow">QR-Code</p>
+            <h2>Digitale Karte</h2>
+          </div>
+        </div>
+        <div class="qr-frame">{{ qr_svg|safe }}</div>
+        <p class="field-hint">Scan-Endpunkt: <code>/governance/cards/validate/{{ card.qr_token }}/</code></p>
+      </article>
+
+      <article class="panel">
+        <div class="panel__header">
+          <div>
+            <p class="panel__eyebrow">Kartenstatus</p>
+            <h2>Metadaten</h2>
+          </div>
+        </div>
+        <ul class="detail-list">
+          <li><span>Status</span><strong>{{ card.get_status_display }}</strong></li>
+          <li><span>Version</span><strong>{{ card.version }}</strong></li>
+          <li><span>Ausgegeben am</span><strong>{{ card.issued_at|date:"d.m.Y H:i" }}</strong></li>
+          <li><span>Gueltig bis</span><strong>{{ card.expires_at|date:"d.m.Y" }}</strong></li>
+          <li><span>Letzter Scan</span><strong>{{ card.last_scanned_at|date:"d.m.Y H:i"|default:'-' }}</strong></li>
+        </ul>
+      </article>
+    </section>
+  </section>
+{% endblock %}

@@ -8,6 +8,7 @@ from django.views.decorators.http import require_POST
 from django.core.paginator import Paginator
 from django.utils import timezone
 from django.db.models import Sum, Count, Avg
+from datetime import timedelta
 import uuid
 
 from .models import EmailGroup, EmailGroupMember, MassEmail, EmailLog
@@ -25,12 +26,26 @@ from apps.members.models import Profile
 @permission_required("messaging.view_massemail", raise_exception=True)
 def messaging_dashboard(request):
     """Messaging Dashboard mit Übersicht"""
+    recent_emails = (
+        MassEmail.objects.select_related("created_by")
+        .exclude(status="draft")
+        .order_by("-created_at")[:6]
+    )
+    sent_logs = EmailLog.objects.filter(status__in=["sent", "delivered", "opened"]).count()
+    opened_logs = EmailLog.objects.filter(status="opened").count()
+
     context = {
         "total_groups": EmailGroup.objects.filter(is_active=True).count(),
         "total_emails": MassEmail.objects.exclude(status="draft").count(),
         "total_recipients": MassEmail.objects.aggregate(
             total=Sum("total_recipients")
         )["total"] or 0,
+        "active_groups": EmailGroup.objects.filter(is_active=True).count(),
+        "emails_last_month": MassEmail.objects.filter(
+            created_at__gte=timezone.now() - timedelta(days=30)
+        ).exclude(status="draft").count(),
+        "recent_emails": recent_emails,
+        "open_rate": round((opened_logs / sent_logs) * 100) if sent_logs else 0,
         # SMS Stats
         "total_sms": SmsMessage.objects.exclude(status="draft").count(),
         "sms_this_month": SmsMessage.objects.filter(

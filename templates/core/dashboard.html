@@ -1,40 +1,356 @@
 {% extends 'base.html' %}
 {% block title %}Dashboard{% endblock %}
 {% block content %}
-<h1 class="mb-4 text-2xl font-bold">Admin Dashboard</h1>
-<div class="grid gap-4 md:grid-cols-2">
-  <section class="card">
-    <h2 class="text-lg font-semibold">Mein Profil</h2>
-    {% if profile %}
-      <p>Mitgliedsnummer: {{ profile.member_number|default:'-' }}</p>
-      <p>Status: {{ profile.get_status_display }}</p>
-      <p>Guthaben: {{ profile.balance }} EUR</p>
-      <p>Heute: {{ profile.daily_used }}g / 25g</p>
-      <p>Monat: {{ profile.monthly_used }}g / 50g</p>
-    {% else %}
-      <p>Kein Profil vorhanden.</p>
-    {% endif %}
-  </section>
-  <section class="card">
-    <h2 class="text-lg font-semibold">Letzte Bestellungen</h2>
-    {% if recent_orders %}
-      <ul class="space-y-2">
-        {% for order in recent_orders %}
-          <li>#{{ order.id }} - {{ order.total }} EUR - {{ order.get_status_display }}</li>
+  {% if board_mode %}
+    <section class="hero-panel">
+      <div class="hero-panel__copy">
+        <p class="eyebrow">Vorstandscockpit</p>
+        <h1>Clubbetrieb, Risiken und offene Aufgaben auf einen Blick.</h1>
+        <p class="lede">
+          Das Cockpit verdichtet Mitgliederstand, Reservierungen, Forderungen, Compliance und Anbau in eine
+          arbeitsfaehige Tagesansicht fuer Vorstand und Administration.
+        </p>
+        <div class="hero-actions">
+          <a href="{% url 'members:directory' %}" class="btn-primary">Mitglieder-Cockpit</a>
+          <a href="{% url 'core:feature_audit' %}" class="btn-ghost">Feature-Audit</a>
+        </div>
+      </div>
+      <div class="hero-panel__aside">
+        <div class="signal-card signal-card--forest">
+          <span class="signal-card__label">Mitgliederkapazitaet</span>
+          <strong>{{ member_capacity_remaining }} freie Plaetze</strong>
+          <div class="meter">
+            <span style="width: {{ capacity_percent }}%;"></span>
+          </div>
+          <small>{{ dashboard_date|date:"d.m.Y" }}</small>
+        </div>
+        <div class="signal-card signal-card--sand">
+          <span class="signal-card__label">Bestand aktiv</span>
+          <strong>{{ total_stock }} g</strong>
+          <small>{% if latest_count %}Letzte Inventur: {{ latest_count.date|date:"d.m.Y" }}{% else %}Noch keine Inventur vorhanden{% endif %}</small>
+        </div>
+      </div>
+    </section>
+
+    <section class="kpi-grid">
+      {% for card in summary_cards %}
+        <article class="kpi-card kpi-card--{{ card.tone }}">
+          <span class="kpi-card__label">{{ card.label }}</span>
+          <strong class="kpi-card__value">{{ card.value }}</strong>
+          <small class="kpi-card__detail">{{ card.detail }}</small>
+        </article>
+      {% endfor %}
+    </section>
+
+    <section class="board-grid">
+      <article class="panel panel--span-2">
+        <div class="panel__header">
+          <div>
+            <p class="panel__eyebrow">Arbeitsvorrat</p>
+            <h2>Offene Mitgliedsthemen</h2>
+          </div>
+          <a href="{% url 'members:directory' %}" class="text-link">Alle Mitglieder</a>
+        </div>
+        {% if pending_members %}
+          <div class="table-card">
+            <table class="table">
+              <thead>
+                <tr>
+                  <th>Mitglied</th>
+                  <th>Status</th>
+                  <th>Registriert</th>
+                  <th>Aktion</th>
+                </tr>
+              </thead>
+              <tbody>
+                {% for member in pending_members %}
+                  <tr>
+                    <td>
+                      <strong>{{ member.user.full_name|default:member.user.email }}</strong>
+                      <div class="table-meta">{{ member.user.email }}</div>
+                    </td>
+                    <td><span class="status-pill status-pill--pending">{{ member.get_status_display }}</span></td>
+                    <td>{{ member.created_at|date:"d.m.Y" }}</td>
+                    <td>
+                      <form method="post" action="{% url 'members:action' member.id %}" class="inline-actions">
+                        {% csrf_token %}
+                        <input type="hidden" name="action" value="verify">
+                        <input type="hidden" name="next" value="{{ request.path }}">
+                        <button type="submit" class="btn-ghost btn-ghost--small">Freischalten</button>
+                      </form>
+                    </td>
+                  </tr>
+                {% endfor %}
+              </tbody>
+            </table>
+          </div>
+        {% else %}
+          <p class="empty-copy">Keine offenen Mitgliedspruefungen. Der Aufnahmeprozess ist aktuell sauber abgearbeitet.</p>
+        {% endif %}
+        <div class="info-strip">
+          <span>{{ work_hours_open }} offene Stundenfreigaben</span>
+          <span>{{ engagement_open }} unvollstaendige Registrierungs-Engagements</span>
+        </div>
+      </article>
+
+      <article class="panel">
+        <div class="panel__header">
+          <div>
+            <p class="panel__eyebrow">Betriebsrisiko</p>
+            <h2>Niedrigbestand</h2>
+          </div>
+          <a href="{% url 'inventory:strain_list' %}" class="text-link">Inventar</a>
+        </div>
+        {% if low_stock_strains %}
+          <ul class="stack-list">
+            {% for strain in low_stock_strains %}
+              <li class="stack-list__item">
+                <div>
+                  <strong>{{ strain.name }}</strong>
+                  <small>{{ strain.thc }}% THC · {{ strain.quality_grade }}</small>
+                </div>
+                <span class="status-pill status-pill--danger">{{ strain.stock }} g</span>
+              </li>
+            {% endfor %}
+          </ul>
+        {% else %}
+          <p class="empty-copy">Aktuell keine kritischen Bestandsunterschreitungen.</p>
+        {% endif %}
+      </article>
+
+      <article class="panel">
+        <div class="panel__header">
+          <div>
+            <p class="panel__eyebrow">Liquiditaet</p>
+            <h2>Offene Forderungen</h2>
+          </div>
+          <a href="{% url 'finance:dashboard' %}" class="text-link">Finanzen</a>
+        </div>
+        {% if open_invoices %}
+          <ul class="stack-list">
+            {% for invoice in open_invoices %}
+              <li class="stack-list__item">
+                <div>
+                  <strong>{{ invoice.invoice_number }}</strong>
+                  <small>{{ invoice.profile.user.full_name|default:invoice.profile.user.email }}</small>
+                </div>
+                <span class="status-pill{% if invoice.due_date < dashboard_date %} status-pill--danger{% else %} status-pill--sand{% endif %}">
+                  {{ invoice.amount }} EUR
+                </span>
+              </li>
+            {% endfor %}
+          </ul>
+        {% else %}
+          <p class="empty-copy">Keine offenen Rechnungen im Bestand.</p>
+        {% endif %}
+      </article>
+
+      <article class="panel panel--span-2">
+        <div class="panel__header">
+          <div>
+            <p class="panel__eyebrow">Kontrolle</p>
+            <h2>Compliance und operative Termine</h2>
+          </div>
+          <a href="{% url 'compliance:dashboard' %}" class="text-link">Compliance</a>
+        </div>
+        <div class="split-cards">
+          <div class="mini-panel">
+            <h3>Offene Verdachtsfaelle</h3>
+            {% if suspicious_open %}
+              <ul class="stack-list stack-list--compact">
+                {% for activity in suspicious_open %}
+                  <li class="stack-list__item">
+                    <div>
+                      <strong>{{ activity.profile.user.full_name|default:activity.profile.user.email }}</strong>
+                      <small>{{ activity.month_key }}</small>
+                    </div>
+                    <span class="status-pill status-pill--danger">{{ activity.consumed_grams }} g</span>
+                  </li>
+                {% endfor %}
+              </ul>
+            {% else %}
+              <p class="empty-copy">Keine offenen Verdachtsfaelle vorhanden.</p>
+            {% endif %}
+          </div>
+          <div class="mini-panel">
+            <h3>Anstehende Schichten</h3>
+            {% if upcoming_shifts %}
+              <ul class="stack-list stack-list--compact">
+                {% for shift in upcoming_shifts %}
+                  <li class="stack-list__item">
+                    <div>
+                      <strong>{{ shift.title }}</strong>
+                      <small>{{ shift.starts_at|date:"d.m.Y H:i" }}</small>
+                    </div>
+                    <span class="status-pill status-pill--ink">{{ shift.required_members }} Pers.</span>
+                  </li>
+                {% endfor %}
+              </ul>
+            {% else %}
+              <p class="empty-copy">Keine zukuenftigen Schichten geplant.</p>
+            {% endif %}
+          </div>
+        </div>
+        {% if latest_report %}
+          <div class="info-strip">
+            <span>Letzter Compliance-Bericht: {{ latest_report.year }}</span>
+            <span>{{ latest_report.total_orders }} Abgaben · {{ latest_report.total_grams }} g</span>
+          </div>
+        {% endif %}
+      </article>
+
+      <article class="panel">
+        <div class="panel__header">
+          <div>
+            <p class="panel__eyebrow">Anbau</p>
+            <h2>Seed-to-sale Lage</h2>
+          </div>
+          <a href="{% url 'cultivation:dashboard' %}" class="text-link">Anbau-Dashboard</a>
+        </div>
+        <ul class="detail-list">
+          <li><span>Aktive Grow Cycles</span><strong>{{ cultivation_overview.cycle_count }}</strong></li>
+          <li><span>Aktive Pflanzen</span><strong>{{ cultivation_overview.plant_count }}</strong></li>
+          <li><span>Harvest Batches</span><strong>{{ cultivation_overview.harvest_count }}</strong></li>
+        </ul>
+      </article>
+
+      <article class="panel">
+        <div class="panel__header">
+          <div>
+            <p class="panel__eyebrow">Naechste Schritte</p>
+            <h2>Sinnvolle Ausbaupunkte</h2>
+          </div>
+          <a href="{% url 'core:feature_audit' %}" class="text-link">Gesamte Liste</a>
+        </div>
+        <ul class="recommendation-list">
+          {% for item in recommended_features %}
+            <li>{{ item }}</li>
+          {% endfor %}
+        </ul>
+      </article>
+    </section>
+
+    <section class="panel">
+      <div class="panel__header">
+        <div>
+          <p class="panel__eyebrow">Direktzugriff</p>
+          <h2>Operationsbereiche</h2>
+        </div>
+      </div>
+      <div class="module-grid">
+        {% for module in module_links %}
+          <a href="{{ module.href }}" class="module-tile module-tile--{{ module.tone }}">
+            <strong>{{ module.title }}</strong>
+            <span>{{ module.description }}</span>
+          </a>
         {% endfor %}
-      </ul>
-    {% else %}
-      <p>Keine Bestellungen vorhanden.</p>
-    {% endif %}
-  </section>
-</div>
-{% if cultivation_overview %}
-<section class="card mt-4">
-  <h2 class="text-lg font-semibold">Anbau-Übersicht</h2>
-  <p>Mutterpflanzen: {{ cultivation_overview.mother_count }}</p>
-  <p>Aktive Pflanzen: {{ cultivation_overview.active_plants }}</p>
-  <p>Ernten: {{ cultivation_overview.harvest_count }}</p>
-  <p class="mt-2"><a class="underline" href="{% url 'cultivation:dashboard' %}">Zum Anbau-Dashboard</a></p>
-</section>
-{% endif %}
+      </div>
+    </section>
+  {% else %}
+    <section class="hero-panel hero-panel--member">
+      <div class="hero-panel__copy">
+        <p class="eyebrow">Mein Bereich</p>
+        <h1>Mitgliedschaft, Limits und Bestellungen transparent im Blick.</h1>
+        <p class="lede">
+          Dein Dashboard zeigt Guthaben, Verbrauch und offene Bestellungen ohne versteckte Menues oder Admin-Rauschen.
+        </p>
+        <div class="hero-actions">
+          <a href="{% url 'orders:shop' %}" class="btn-primary">Zum Shop</a>
+          <a href="{% url 'members:profile' %}" class="btn-ghost">Profil ansehen</a>
+        </div>
+      </div>
+      {% if profile %}
+        <div class="hero-panel__aside">
+          <div class="signal-card signal-card--forest">
+            <span class="signal-card__label">Status</span>
+            <strong>{{ profile.get_status_display }}</strong>
+            <small>Mitgliedsnummer {{ profile.member_number|default:"wird vergeben" }}</small>
+          </div>
+          <div class="signal-card signal-card--sand">
+            <span class="signal-card__label">Guthaben</span>
+            <strong>{{ profile.balance }} EUR</strong>
+            <small>{{ profile.monthly_used }} g im aktuellen Monat</small>
+          </div>
+        </div>
+      {% endif %}
+    </section>
+
+    <section class="kpi-grid">
+      <article class="kpi-card kpi-card--forest">
+        <span class="kpi-card__label">Tageslimit</span>
+        <strong class="kpi-card__value">{% if profile %}{{ profile.daily_used }} g{% else %}-{% endif %}</strong>
+        <small class="kpi-card__detail">von 25 g verbraucht</small>
+      </article>
+      <article class="kpi-card kpi-card--sand">
+        <span class="kpi-card__label">Monatslimit</span>
+        <strong class="kpi-card__value">{% if profile %}{{ profile.monthly_used }} g{% else %}-{% endif %}</strong>
+        <small class="kpi-card__detail">von 50 g verbraucht</small>
+      </article>
+      <article class="kpi-card kpi-card--ink">
+        <span class="kpi-card__label">Pflichtstunden</span>
+        <strong class="kpi-card__value">{% if profile %}{{ profile.work_hours_done }} h{% else %}-{% endif %}</strong>
+        <small class="kpi-card__detail">im Profil verbucht</small>
+      </article>
+    </section>
+
+    <section class="board-grid">
+      <article class="panel">
+        <div class="panel__header">
+          <div>
+            <p class="panel__eyebrow">Profil</p>
+            <h2>Mitgliedsdaten</h2>
+          </div>
+          <a href="{% url 'members:profile' %}" class="text-link">Profil</a>
+        </div>
+        {% if profile %}
+          <ul class="detail-list">
+            <li><span>Mitgliedsnummer</span><strong>{{ profile.member_number|default:"-" }}</strong></li>
+            <li><span>Status</span><strong>{{ profile.get_status_display }}</strong></li>
+            <li><span>Verifiziert</span><strong>{{ profile.is_verified|yesno:"Ja,Nein" }}</strong></li>
+            <li><span>Letzte Aktivitaet</span><strong>{{ profile.last_activity|date:"d.m.Y H:i"|default:"-" }}</strong></li>
+          </ul>
+        {% else %}
+          <p class="empty-copy">Zu diesem Konto ist noch kein Profil vorhanden.</p>
+        {% endif %}
+      </article>
+
+      <article class="panel panel--span-2">
+        <div class="panel__header">
+          <div>
+            <p class="panel__eyebrow">Bestellungen</p>
+            <h2>Letzte Reservierungen und Abgaben</h2>
+          </div>
+          <a href="{% url 'orders:list' %}" class="text-link">Alle Bestellungen</a>
+        </div>
+        {% if recent_orders %}
+          <div class="table-card">
+            <table class="table">
+              <thead>
+                <tr>
+                  <th>Bestellung</th>
+                  <th>Status</th>
+                  <th>Menge</th>
+                  <th>Gesamt</th>
+                  <th>Reserviert bis</th>
+                </tr>
+              </thead>
+              <tbody>
+                {% for order in recent_orders %}
+                  <tr>
+                    <td>#{{ order.id }}</td>
+                    <td><span class="status-pill status-pill--ink">{{ order.get_status_display }}</span></td>
+                    <td>{{ order.total_grams }} g</td>
+                    <td>{{ order.total }} EUR</td>
+                    <td>{{ order.reserved_until|date:"d.m.Y H:i" }}</td>
+                  </tr>
+                {% endfor %}
+              </tbody>
+            </table>
+          </div>
+        {% else %}
+          <p class="empty-copy">Noch keine Bestellungen vorhanden. Der Shop ist direkt ueber das Hauptmenue erreichbar.</p>
+        {% endif %}
+      </article>
+    </section>
+  {% endif %}
 {% endblock %}

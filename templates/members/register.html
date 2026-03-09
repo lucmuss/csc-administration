@@ -1,12 +1,67 @@
 {% extends 'base.html' %}
 {% block title %}Registrierung{% endblock %}
 {% block content %}
-<div class="mx-auto max-w-xl card">
-  <h1 class="mb-4 text-xl font-semibold">Mitglied registrieren</h1>
-  <form method="post" class="space-y-3">
-    {% csrf_token %}
-    {{ form.as_p }}
-    <button type="submit" class="btn-primary">Registrieren</button>
-  </form>
-</div>
+  <section class="auth-layout">
+    <div class="auth-copy panel">
+      <p class="eyebrow">Mitgliedschaft</p>
+      <h1>Neue Konten werden in einen klaren Vereinsworkflow aufgenommen.</h1>
+      <p class="lede">
+        Die Registrierung startet den Mitgliedsprozess und legt den operativen Datensatz fuer Shop, Finanzen,
+        Pflichtstunden und Compliance an.
+      </p>
+      <ul class="recommendation-list">
+        <li>Harte Limits fuer Tages- und Monatsabgabe werden sofort vorbereitet.</li>
+        <li>Mitgliedsprofil, Engagement und Zahlungsdaten laufen in derselben Datenbasis zusammen.</li>
+        <li>Die erste Registrierung kann das System initial als Vorstand bootstrapen.</li>
+      </ul>
+      {% if is_bootstrap %}
+        <div class="flash flash--warning">
+          <strong>Initialer Setup-Modus</strong>
+          <span>Da noch kein Benutzerkonto existiert, wird der erste Account automatisch als Vorstand eingerichtet.</span>
+        </div>
+      {% endif %}
+    </div>
+
+    <div class="auth-card panel">
+      <div class="panel__header">
+        <div>
+          <p class="panel__eyebrow">Registrierung</p>
+          <h2>Konto erstellen</h2>
+        </div>
+      </div>
+      <form method="post" class="form-stack">
+        {% csrf_token %}
+        <div class="field-grid">
+          <div class="field">
+            <label for="{{ form.first_name.id_for_label }}">Vorname</label>
+            {{ form.first_name }}
+            {{ form.first_name.errors }}
+          </div>
+          <div class="field">
+            <label for="{{ form.last_name.id_for_label }}">Nachname</label>
+            {{ form.last_name }}
+            {{ form.last_name.errors }}
+          </div>
+        </div>
+        <div class="field">
+          <label for="{{ form.email.id_for_label }}">E-Mail</label>
+          {{ form.email }}
+          {{ form.email.errors }}
+        </div>
+        <div class="field">
+          <label for="{{ form.birth_date.id_for_label }}">Geburtsdatum</label>
+          {{ form.birth_date }}
+          {{ form.birth_date.errors }}
+          <small class="field-hint">Die aktuelle Validierung setzt ein Mindestalter von 21 Jahren voraus.</small>
+        </div>
+        <div class="field">
+          <label for="{{ form.password.id_for_label }}">Passwort</label>
+          {{ form.password }}
+          {{ form.password.errors }}
+          <small class="field-hint">Nutze ein starkes Passwort fuer Vereins- und Personendaten.</small>
+        </div>
+        <button type="submit" class="btn-primary btn-block">Registrierung absenden</button>
+      </form>
+    </div>
+  </section>
 {% endblock %}

@@ -1,0 +1,148 @@
+{% extends 'base.html' %}
+{% block title %}{{ meeting.title }}{% endblock %}
+{% block content %}
+  <section class="page-shell">
+    <div class="page-heading">
+      <div>
+        <p class="eyebrow">{{ meeting.get_meeting_type_display }}</p>
+        <h1>{{ meeting.title }}</h1>
+        <p class="lede">{{ meeting.scheduled_for|date:"d.m.Y H:i" }}{% if meeting.location %} · {{ meeting.location }}{% endif %}</p>
+      </div>
+      <div class="hero-actions">
+        <form method="post" class="inline-actions">
+          {% csrf_token %}
+          <input type="hidden" name="action" value="send_invitation">
+          <button type="submit" class="btn-ghost">Einladung dokumentieren</button>
+        </form>
+      </div>
+    </div>
+
+    <section class="board-grid">
+      <article class="panel panel--span-2">
+        <div class="panel__header">
+          <div>
+            <p class="panel__eyebrow">Tagesordnung</p>
+            <h2>TOPs</h2>
+          </div>
+        </div>
+        {% if agenda_items %}
+          <ul class="stack-list">
+            {% for item in agenda_items %}
+              <li class="stack-list__item stack-list__item--wide">
+                <div>
+                  <strong>TOP {{ item.order }} · {{ item.title }}</strong>
+                  <small>{{ item.description|default:'Keine Beschreibung.' }}</small>
+                </div>
+                <span class="status-pill status-pill--sand">{{ item.get_status_display }}</span>
+              </li>
+            {% endfor %}
+          </ul>
+        {% else %}
+          <p class="empty-copy">Noch keine TOPs angelegt.</p>
+        {% endif %}
+      </article>
+
+      <article class="panel">
+        <div class="panel__header">
+          <div>
+            <p class="panel__eyebrow">Neuer TOP</p>
+            <h2>Agenda pflegen</h2>
+          </div>
+        </div>
+        <form method="post" class="form-stack">
+          {% csrf_token %}
+          <input type="hidden" name="action" value="agenda">
+          {% for field in agenda_form %}
+            <div class="field">
+              <label for="{{ field.id_for_label }}">{{ field.label }}</label>
+              {{ field }}
+              {{ field.errors }}
+            </div>
+          {% endfor %}
+          <button type="submit" class="btn-primary">TOP speichern</button>
+        </form>
+      </article>
+
+      <article class="panel panel--span-2">
+        <div class="panel__header">
+          <div>
+            <p class="panel__eyebrow">Beschlusshistorie</p>
+            <h2>Erfasste Beschluesse</h2>
+          </div>
+        </div>
+        {% if resolutions %}
+          <div class="table-card">
+            <table class="table">
+              <thead>
+                <tr>
+                  <th>Nummer</th>
+                  <th>Titel</th>
+                  <th>Status</th>
+                  <th>Abstimmung</th>
+                </tr>
+              </thead>
+              <tbody>
+                {% for resolution in resolutions %}
+                  <tr>
+                    <td>{{ resolution.resolution_number }}</td>
+                    <td>
+                      <strong>{{ resolution.title }}</strong>
+                      <div class="table-meta">{{ resolution.decision_text|truncatechars:120 }}</div>
+                    </td>
+                    <td><span class="status-pill status-pill--ink">{{ resolution.get_status_display }}</span></td>
+                    <td>{{ resolution.vote_result|default:'-' }}</td>
+                  </tr>
+                {% endfor %}
+              </tbody>
+            </table>
+          </div>
+        {% else %}
+          <p class="empty-copy">Noch keine Beschluesse dokumentiert.</p>
+        {% endif %}
+      </article>
+
+      <article class="panel">
+        <div class="panel__header">
+          <div>
+            <p class="panel__eyebrow">Beschluss erfassen</p>
+            <h2>Neuer Beschluss</h2>
+          </div>
+        </div>
+        <form method="post" class="form-stack">
+          {% csrf_token %}
+          <input type="hidden" name="action" value="resolution">
+          {% for field in resolution_form %}
+            <div class="field">
+              <label for="{{ field.id_for_label }}">{{ field.label }}</label>
+              {{ field }}
+              {{ field.errors }}
+            </div>
+          {% endfor %}
+          <button type="submit" class="btn-primary">Beschluss speichern</button>
+        </form>
+      </article>
+    </section>
+
+    <section class="panel">
+      <div class="panel__header">
+        <div>
+          <p class="panel__eyebrow">Protokoll</p>
+          <h2>Abschluss und Notizen</h2>
+        </div>
+      </div>
+      <form method="post" class="form-stack">
+        {% csrf_token %}
+        <input type="hidden" name="action" value="complete">
+        <div class="field">
+          <label for="minutes_summary">Protokollzusammenfassung</label>
+          <textarea name="minutes_summary" id="minutes_summary">{{ meeting.minutes_summary }}</textarea>
+        </div>
+        <div class="field">
+          <label for="attendance_notes">Anwesenheit / Hinweise</label>
+          <textarea name="attendance_notes" id="attendance_notes">{{ meeting.attendance_notes }}</textarea>
+        </div>
+        <button type="submit" class="btn-primary">Sitzung abschliessen</button>
+      </form>
+    </section>
+  </section>
+{% endblock %}

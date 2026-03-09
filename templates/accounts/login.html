@@ -1,12 +1,49 @@
 {% extends 'base.html' %}
-{% block title %}Login{% endblock %}
+{% block title %}Anmelden{% endblock %}
 {% block content %}
-<div class="mx-auto max-w-md card">
-  <h1 class="mb-4 text-xl font-semibold">Login</h1>
-  <form method="post" class="space-y-3">
-    {% csrf_token %}
-    {{ form.as_p }}
-    <button type="submit" class="btn-primary">Anmelden</button>
-  </form>
-</div>
+  <section class="auth-layout">
+    <div class="auth-copy panel">
+      <p class="eyebrow">Sicherer Zugang</p>
+      <h1>Anmeldung fuer Vorstand, Mitarbeitende und Mitglieder.</h1>
+      <p class="lede">
+        Melde dich mit deiner E-Mail-Adresse an. Das System fuehrt Mitglieder, Anbau, Finanzen und Compliance
+        in einer gemeinsamen Verwaltungsoberflaeche zusammen.
+      </p>
+      <ul class="recommendation-list">
+        <li>Vorstandscockpit mit offenen Aufgaben, Risiken und Schnellaktionen.</li>
+        <li>Mitglieder- und Shopbereich mit harten Tages- und Monatslimits.</li>
+        <li>Self-hosted Architektur mit lokalen Assets und Health-Checks.</li>
+      </ul>
+    </div>
+
+    <div class="auth-card panel">
+      <div class="panel__header">
+        <div>
+          <p class="panel__eyebrow">Login</p>
+          <h2>Konto oeffnen</h2>
+        </div>
+      </div>
+      <form method="post" class="form-stack">
+        {% csrf_token %}
+        {% if form.non_field_errors %}
+          <div class="flash flash--error">{{ form.non_field_errors }}</div>
+        {% endif %}
+        <div class="field">
+          <label for="{{ form.username.id_for_label }}">E-Mail</label>
+          {{ form.username }}
+          {{ form.username.errors }}
+        </div>
+        <div class="field">
+          <label for="{{ form.password.id_for_label }}">Passwort</label>
+          {{ form.password }}
+          {{ form.password.errors }}
+        </div>
+        <button type="submit" class="btn-primary btn-block">Anmelden</button>
+      </form>
+      <div class="auth-card__footer">
+        <span>Noch kein Zugang?</span>
+        <a href="{% url 'members:register' %}" class="text-link">Jetzt registrieren</a>
+      </div>
+    </div>
+  </section>
 {% endblock %}

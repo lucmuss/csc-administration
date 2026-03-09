@@ -29,4 +29,5 @@ urlpatterns = [
     path("participation/", include("apps.participation.urls")),
     path("cultivation/", include("apps.cultivation.urls")),
     path("messaging/", include("apps.messaging.urls")),
+    path("governance/", include("apps.governance.urls")),
 ]

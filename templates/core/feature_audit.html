@@ -1,0 +1,71 @@
+{% extends 'base.html' %}
+{% block title %}Feature-Audit{% endblock %}
+{% block content %}
+  <section class="page-shell">
+    <div class="page-heading">
+      <div>
+        <p class="eyebrow">Feature-Audit</p>
+        <h1>Requirements gegen Codebase konsolidiert.</h1>
+        <p class="lede">
+          Diese Uebersicht basiert auf dem aktuellen Projektstand in Models, Services, Views, Templates und
+          den zentralen Requirement-Markdowns. Sie ist bewusst operativ und nicht marketinggetrieben.
+        </p>
+      </div>
+      <a href="{% url 'core:dashboard' %}" class="btn-ghost">Zurueck zum Cockpit</a>
+    </div>
+
+    <section class="kpi-grid">
+      <article class="kpi-card kpi-card--forest">
+        <span class="kpi-card__label">Implementiert</span>
+        <strong class="kpi-card__value">{{ summary.implemented }}</strong>
+        <small class="kpi-card__detail">sauber im Codebestand verankert</small>
+      </article>
+      <article class="kpi-card kpi-card--sand">
+        <span class="kpi-card__label">Teilweise</span>
+        <strong class="kpi-card__value">{{ summary.partial }}</strong>
+        <small class="kpi-card__detail">vorhanden, aber noch nicht durchgaengig</small>
+      </article>
+      <article class="kpi-card kpi-card--ink">
+        <span class="kpi-card__label">Geplant</span>
+        <strong class="kpi-card__value">{{ summary.planned }}</strong>
+        <small class="kpi-card__detail">fachlich sinnvoll, aktuell noch offen</small>
+      </article>
+    </section>
+
+    <section class="audit-grid">
+      {% for group in groups %}
+        <article class="panel">
+          <div class="panel__header">
+            <div>
+              <p class="panel__eyebrow">Kategorie</p>
+              <h2>{{ group.title }}</h2>
+            </div>
+          </div>
+          <p class="panel__intro">{{ group.summary }}</p>
+          <ul class="audit-list">
+            {% for item in group.items %}
+              <li class="audit-list__item">
+                <span class="status-pill status-pill--{{ item.status }}">{{ item.status|title }}</span>
+                <span>{{ item.name }}</span>
+              </li>
+            {% endfor %}
+          </ul>
+        </article>
+      {% endfor %}
+    </section>
+
+    <section class="panel">
+      <div class="panel__header">
+        <div>
+          <p class="panel__eyebrow">Empfehlungen</p>
+          <h2>Sinnvolle naechste Features fuer Vorstandsbetrieb</h2>
+        </div>
+      </div>
+      <ol class="ordered-list">
+        {% for feature in recommended_features %}
+          <li>{{ feature }}</li>
+        {% endfor %}
+      </ol>
+    </section>
+  </section>
+{% endblock %}

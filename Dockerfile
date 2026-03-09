@@ -17,7 +17,9 @@ RUN pip install --no-cache-dir \
     "pytest>=8.3,<9" \
     "pytest-django>=4.11,<5" \
     "markdown>=3.5" \
-    "django-csp>=3.8"
+    "django-csp>=3.8" \
+    "reportlab>=4.2,<5" \
+    "segno>=1.6,<2"
 
 # Copy application code
 COPY . .

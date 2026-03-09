@@ -1,0 +1,83 @@
+{% extends 'base.html' %}
+{% block title %}Integrationen{% endblock %}
+{% block content %}
+  <section class="page-shell">
+    <div class="page-heading">
+      <div>
+        <p class="eyebrow">Integrationen</p>
+        <h1>API- und Webhook-Layer fuer Buchhaltung, Drucker und externe Club-Apps.</h1>
+      </div>
+      <div class="hero-actions">
+        <a href="{% url 'governance:dashboard' %}" class="btn-ghost">Governance</a>
+      </div>
+    </div>
+
+    <section class="board-grid">
+      <article class="panel">
+        <div class="panel__header">
+          <div>
+            <p class="panel__eyebrow">Neue Integration</p>
+            <h2>Webhook oder API-Client</h2>
+          </div>
+        </div>
+        <form method="post" class="form-stack">
+          {% csrf_token %}
+          {% for field in form %}
+            <div class="field">
+              <label for="{{ field.id_for_label }}">{{ field.label }}</label>
+              {{ field }}
+              {% if field.help_text %}<small class="field-hint">{{ field.help_text }}</small>{% endif %}
+              {{ field.errors }}
+            </div>
+          {% endfor %}
+          <button type="submit" class="btn-primary">Integration speichern</button>
+        </form>
+      </article>
+
+      <article class="panel panel--span-2">
+        <div class="panel__header">
+          <div>
+            <p class="panel__eyebrow">Konfigurierte Endpunkte</p>
+            <h2>Webhook- und API-Zugaenge</h2>
+          </div>
+        </div>
+        <div class="integration-grid">
+          {% for endpoint in endpoints %}
+            <article class="integration-card">
+              <strong>{{ endpoint.name }}</strong>
+              <p>{{ endpoint.get_integration_type_display }}</p>
+              <ul class="detail-list detail-list--compact">
+                <li><span>API-Key</span><strong><code>{{ endpoint.api_key|slice:":12" }}...</code></strong></li>
+                <li><span>Webhook</span><strong>{{ endpoint.endpoint_url|default:'-' }}</strong></li>
+                <li><span>Letzte Zustellung</span><strong>{{ endpoint.last_delivery_status|default:'-' }}</strong></li>
+              </ul>
+              {% if endpoint.deliveries.all %}
+                <div class="field-hint">Letztes Event: {{ endpoint.deliveries.all.0.event_name|default:'-' }}</div>
+              {% endif %}
+            </article>
+          {% empty %}
+            <p class="empty-copy">Noch keine Integrationen angelegt.</p>
+          {% endfor %}
+        </div>
+      </article>
+    </section>
+
+    <section class="panel">
+      <div class="panel__header">
+        <div>
+          <p class="panel__eyebrow">API-Schnittstellen</p>
+          <h2>Verfuegbare Ressourcen</h2>
+        </div>
+      </div>
+      <div class="api-doc-grid">
+        {% for resource in api_resources %}
+          <article class="api-doc-card">
+            <strong>{{ resource }}</strong>
+            <p><code>GET /governance/api/{{ resource }}/</code></p>
+            <p class="field-hint">Header: <code>X-Api-Key: ...</code></p>
+          </article>
+        {% endfor %}
+      </div>
+    </section>
+  </section>
+{% endblock %}

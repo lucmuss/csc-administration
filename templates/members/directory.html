@@ -1,0 +1,140 @@
+{% extends 'base.html' %}
+{% block title %}Mitglieder-Cockpit{% endblock %}
+{% block content %}
+  <section class="page-shell">
+    <div class="page-heading">
+      <div>
+        <p class="eyebrow">Mitglieder-Cockpit</p>
+        <h1>Suche, Statussteuerung und Export fuer Vorstand und Administration.</h1>
+      </div>
+      <div class="hero-actions">
+        <a href="{% url 'members:export' %}" class="btn-ghost">CSV-Export</a>
+        <a href="{% url 'core:dashboard' %}" class="btn-primary">Zurueck zum Cockpit</a>
+      </div>
+    </div>
+
+    <section class="panel">
+      <div class="panel__header">
+        <div>
+          <p class="panel__eyebrow">Filter</p>
+          <h2>Mitglieder finden</h2>
+        </div>
+      </div>
+      <form method="get" class="filter-grid">
+        <div class="field">
+          <label for="q">Suche</label>
+          <input id="q" type="text" name="q" value="{{ filters.q }}" placeholder="Name, E-Mail oder Mitgliedsnummer">
+        </div>
+        <div class="field">
+          <label for="status">Status</label>
+          <select id="status" name="status">
+            <option value="">Alle Status</option>
+            {% for value, label in status_choices %}
+              <option value="{{ value }}"{% if filters.status == value %} selected{% endif %}>{{ label }}</option>
+            {% endfor %}
+          </select>
+        </div>
+        <div class="field">
+          <label for="locked">Bestellsperre</label>
+          <select id="locked" name="locked">
+            <option value="">Alle</option>
+            <option value="yes"{% if filters.locked == 'yes' %} selected{% endif %}>Nur gesperrte</option>
+            <option value="no"{% if filters.locked == 'no' %} selected{% endif %}>Nur freigegebene</option>
+          </select>
+        </div>
+        <div class="field field--actions">
+          <button type="submit" class="btn-primary btn-block">Filter anwenden</button>
+        </div>
+      </form>
+    </section>
+
+    <section class="panel">
+      <div class="panel__header">
+        <div>
+          <p class="panel__eyebrow">Verzeichnis</p>
+          <h2>{{ page_obj.paginator.count }} Mitglieder im Treffer</h2>
+        </div>
+      </div>
+      <div class="table-card">
+        <table class="table">
+          <thead>
+            <tr>
+              <th>Mitglied</th>
+              <th>Status</th>
+              <th>Guthaben</th>
+              <th>Verbrauch</th>
+              <th>Hinweise</th>
+              <th>Aktion</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for profile in page_obj %}
+              <tr>
+                <td>
+                  <strong>{{ profile.user.full_name|default:profile.user.email }}</strong>
+                  <div class="table-meta">
+                    {{ profile.user.email }}
+                    {% if profile.member_number %}· Nr. {{ profile.member_number }}{% endif %}
+                  </div>
+                </td>
+                <td>
+                  {% if profile.status == 'active' %}
+                    <span class="status-pill status-pill--active">{{ profile.get_status_display }}</span>
+                  {% elif profile.status == 'pending' %}
+                    <span class="status-pill status-pill--pending">{{ profile.get_status_display }}</span>
+                  {% elif profile.status == 'rejected' %}
+                    <span class="status-pill status-pill--danger">{{ profile.get_status_display }}</span>
+                  {% else %}
+                    <span class="status-pill status-pill--ink">{{ profile.get_status_display }}</span>
+                  {% endif %}
+                </td>
+                <td>{{ profile.balance }} EUR</td>
+                <td>{{ profile.monthly_used }} g / 50 g</td>
+                <td>
+                  <div class="table-meta">
+                    {% if profile.is_locked_for_orders %}Bestellungen gesperrt · {% endif %}
+                    {{ profile.open_invoice_count }} offene Rechnungen · {{ profile.suspicious_count }} Risiken
+                  </div>
+                </td>
+                <td>
+                  {% if can_manage %}
+                    <form method="post" action="{% url 'members:action' profile.id %}" class="inline-actions">
+                      {% csrf_token %}
+                      <input type="hidden" name="next" value="{{ request.get_full_path }}">
+                      {% if profile.status == 'pending' %}
+                        <button type="submit" name="action" value="verify" class="btn-ghost btn-ghost--small">Freischalten</button>
+                        <button type="submit" name="action" value="reject" class="btn-ghost btn-ghost--small">Ablehnen</button>
+                      {% elif profile.is_locked_for_orders %}
+                        <button type="submit" name="action" value="unlock_orders" class="btn-ghost btn-ghost--small">Freigeben</button>
+                      {% else %}
+                        <button type="submit" name="action" value="lock_orders" class="btn-ghost btn-ghost--small">Sperren</button>
+                      {% endif %}
+                    </form>
+                  {% else %}
+                    <span class="table-meta">Nur Ansicht</span>
+                  {% endif %}
+                </td>
+              </tr>
+            {% empty %}
+              <tr>
+                <td colspan="6">Keine Mitglieder fuer diese Filter gefunden.</td>
+              </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+
+      {% if page_obj.paginator.num_pages > 1 %}
+        <div class="pagination-bar">
+          {% if page_obj.has_previous %}
+            <a href="?page={{ page_obj.previous_page_number }}&q={{ filters.q }}&status={{ filters.status }}&locked={{ filters.locked }}" class="btn-ghost btn-ghost--small">Zurueck</a>
+          {% endif %}
+          <span>Seite {{ page_obj.number }} von {{ page_obj.paginator.num_pages }}</span>
+          {% if page_obj.has_next %}
+            <a href="?page={{ page_obj.next_page_number }}&q={{ filters.q }}&status={{ filters.status }}&locked={{ filters.locked }}" class="btn-ghost btn-ghost--small">Weiter</a>
+          {% endif %}
+        </div>
+      {% endif %}
+    </section>
+  </section>
+{% endblock %}

@@ -1,32 +1,61 @@
 {% extends 'base.html' %}
-{% block title %}Compliance Dashboard{% endblock %}
+{% block title %}Compliance{% endblock %}
 {% block content %}
-<h1 class="mb-4 text-2xl font-bold">Compliance Dashboard</h1>
-<div class="grid gap-4 md:grid-cols-2">
-  <section class="card">
-    <h2 class="text-lg font-semibold">Jahresmeldung</h2>
-    {% if latest_report %}
-      <p>Letzter Bericht: {{ latest_report.year }}</p>
-      <p>Abgaben: {{ latest_report.total_orders }}</p>
-      <p>Menge gesamt: {{ latest_report.total_grams }}g</p>
-    {% else %}
-      <p>Noch kein Bericht vorhanden.</p>
-    {% endif %}
-    <a class="btn mt-2 inline-block" href="{% url 'compliance:annual_report' %}?year={{ year }}">Bericht fuer {{ year }} erstellen</a>
-  </section>
+  <section class="page-shell">
+    <div class="page-heading">
+      <div>
+        <p class="eyebrow">Compliance</p>
+        <h1>Berichtswesen, Praevention und offene Verdachtsfaelle.</h1>
+      </div>
+      <div class="hero-actions">
+        <a href="{% url 'compliance:annual_report' %}?year={{ year }}" class="btn-primary">Bericht fuer {{ year }}</a>
+        <a href="{% url 'compliance:suspicious_activity_list' %}" class="btn-ghost">Verdachtsfaelle</a>
+      </div>
+    </div>
 
-  <section class="card">
-    <h2 class="text-lg font-semibold">Offene Verdachtsfaelle</h2>
-    {% if suspicious_open %}
-      <ul class="space-y-2">
-        {% for activity in suspicious_open %}
-          <li>{{ activity.profile.user.email }} - {{ activity.month_key }} - {{ activity.consumed_grams }}g</li>
-        {% endfor %}
-      </ul>
-    {% else %}
-      <p>Keine offenen Verdachtsfaelle.</p>
-    {% endif %}
-    <a class="btn mt-2 inline-block" href="{% url 'compliance:suspicious_activity_list' %}">Alle Verdachtsfaelle</a>
+    <section class="board-grid">
+      <article class="panel">
+        <div class="panel__header">
+          <div>
+            <p class="panel__eyebrow">Berichtswesen</p>
+            <h2>Jahresmeldung</h2>
+          </div>
+        </div>
+        {% if latest_report %}
+          <ul class="detail-list">
+            <li><span>Berichtsjahr</span><strong>{{ latest_report.year }}</strong></li>
+            <li><span>Abgaben</span><strong>{{ latest_report.total_orders }}</strong></li>
+            <li><span>Gesamtmenge</span><strong>{{ latest_report.total_grams }} g</strong></li>
+            <li><span>Verdachtsfaelle</span><strong>{{ latest_report.suspicious_cases }}</strong></li>
+          </ul>
+        {% else %}
+          <p class="empty-copy">Noch kein Bericht vorhanden. Erstelle den ersten Bericht direkt ueber den Aktionsbutton.</p>
+        {% endif %}
+      </article>
+
+      <article class="panel">
+        <div class="panel__header">
+          <div>
+            <p class="panel__eyebrow">Fallliste</p>
+            <h2>Offene Hinweise</h2>
+          </div>
+        </div>
+        {% if suspicious_open %}
+          <ul class="stack-list">
+            {% for activity in suspicious_open %}
+              <li class="stack-list__item">
+                <div>
+                  <strong>{{ activity.profile.user.full_name|default:activity.profile.user.email }}</strong>
+                  <small>{{ activity.month_key }}</small>
+                </div>
+                <span class="status-pill status-pill--danger">{{ activity.consumed_grams }} g</span>
+              </li>
+            {% endfor %}
+          </ul>
+        {% else %}
+          <p class="empty-copy">Keine offenen Verdachtsfaelle vorhanden.</p>
+        {% endif %}
+      </article>
+    </section>
   </section>
-</div>
 {% endblock %}

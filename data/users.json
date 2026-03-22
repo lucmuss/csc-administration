@@ -1,0 +1,348 @@
+{
+  "default_password": "StrongPass123!",
+  "users": [
+    {
+      "key": "capture_admin",
+      "email": "capture-admin@csc.local",
+      "password": "StrongPass123!",
+      "first_name": "Clara",
+      "last_name": "Bergmann",
+      "role": "board",
+      "is_staff": true,
+      "is_superuser": true,
+      "is_active": true,
+      "profile": {
+        "birth_date": "1986-06-14",
+        "member_number": 100100,
+        "status": "active",
+        "is_verified": true,
+        "balance": "420.00",
+        "is_locked_for_orders": false,
+        "daily_used": "2.50",
+        "monthly_used": "18.50",
+        "last_activity": "2026-03-22T08:35:00+01:00"
+      },
+      "engagement": {
+        "required_hours_year": "24.00",
+        "annual_meeting_date": "2026-04-20",
+        "registration_deadline": "2026-03-31",
+        "registration_completed": true
+      },
+      "card": {
+        "card_number": "SEED-CARD-100100",
+        "status": "active",
+        "notes": "Seed admin card"
+      },
+      "sepa_mandate": {
+        "iban": "DE75512108001245126199",
+        "bic": "COLSDE33XXX",
+        "account_holder": "Clara Bergmann",
+        "mandate_reference": "SEED-MANDATE-100100",
+        "is_active": true
+      }
+    },
+    {
+      "key": "board_ops",
+      "email": "vorstand.ops@csc.local",
+      "password": "StrongPass123!",
+      "first_name": "Jonas",
+      "last_name": "Kraft",
+      "role": "board",
+      "is_staff": true,
+      "is_superuser": false,
+      "is_active": true,
+      "profile": {
+        "birth_date": "1984-11-03",
+        "member_number": 100101,
+        "status": "active",
+        "is_verified": true,
+        "balance": "295.00",
+        "is_locked_for_orders": false,
+        "daily_used": "0.00",
+        "monthly_used": "6.00",
+        "last_activity": "2026-03-21T19:20:00+01:00"
+      },
+      "engagement": {
+        "required_hours_year": "22.00",
+        "annual_meeting_date": "2026-04-20",
+        "registration_deadline": "2026-03-31",
+        "registration_completed": true
+      },
+      "card": {
+        "card_number": "SEED-CARD-100101",
+        "status": "active",
+        "notes": "Board operations card"
+      },
+      "sepa_mandate": {
+        "iban": "DE68500105175407324931",
+        "bic": "INGDDEFFXXX",
+        "account_holder": "Jonas Kraft",
+        "mandate_reference": "SEED-MANDATE-100101",
+        "is_active": true
+      }
+    },
+    {
+      "key": "staff_finance",
+      "email": "finanzen.team@csc.local",
+      "password": "StrongPass123!",
+      "first_name": "Mara",
+      "last_name": "Schulze",
+      "role": "staff",
+      "is_staff": true,
+      "is_superuser": false,
+      "is_active": true,
+      "profile": {
+        "birth_date": "1991-02-18",
+        "member_number": 100102,
+        "status": "active",
+        "is_verified": true,
+        "balance": "180.00",
+        "is_locked_for_orders": false,
+        "daily_used": "0.00",
+        "monthly_used": "3.50",
+        "last_activity": "2026-03-21T14:05:00+01:00"
+      },
+      "engagement": {
+        "required_hours_year": "18.00",
+        "annual_meeting_date": "2026-04-20",
+        "registration_deadline": "2026-03-28",
+        "registration_completed": true
+      },
+      "card": {
+        "card_number": "SEED-CARD-100102",
+        "status": "active",
+        "notes": "Finance staff card"
+      }
+    },
+    {
+      "key": "staff_cultivation",
+      "email": "anbau.team@csc.local",
+      "password": "StrongPass123!",
+      "first_name": "Levin",
+      "last_name": "Aydin",
+      "role": "staff",
+      "is_staff": true,
+      "is_superuser": false,
+      "is_active": true,
+      "profile": {
+        "birth_date": "1990-08-27",
+        "member_number": 100103,
+        "status": "active",
+        "is_verified": true,
+        "balance": "205.00",
+        "is_locked_for_orders": false,
+        "daily_used": "1.00",
+        "monthly_used": "8.00",
+        "last_activity": "2026-03-22T06:50:00+01:00"
+      },
+      "engagement": {
+        "required_hours_year": "20.00",
+        "annual_meeting_date": "2026-04-20",
+        "registration_deadline": "2026-03-30",
+        "registration_completed": true
+      },
+      "card": {
+        "card_number": "SEED-CARD-100103",
+        "status": "active",
+        "notes": "Cultivation staff card"
+      }
+    },
+    {
+      "key": "member_pending",
+      "email": "lara.pending@csc.local",
+      "password": "StrongPass123!",
+      "first_name": "Lara",
+      "last_name": "Neumann",
+      "role": "member",
+      "is_staff": false,
+      "is_superuser": false,
+      "is_active": true,
+      "profile": {
+        "birth_date": "1998-05-08",
+        "member_number": null,
+        "status": "pending",
+        "is_verified": false,
+        "balance": "0.00",
+        "is_locked_for_orders": false,
+        "daily_used": "0.00",
+        "monthly_used": "0.00",
+        "last_activity": "2026-03-22T09:10:00+01:00"
+      },
+      "engagement": {
+        "required_hours_year": "20.00",
+        "annual_meeting_date": "2026-05-05",
+        "registration_deadline": "2026-04-15",
+        "registration_completed": false
+      }
+    },
+    {
+      "key": "member_verified",
+      "email": "milan.verified@csc.local",
+      "password": "StrongPass123!",
+      "first_name": "Milan",
+      "last_name": "Roth",
+      "role": "member",
+      "is_staff": false,
+      "is_superuser": false,
+      "is_active": true,
+      "profile": {
+        "birth_date": "1993-09-11",
+        "member_number": null,
+        "status": "verified",
+        "is_verified": true,
+        "balance": "35.00",
+        "is_locked_for_orders": false,
+        "daily_used": "0.00",
+        "monthly_used": "0.00",
+        "last_activity": "2026-03-21T16:45:00+01:00"
+      },
+      "engagement": {
+        "required_hours_year": "20.00",
+        "annual_meeting_date": "2026-05-05",
+        "registration_deadline": "2026-04-10",
+        "registration_completed": false
+      }
+    },
+    {
+      "key": "member_active_a",
+      "email": "nora.mitglied@csc.local",
+      "password": "StrongPass123!",
+      "first_name": "Nora",
+      "last_name": "Kilic",
+      "role": "member",
+      "is_staff": false,
+      "is_superuser": false,
+      "is_active": true,
+      "profile": {
+        "birth_date": "1995-01-19",
+        "member_number": 100104,
+        "status": "active",
+        "is_verified": true,
+        "balance": "145.50",
+        "is_locked_for_orders": false,
+        "daily_used": "5.00",
+        "monthly_used": "24.00",
+        "last_activity": "2026-03-21T12:30:00+01:00"
+      },
+      "engagement": {
+        "required_hours_year": "16.00",
+        "annual_meeting_date": "2026-04-20",
+        "registration_deadline": "2026-03-25",
+        "registration_completed": true
+      },
+      "card": {
+        "card_number": "SEED-CARD-100104",
+        "status": "active",
+        "notes": "Primary shop test member"
+      },
+      "sepa_mandate": {
+        "iban": "DE44500105175407324931",
+        "bic": "INGDDEFFXXX",
+        "account_holder": "Nora Kilic",
+        "mandate_reference": "SEED-MANDATE-100104",
+        "is_active": true
+      }
+    },
+    {
+      "key": "member_active_b",
+      "email": "emir.mitglied@csc.local",
+      "password": "StrongPass123!",
+      "first_name": "Emir",
+      "last_name": "Pfeiffer",
+      "role": "member",
+      "is_staff": false,
+      "is_superuser": false,
+      "is_active": true,
+      "profile": {
+        "birth_date": "1992-12-02",
+        "member_number": 100105,
+        "status": "active",
+        "is_verified": true,
+        "balance": "82.00",
+        "is_locked_for_orders": false,
+        "daily_used": "3.00",
+        "monthly_used": "31.00",
+        "last_activity": "2026-03-20T18:10:00+01:00"
+      },
+      "engagement": {
+        "required_hours_year": "18.00",
+        "annual_meeting_date": "2026-04-20",
+        "registration_deadline": "2026-03-29",
+        "registration_completed": true
+      },
+      "card": {
+        "card_number": "SEED-CARD-100105",
+        "status": "active",
+        "notes": "Secondary shop test member"
+      },
+      "sepa_mandate": {
+        "iban": "DE02120300000000202051",
+        "bic": "BYLADEM1001",
+        "account_holder": "Emir Pfeiffer",
+        "mandate_reference": "SEED-MANDATE-100105",
+        "is_active": true
+      }
+    },
+    {
+      "key": "member_locked",
+      "email": "sina.gesperrt@csc.local",
+      "password": "StrongPass123!",
+      "first_name": "Sina",
+      "last_name": "Hartmann",
+      "role": "member",
+      "is_staff": false,
+      "is_superuser": false,
+      "is_active": true,
+      "profile": {
+        "birth_date": "1988-04-09",
+        "member_number": 100106,
+        "status": "active",
+        "is_verified": true,
+        "balance": "18.00",
+        "is_locked_for_orders": true,
+        "daily_used": "0.00",
+        "monthly_used": "12.50",
+        "last_activity": "2026-03-10T10:10:00+01:00"
+      },
+      "engagement": {
+        "required_hours_year": "14.00",
+        "annual_meeting_date": "2026-04-20",
+        "registration_deadline": "2026-03-20",
+        "registration_completed": false
+      },
+      "card": {
+        "card_number": "SEED-CARD-100106",
+        "status": "active",
+        "notes": "Locked ordering member"
+      }
+    },
+    {
+      "key": "member_rejected",
+      "email": "paul.abgelehnt@csc.local",
+      "password": "StrongPass123!",
+      "first_name": "Paul",
+      "last_name": "Winter",
+      "role": "member",
+      "is_staff": false,
+      "is_superuser": false,
+      "is_active": true,
+      "profile": {
+        "birth_date": "1999-07-23",
+        "member_number": null,
+        "status": "rejected",
+        "is_verified": false,
+        "balance": "0.00",
+        "is_locked_for_orders": true,
+        "daily_used": "0.00",
+        "monthly_used": "0.00",
+        "last_activity": "2026-03-05T08:20:00+01:00"
+      },
+      "engagement": {
+        "required_hours_year": "0.00",
+        "annual_meeting_date": null,
+        "registration_deadline": null,
+        "registration_completed": false
+      }
+    }
+  ]
+}

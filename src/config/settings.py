@@ -127,3 +127,26 @@ GA_TRACKING_ID = os.getenv("GA_TRACKING_ID", "")
 
 # Test User fuer Dev-Login / GUI-Tests
 TEST_USER_EMAIL = os.getenv("TEST_USER_EMAIL", "")
+DEV_LOGIN_ALLOWED_DOMAIN = os.getenv("DEV_LOGIN_ALLOWED_DOMAIN", "@test.local")
+
+# Site-URL fuer absolute Links (z.B. Tracking-Pixel in E-Mails)
+SITE_URL = os.getenv("SITE_URL", "http://localhost:8000")
+
+# E-Mail-Versand
+DEFAULT_FROM_EMAIL = os.getenv("DEFAULT_FROM_EMAIL", "noreply@localhost")
+EMAIL_DELIVERY_MODE = os.getenv("EMAIL_DELIVERY_MODE", "console")  # console | smtp | resend
+USE_RESEND = os.getenv("USE_RESEND", "0") == "1"
+
+if EMAIL_DELIVERY_MODE == "smtp" or USE_RESEND:
+    EMAIL_BACKEND = "django.core.mail.backends.smtp.EmailBackend"
+    EMAIL_HOST = os.getenv("EMAIL_HOST", "")
+    EMAIL_PORT = int(os.getenv("EMAIL_PORT", "587"))
+    EMAIL_USE_TLS = os.getenv("EMAIL_USE_TLS", "1") == "1"
+    EMAIL_HOST_USER = os.getenv("EMAIL_HOST_USER", "")
+    EMAIL_HOST_PASSWORD = os.getenv("EMAIL_HOST_PASSWORD", "")
+else:
+    EMAIL_BACKEND = "django.core.mail.backends.console.EmailBackend"
+
+# Vereins-Konfiguration
+MEMBER_CAPACITY = int(os.getenv("MEMBER_CAPACITY", "500"))  # Maximale Mitgliederzahl
+LOW_STOCK_THRESHOLD_EUR = os.getenv("LOW_STOCK_THRESHOLD_EUR", "25.00")  # Mindestbestand in EUR

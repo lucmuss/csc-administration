@@ -688,8 +688,7 @@ def sms_provider_delete(request, pk):
 @permission_required("messaging.view_smsmessage", raise_exception=True)
 def sms_stats(request):
     """SMS-Statistiken"""
-    from django.db.models import Sum, Count, Avg
-    
+
     # Gesamtstatistiken
     total_stats = SmsMessage.objects.aggregate(
         total=Count("id"),

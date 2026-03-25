@@ -1,5 +1,6 @@
 from decimal import Decimal
 
+from django.conf import settings as django_settings
 from django.contrib.auth.decorators import login_required, user_passes_test
 from django.db import connection
 from django.db.models import Count, Q, Sum
@@ -18,8 +19,8 @@ from apps.participation.models import MemberEngagement, Shift, WorkHours
 
 from .feature_audit import FEATURE_AUDIT_GROUPS, RECOMMENDED_FEATURES, feature_audit_summary
 
-LOW_STOCK_THRESHOLD = Decimal("25.00")
-MEMBER_CAPACITY = 500
+LOW_STOCK_THRESHOLD = Decimal(django_settings.LOW_STOCK_THRESHOLD_EUR)
+MEMBER_CAPACITY = django_settings.MEMBER_CAPACITY
 
 
 def _is_staff_or_board(user: User) -> bool:

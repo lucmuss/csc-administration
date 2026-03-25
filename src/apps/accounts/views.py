@@ -41,8 +41,9 @@ def dev_login(request):
         return HttpResponseForbidden("TEST_USER_EMAIL nicht konfiguriert.")
     
     # Optional: Test-User muss bestimmtes Suffix haben
-    if not test_email.endswith('@test.local'):
-        return HttpResponseForbidden("Ungueltiger Test-User. Muss @test.local Domain haben.")
+    allowed_domain = getattr(settings, "DEV_LOGIN_ALLOWED_DOMAIN", "@test.local")
+    if not test_email.endswith(allowed_domain):
+        return HttpResponseForbidden(f"Ungueltiger Test-User. Muss {allowed_domain} Domain haben.")
     
     try:
         user = User.objects.get(email=test_email)

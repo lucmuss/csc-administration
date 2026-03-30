@@ -172,18 +172,14 @@ class ForgejoClient:
 
     def transition_label(self, issue: int, remove: list[str], add: list[str]) -> None:
         labels = self.labels()
-        for label in remove:
-            label_id = labels.get(label)
-            if not label_id:
-                continue
-            try:
-                self.request(f"/issues/{issue}/labels/{label_id}", method="DELETE")
-            except urllib.error.HTTPError as exc:
-                if exc.code != 404:
-                    raise
-        add_ids = [labels[label] for label in add if label in labels]
-        if add_ids:
-            self.request(f"/issues/{issue}/labels", method="POST", data={"labels": add_ids})
+        issue_data = self.request(f"/issues/{issue}")
+        current_names = [item["name"] for item in issue_data.get("labels", [])]
+        target_names = [name for name in current_names if name not in remove]
+        for name in add:
+            if name in labels and name not in target_names:
+                target_names.append(name)
+        target_ids = [labels[name] for name in target_names if name in labels]
+        self.request(f"/issues/{issue}/labels", method="PUT", data={"labels": target_ids})
 
     def patch_issue(self, issue: int, *, state: str | None = None, title: str | None = None, body: str | None = None) -> None:
         payload: dict[str, Any] = {}

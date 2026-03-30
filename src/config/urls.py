@@ -1,6 +1,8 @@
+from django.conf import settings
 from django.contrib import admin
-from django.views.generic import TemplateView
 from django.urls import include, path
+from django.views.generic import TemplateView
+from django.views.static import serve
 
 urlpatterns = [
     path("admin/", admin.site.urls),
@@ -30,4 +32,5 @@ urlpatterns = [
     path("cultivation/", include("apps.cultivation.urls")),
     path("messaging/", include("apps.messaging.urls")),
     path("governance/", include("apps.governance.urls")),
+    path("media/<path:path>", serve, {"document_root": settings.MEDIA_ROOT}),
 ]

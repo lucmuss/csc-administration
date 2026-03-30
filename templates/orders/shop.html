@@ -8,6 +8,11 @@
 <div class="grid gap-4 md:grid-cols-2">
   {% for strain in strains %}
   <article class="card card-shop">
+    {% if strain.image %}
+    <div class="mb-3 overflow-hidden rounded-2xl border border-slate-200 bg-slate-100">
+      <img src="{{ strain.image.url }}" alt="{{ strain.name }}" class="h-48 w-full object-cover">
+    </div>
+    {% endif %}
     <h2 class="text-lg font-semibold">{{ strain.name }}</h2>
     <p>THC {{ strain.thc }}% | CBD {{ strain.cbd }}%</p>
     <p>Preis: {{ strain.price }} EUR pro Gramm</p>

@@ -1,13 +1,27 @@
 from django.contrib import admin
+from django.utils.html import format_html
 
 from .models import Batch, InventoryCount, InventoryItem, InventoryLocation, Strain
 
 
 @admin.register(Strain)
 class StrainAdmin(admin.ModelAdmin):
-    list_display = ("name", "quality_grade", "thc", "cbd", "price", "stock", "is_active")
+    list_display = ("image_preview", "name", "quality_grade", "thc", "cbd", "price", "stock", "is_active")
     search_fields = ("name",)
     list_filter = ("quality_grade", "is_active")
+    readonly_fields = ("image_preview",)
+    fields = ("name", "image", "image_preview", "thc", "cbd", "price", "stock", "quality_grade", "is_active")
+
+    def image_preview(self, obj):
+        if not obj.image:
+            return "Kein Bild"
+        return format_html(
+            '<img src="{}" alt="{}" style="width: 72px; height: 72px; object-fit: cover; border-radius: 12px;" />',
+            obj.image.url,
+            obj.name,
+        )
+
+    image_preview.short_description = "Shop-Bild"
 
 
 @admin.register(InventoryLocation)

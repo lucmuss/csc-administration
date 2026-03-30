@@ -139,6 +139,8 @@ USE_TZ = True
 STATIC_URL = "/static/"
 STATICFILES_DIRS = [BASE_DIR / "static"]
 STATIC_ROOT = Path(os.getenv("DJANGO_STATIC_ROOT", "/tmp/csc-staticfiles"))
+MEDIA_URL = "/media/"
+MEDIA_ROOT = Path(os.getenv("DJANGO_MEDIA_ROOT", BASE_DIR / "media"))
 EXPORT_ROOT = Path(os.getenv("CSC_EXPORT_ROOT", "/tmp/csc-exports"))
 STORAGES = {
     "default": {"BACKEND": "django.core.files.storage.FileSystemStorage"},

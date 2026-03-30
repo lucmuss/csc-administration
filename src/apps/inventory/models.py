@@ -22,6 +22,7 @@ class Strain(models.Model):
     price = models.DecimalField(max_digits=8, decimal_places=2)
     stock = models.DecimalField(max_digits=10, decimal_places=2)
     quality_grade = models.CharField(max_length=2, choices=QUALITY_CHOICES, default=QUALITY_B)
+    image = models.FileField(upload_to="strains/", blank=True)
     is_active = models.BooleanField(default=True)
     created_at = models.DateTimeField(auto_now_add=True)
 

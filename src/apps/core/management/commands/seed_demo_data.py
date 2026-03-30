@@ -222,6 +222,7 @@ class Command(BaseCommand):
                     "cbd": _parse_decimal(entry.get("cbd")),
                     "price": _parse_decimal(entry.get("price")),
                     "stock": _parse_decimal(entry.get("stock")),
+                    "product_type": entry.get("product_type", Strain.PRODUCT_TYPE_FLOWER),
                     "quality_grade": entry.get("quality_grade", Strain.QUALITY_B),
                     "is_active": entry.get("is_active", True),
                 },

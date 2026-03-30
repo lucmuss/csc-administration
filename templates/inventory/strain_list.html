@@ -22,10 +22,17 @@
         <a href="{% url 'inventory:discrepancy_report' %}" class="text-link">Abweichungsbericht</a>
       </div>
       <div class="table-card">
+        <div class="mb-4 flex flex-wrap gap-2">
+          <a href="{% url 'inventory:strain_list' %}" class="{% if active_type == 'all' %}btn-primary{% else %}btn-ghost{% endif %}">Alle</a>
+          <a href="{% url 'inventory:strain_list' %}?type=flower" class="{% if active_type == 'flower' %}btn-primary{% else %}btn-ghost{% endif %}">Blueten</a>
+          <a href="{% url 'inventory:strain_list' %}?type=cutting" class="{% if active_type == 'cutting' %}btn-primary{% else %}btn-ghost{% endif %}">Stecklinge</a>
+          <a href="{% url 'inventory:strain_list' %}?type=edible" class="{% if active_type == 'edible' %}btn-primary{% else %}btn-ghost{% endif %}">Edibles</a>
+        </div>
         <table class="table">
           <thead>
             <tr>
               <th>Name</th>
+              <th>Typ</th>
               <th>Qualitaet</th>
               <th>THC / CBD</th>
               <th>Preis</th>
@@ -36,20 +43,21 @@
             {% for strain in strains %}
               <tr>
                 <td><strong>{{ strain.name }}</strong></td>
+                <td>{{ strain.get_product_type_display }}</td>
                 <td><span class="status-pill status-pill--ink">{{ strain.quality_grade }}</span></td>
                 <td>{{ strain.thc }}% / {{ strain.cbd }}%</td>
-                <td>{{ strain.price }} EUR / g</td>
+                <td>{{ strain.price }} EUR {{ strain.unit_price_label }}</td>
                 <td>
                   {% if strain.stock <= 25 %}
-                    <span class="status-pill status-pill--danger">{{ strain.stock }} g</span>
+                    <span class="status-pill status-pill--danger">{{ strain.stock_display }}</span>
                   {% else %}
-                    <span class="status-pill status-pill--active">{{ strain.stock }} g</span>
+                    <span class="status-pill status-pill--active">{{ strain.stock_display }}</span>
                   {% endif %}
                 </td>
               </tr>
             {% empty %}
               <tr>
-                <td colspan="5">Keine Sorten vorhanden.</td>
+                <td colspan="6">Keine Produkte vorhanden.</td>
               </tr>
             {% endfor %}
           </tbody>

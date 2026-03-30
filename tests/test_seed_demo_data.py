@@ -16,7 +16,9 @@ def test_seed_demo_data_is_idempotent():
     assert Strain.objects.count() == 16
     assert Strain.objects.get(name="Orange Bud").price == Decimal("8.00")
     assert Strain.objects.get(name="Orange Bud").stock == Decimal("48.00")
+    assert Strain.objects.get(name="Orange Bud").product_type == Strain.PRODUCT_TYPE_FLOWER
     assert Strain.objects.get(name="Steckling: Orange Bud").price == Decimal("5.00")
     assert Strain.objects.get(name="Steckling: Orange Bud").stock == Decimal("12.00")
+    assert Strain.objects.get(name="Steckling: Orange Bud").product_type == Strain.PRODUCT_TYPE_CUTTING
     assert Order.objects.count() == 3
     assert Invoice.objects.count() == 3

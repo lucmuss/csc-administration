@@ -9,7 +9,7 @@
         <p>#{{ order.id }} | {{ order.get_status_display }} | {{ order.total }} EUR | reserviert bis {{ order.reserved_until|date:'d.m.Y H:i' }}</p>
         <ul class="list-disc pl-5">
           {% for item in order.items.all %}
-            <li>{{ item.strain.name }} - {{ item.quantity_grams }}g - {{ item.total_price }} EUR</li>
+            <li>{{ item.strain.name }} - {{ item.quantity_display }} - {{ item.total_price }} EUR</li>
           {% endfor %}
         </ul>
       </div>

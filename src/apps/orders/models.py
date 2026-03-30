@@ -37,6 +37,10 @@ class Order(models.Model):
     def reservation_deadline() -> timezone.datetime:
         return timezone.now() + timedelta(hours=48)
 
+    @property
+    def total_grams_display(self) -> str:
+        return f"{self.total_grams} g"
+
 
 class OrderItem(models.Model):
     order = models.ForeignKey(Order, on_delete=models.CASCADE, related_name="items")
@@ -50,4 +54,8 @@ class OrderItem(models.Model):
         ordering = ["id"]
 
     def __str__(self):
-        return f"{self.strain.name} {self.quantity_grams}g"
+        return f"{self.strain.name} {self.quantity_display}"
+
+    @property
+    def quantity_display(self) -> str:
+        return f"{self.quantity_grams} {self.strain.unit_label}"

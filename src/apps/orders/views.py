@@ -25,8 +25,16 @@ def _save_cart(request, cart: dict[str, str]) -> None:
 
 @login_required
 def shop(request):
-    strains = Strain.objects.filter(is_active=True).order_by("name")
-    return render(request, "orders/shop.html", {"strains": strains})
+    active_type = request.GET.get("type", "all")
+    strains = Strain.objects.filter(is_active=True)
+    if active_type in {
+        Strain.PRODUCT_TYPE_FLOWER,
+        Strain.PRODUCT_TYPE_CUTTING,
+        Strain.PRODUCT_TYPE_EDIBLE,
+    }:
+        strains = strains.filter(product_type=active_type)
+    strains = strains.order_by("product_type", "name")
+    return render(request, "orders/shop.html", {"strains": strains, "active_type": active_type})
 
 
 @login_required
@@ -35,10 +43,10 @@ def add_to_cart(request):
         return redirect("orders:shop")
 
     strain_id = request.POST.get("strain_id")
-    grams = request.POST.get("grams", "0")
+    quantity = request.POST.get("quantity", request.POST.get("grams", "0"))
     try:
-        grams_decimal = Decimal(grams)
-        if grams_decimal <= 0:
+        quantity_decimal = Decimal(quantity)
+        if quantity_decimal <= 0:
             raise ValueError
     except Exception:
         messages.error(request, "Ungueltige Menge")
@@ -46,7 +54,7 @@ def add_to_cart(request):
 
     cart = _load_cart(request)
     existing = Decimal(cart.get(str(strain_id), "0"))
-    cart[str(strain_id)] = str(existing + grams_decimal)
+    cart[str(strain_id)] = str(existing + quantity_decimal)
     _save_cart(request, cart)
 
     messages.success(request, "Zum Warenkorb hinzugefuegt")
@@ -59,18 +67,22 @@ def cart(request):
     rows = []
     total = Decimal("0.00")
     total_grams = Decimal("0.00")
+    total_pieces = Decimal("0.00")
 
-    for strain_id, grams in raw_cart.items():
+    for strain_id, quantity in raw_cart.items():
         try:
             strain = Strain.objects.get(id=int(strain_id), is_active=True)
-            grams_decimal = Decimal(grams)
+            quantity_decimal = Decimal(quantity)
         except Exception:
             continue
 
-        line_total = strain.price * grams_decimal
-        rows.append({"strain": strain, "grams": grams_decimal, "line_total": line_total})
+        line_total = strain.price * quantity_decimal
+        rows.append({"strain": strain, "quantity": quantity_decimal, "line_total": line_total})
         total += line_total
-        total_grams += grams_decimal
+        if strain.is_weight_based:
+            total_grams += quantity_decimal
+        else:
+            total_pieces += quantity_decimal
 
     return render(
         request,
@@ -79,6 +91,7 @@ def cart(request):
             "rows": rows,
             "total": total,
             "total_grams": total_grams,
+            "total_pieces": total_pieces,
         },
     )
 
@@ -97,9 +110,9 @@ def checkout(request):
 
     raw_cart = _load_cart(request)
     cart_lines = []
-    for strain_id, grams in raw_cart.items():
+    for strain_id, quantity in raw_cart.items():
         try:
-            cart_lines.append(CartLine(strain_id=int(strain_id), grams=Decimal(grams)))
+            cart_lines.append(CartLine(strain_id=int(strain_id), quantity=Decimal(quantity)))
         except Exception:
             continue
 

@@ -27,6 +27,7 @@
       "cbd": "0.30",
       "price": "8.00",
       "stock": "48.00",
+      "product_type": "flower",
       "quality_grade": "A",
       "is_active": true
     },
@@ -37,6 +38,7 @@
       "cbd": "0.20",
       "price": "9.00",
       "stock": "36.00",
+      "product_type": "flower",
       "quality_grade": "A+",
       "is_active": true
     },
@@ -47,6 +49,7 @@
       "cbd": "0.80",
       "price": "8.00",
       "stock": "42.00",
+      "product_type": "flower",
       "quality_grade": "A",
       "is_active": true
     },
@@ -57,6 +60,7 @@
       "cbd": "0.20",
       "price": "9.00",
       "stock": "28.00",
+      "product_type": "flower",
       "quality_grade": "A",
       "is_active": true
     },
@@ -67,6 +71,7 @@
       "cbd": "0.20",
       "price": "9.00",
       "stock": "24.00",
+      "product_type": "flower",
       "quality_grade": "A+",
       "is_active": true
     },
@@ -77,6 +82,7 @@
       "cbd": "0.40",
       "price": "8.00",
       "stock": "32.00",
+      "product_type": "flower",
       "quality_grade": "A",
       "is_active": true
     },
@@ -87,6 +93,7 @@
       "cbd": "0.30",
       "price": "9.00",
       "stock": "30.00",
+      "product_type": "flower",
       "quality_grade": "A",
       "is_active": true
     },
@@ -97,6 +104,7 @@
       "cbd": "0.50",
       "price": "7.00",
       "stock": "20.00",
+      "product_type": "flower",
       "quality_grade": "B",
       "is_active": true
     },
@@ -107,6 +115,7 @@
       "cbd": "0.00",
       "price": "5.00",
       "stock": "12.00",
+      "product_type": "cutting",
       "quality_grade": "B",
       "is_active": true
     },
@@ -117,6 +126,7 @@
       "cbd": "0.00",
       "price": "5.00",
       "stock": "10.00",
+      "product_type": "cutting",
       "quality_grade": "B",
       "is_active": true
     },
@@ -127,6 +137,7 @@
       "cbd": "0.00",
       "price": "5.00",
       "stock": "10.00",
+      "product_type": "cutting",
       "quality_grade": "B",
       "is_active": true
     },
@@ -137,6 +148,7 @@
       "cbd": "0.00",
       "price": "5.00",
       "stock": "8.00",
+      "product_type": "cutting",
       "quality_grade": "B",
       "is_active": true
     },
@@ -147,6 +159,7 @@
       "cbd": "0.00",
       "price": "5.00",
       "stock": "8.00",
+      "product_type": "cutting",
       "quality_grade": "B",
       "is_active": true
     },
@@ -157,6 +170,7 @@
       "cbd": "0.00",
       "price": "5.00",
       "stock": "10.00",
+      "product_type": "cutting",
       "quality_grade": "B",
       "is_active": true
     },
@@ -167,6 +181,7 @@
       "cbd": "0.00",
       "price": "5.00",
       "stock": "8.00",
+      "product_type": "cutting",
       "quality_grade": "B",
       "is_active": true
     },
@@ -177,6 +192,7 @@
       "cbd": "0.00",
       "price": "5.00",
       "stock": "6.00",
+      "product_type": "cutting",
       "quality_grade": "B",
       "is_active": true
     }

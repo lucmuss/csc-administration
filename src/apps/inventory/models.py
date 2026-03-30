@@ -5,6 +5,15 @@ from django.db import models
 
 
 class Strain(models.Model):
+    PRODUCT_TYPE_FLOWER = "flower"
+    PRODUCT_TYPE_CUTTING = "cutting"
+    PRODUCT_TYPE_EDIBLE = "edible"
+    PRODUCT_TYPE_CHOICES = [
+        (PRODUCT_TYPE_FLOWER, "Bluete"),
+        (PRODUCT_TYPE_CUTTING, "Steckling"),
+        (PRODUCT_TYPE_EDIBLE, "Edible"),
+    ]
+
     QUALITY_A_PLUS = "A+"
     QUALITY_A = "A"
     QUALITY_B = "B"
@@ -21,6 +30,7 @@ class Strain(models.Model):
     cbd = models.DecimalField(max_digits=5, decimal_places=2, default=Decimal("0.00"))
     price = models.DecimalField(max_digits=8, decimal_places=2)
     stock = models.DecimalField(max_digits=10, decimal_places=2)
+    product_type = models.CharField(max_length=16, choices=PRODUCT_TYPE_CHOICES, default=PRODUCT_TYPE_FLOWER)
     quality_grade = models.CharField(max_length=2, choices=QUALITY_CHOICES, default=QUALITY_B)
     image = models.FileField(upload_to="strains/", blank=True)
     is_active = models.BooleanField(default=True)
@@ -45,6 +55,22 @@ class Strain(models.Model):
             raise ValidationError("Menge muss > 0 sein")
         self.stock += grams
         self.save(update_fields=["stock"])
+
+    @property
+    def is_weight_based(self) -> bool:
+        return self.product_type == self.PRODUCT_TYPE_FLOWER
+
+    @property
+    def unit_label(self) -> str:
+        return "g" if self.is_weight_based else "Stk."
+
+    @property
+    def unit_price_label(self) -> str:
+        return "pro Gramm" if self.is_weight_based else "pro Stueck"
+
+    @property
+    def stock_display(self) -> str:
+        return f"{self.stock} {self.unit_label}"
 
 
 class InventoryLocation(models.Model):

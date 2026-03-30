@@ -11,8 +11,16 @@ from .services import InventoryCountService
 
 @login_required
 def strain_list(request):
-    strains = Strain.objects.filter(is_active=True).order_by("name")
-    return render(request, "inventory/strain_list.html", {"strains": strains})
+    active_type = request.GET.get("type", "all")
+    strains = Strain.objects.filter(is_active=True)
+    if active_type in {
+        Strain.PRODUCT_TYPE_FLOWER,
+        Strain.PRODUCT_TYPE_CUTTING,
+        Strain.PRODUCT_TYPE_EDIBLE,
+    }:
+        strains = strains.filter(product_type=active_type)
+    strains = strains.order_by("product_type", "name")
+    return render(request, "inventory/strain_list.html", {"strains": strains, "active_type": active_type})
 
 
 @login_required

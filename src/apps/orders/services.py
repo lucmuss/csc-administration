@@ -20,7 +20,7 @@ from .models import Order, OrderItem
 @dataclass
 class CartLine:
     strain_id: int
-    grams: Decimal
+    quantity: Decimal
 
 
 @transaction.atomic
@@ -40,13 +40,14 @@ def create_reserved_order(*, user, cart_lines: list[CartLine]) -> Order:
     strains = {}
 
     for line in cart_lines:
-        if line.grams <= 0:
+        if line.quantity <= 0:
             raise ValidationError("Menge muss > 0 sein")
         strain = Strain.objects.select_for_update().get(id=line.strain_id, is_active=True)
-        if strain.stock < line.grams:
+        if strain.stock < line.quantity:
             raise ValidationError(f"Nicht genug Bestand fuer {strain.name}")
-        line_total = strain.price * line.grams
-        total_grams += line.grams
+        line_total = strain.price * line.quantity
+        if strain.is_weight_based:
+            total_grams += line.quantity
         total_price += line_total
         strains[line.strain_id] = strain
 
@@ -68,33 +69,36 @@ def create_reserved_order(*, user, cart_lines: list[CartLine]) -> Order:
 
     for line in cart_lines:
         strain = strains[line.strain_id]
-        line_total = strain.price * line.grams
+        line_total = strain.price * line.quantity
         batch = (
             Batch.objects.select_for_update()
             .filter(
                 strain=strain,
                 is_active=True,
-                quantity__gte=line.grams,
+                quantity__gte=line.quantity,
             )
             .order_by("harvested_at", "created_at")
             .first()
+            if strain.is_weight_based
+            else None
         )
         OrderItem.objects.create(
             order=order,
             strain=strain,
             batch=batch,
-            quantity_grams=line.grams,
+            quantity_grams=line.quantity,
             unit_price=strain.price,
             total_price=line_total,
         )
         if batch:
-            batch.quantity = F("quantity") - line.grams
+            batch.quantity = F("quantity") - line.quantity
             batch.save(update_fields=["quantity"])
-        strain.stock = F("stock") - line.grams
+        strain.stock = F("stock") - line.quantity
         strain.save(update_fields=["stock"])
 
     profile.balance -= total_price
-    profile.consume(total_grams)
+    if total_grams > Decimal("0.00"):
+        profile.consume(total_grams)
     profile.last_activity = timezone.now()
     profile.save(update_fields=["balance", "daily_used", "monthly_used", "last_activity", "updated_at"])
     detect_suspicious_activity_for_profile(profile=profile)

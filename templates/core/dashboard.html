@@ -107,9 +107,9 @@
               <li class="stack-list__item">
                 <div>
                   <strong>{{ strain.name }}</strong>
-                  <small>{{ strain.thc }}% THC · {{ strain.quality_grade }}</small>
+                  <small>{{ strain.get_product_type_display }} · {{ strain.thc }}% THC · {{ strain.quality_grade }}</small>
                 </div>
-                <span class="status-pill status-pill--danger">{{ strain.stock }} g</span>
+                <span class="status-pill status-pill--danger">{{ strain.stock_display }}</span>
               </li>
             {% endfor %}
           </ul>

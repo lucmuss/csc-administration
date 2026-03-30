@@ -6,12 +6,12 @@ from .models import Batch, InventoryCount, InventoryItem, InventoryLocation, Str
 
 @admin.register(Strain)
 class StrainAdmin(admin.ModelAdmin):
-    list_display = ("image_preview", "name", "quality_grade", "thc", "cbd", "price", "stock", "is_active")
-    list_editable = ("price", "stock", "is_active")
+    list_display = ("image_preview", "name", "product_type", "quality_grade", "thc", "cbd", "price", "stock", "is_active")
+    list_editable = ("product_type", "price", "stock", "is_active")
     search_fields = ("name",)
-    list_filter = ("quality_grade", "is_active")
+    list_filter = ("product_type", "quality_grade", "is_active")
     readonly_fields = ("image_preview",)
-    fields = ("name", "image", "image_preview", "thc", "cbd", "price", "stock", "quality_grade", "is_active")
+    fields = ("name", "product_type", "image", "image_preview", "thc", "cbd", "price", "stock", "quality_grade", "is_active")
 
     def image_preview(self, obj):
         if not obj.image:

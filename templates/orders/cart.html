@@ -5,18 +5,20 @@
   <h1 class="mb-4 text-xl font-semibold">Warenkorb</h1>
   {% if rows %}
     <table class="mb-4 w-full text-left text-sm">
-      <thead><tr><th>Sorte</th><th>Menge</th><th>Preis</th></tr></thead>
+      <thead><tr><th>Produkt</th><th>Typ</th><th>Menge</th><th>Preis</th></tr></thead>
       <tbody>
       {% for row in rows %}
         <tr>
           <td>{{ row.strain.name }}</td>
-          <td>{{ row.grams }}g</td>
+          <td>{{ row.strain.get_product_type_display }}</td>
+          <td>{{ row.quantity }} {{ row.strain.unit_label }}</td>
           <td>{{ row.line_total }} EUR</td>
         </tr>
       {% endfor %}
       </tbody>
     </table>
-    <p>Gesamtmenge: {{ total_grams }}g</p>
+    {% if total_grams > 0 %}<p>Gesamtmenge Blueten: {{ total_grams }} g</p>{% endif %}
+    {% if total_pieces > 0 %}<p>Gesamtmenge Stecklinge/Produkte: {{ total_pieces }} Stk.</p>{% endif %}
     <p>Gesamtpreis: {{ total }} EUR</p>
     <div class="mt-4 flex gap-2">
       <form method="post" action="{% url 'orders:checkout' %}">

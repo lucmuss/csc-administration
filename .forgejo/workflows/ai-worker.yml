@@ -45,15 +45,30 @@ jobs:
           python3 "$RUNTIME_SCRIPT" cleanup-artifacts --artifact-root "$ARTIFACT_ROOT"
           python3 "$RUNTIME_SCRIPT" log --level INFO --phase prepare --message "Artifact directory prepared at $ARTIFACT_DIR" --issue "$ISSUE" --log-file "$LOG_FILE" --json-log-file "$JSON_LOG_FILE"
 
+      - name: Resolve Forgejo token
+        env:
+          TOKEN_FROM_SECRET: ${{ secrets.FORGEJO_TOKEN }}
+        run: |
+          TOKEN="$TOKEN_FROM_SECRET"
+          if [ -z "$TOKEN" ] && [ -f "$RUNNER_ENV_FILE" ]; then
+            set -a
+            . "$RUNNER_ENV_FILE"
+            set +a
+            TOKEN="${FORGEJO_TOKEN:-}"
+          fi
+          if [ -z "$TOKEN" ]; then
+            echo "FORGEJO_TOKEN unavailable (secret missing and no local fallback in $RUNNER_ENV_FILE)" >&2
+            exit 1
+          fi
+          printf 'FORGEJO_TOKEN=%s\n' "$TOKEN" >> "$GITHUB_ENV"
+
       - name: Acquire worker lock
         run: |
           python3 "$RUNTIME_SCRIPT" acquire-lock --lock-file "$RUN_LOCK" --issue "$ISSUE" --log-file "$LOG_FILE" --json-log-file "$JSON_LOG_FILE"
 
       - name: Pre-flight checks
-        env:
-          TOKEN: ${{ secrets.FORGEJO_TOKEN }}
         run: |
-          REPO_URL="http://ai-worker:$TOKEN@localhost:18095/$REPO.git"
+          REPO_URL="http://ai-worker:$FORGEJO_TOKEN@localhost:18095/$REPO.git"
           if ! python3 "$RUNTIME_SCRIPT" preflight --runner-env-file "$RUNNER_ENV_FILE" --forgejo-api-base "$BASE" --repo-url "$REPO_URL" --site-domain forgejo.kolibri-kollektiv.eu > "$ARTIFACT_DIR/preflight-errors.txt"; then
             python3 "$RUNTIME_SCRIPT" log --level ERROR --phase preflight --message "Pre-flight checks failed" --issue "$ISSUE" --log-file "$LOG_FILE" --json-log-file "$JSON_LOG_FILE"
             cat "$ARTIFACT_DIR/preflight-errors.txt"
@@ -62,20 +77,16 @@ jobs:
           python3 "$RUNTIME_SCRIPT" log --level INFO --phase preflight --message "All pre-flight checks passed" --issue "$ISSUE" --log-file "$LOG_FILE" --json-log-file "$JSON_LOG_FILE"
 
       - name: Swap label ai:ready to ai:running
-        env:
-          TOKEN: ${{ secrets.FORGEJO_TOKEN }}
         run: |
-          python3 "$RUNTIME_SCRIPT" label-transition --base "$BASE" --repo "$REPO" --token "$TOKEN" --issue "$ISSUE" --remove "ai:ready" --add "ai:running"
+          python3 "$RUNTIME_SCRIPT" label-transition --base "$BASE" --repo "$REPO" --token "$FORGEJO_TOKEN" --issue "$ISSUE" --remove "ai:ready" --add "ai:running"
           python3 "$RUNTIME_SCRIPT" log --level INFO --phase labels --message "Swapped ai:ready to ai:running" --issue "$ISSUE" --log-file "$LOG_FILE" --json-log-file "$JSON_LOG_FILE"
 
       - name: Prepare repo from persistent mirror
-        env:
-          TOKEN: ${{ secrets.FORGEJO_TOKEN }}
         run: |
           set -o pipefail
           echo "clone" > "$PHASE_FILE"
           python3 "$RUNTIME_SCRIPT" log --level INFO --phase clone --message "Preparing repo from persistent mirror" --issue "$ISSUE" --log-file "$LOG_FILE" --json-log-file "$JSON_LOG_FILE"
-          REPO_URL="http://ai-worker:$TOKEN@localhost:18095/$REPO.git"
+          REPO_URL="http://ai-worker:$FORGEJO_TOKEN@localhost:18095/$REPO.git"
           mkdir -p "$(dirname "$WORKDIR")" "$(dirname "$MIRROR")"
 
           if [ ! -d "$MIRROR" ]; then
@@ -105,7 +116,6 @@ jobs:
 
       - name: Refine issue into structured brief
         env:
-          TOKEN: ${{ secrets.FORGEJO_TOKEN }}
           ISSUE_TITLE: ${{ github.event.issue.title }}
           ISSUE_BODY: ${{ github.event.issue.body }}
         run: |
@@ -143,7 +153,7 @@ jobs:
               --body-output "$ARTIFACT_DIR/issue-update-body.md"
             then
               TITLE=$(python3 "$RUNTIME_SCRIPT" json-field --json-file "$ARTIFACT_DIR/issue-update.json" --field title)
-              python3 "$RUNTIME_SCRIPT" patch-issue --base "$BASE" --repo "$REPO" --token "$TOKEN" --issue "$ISSUE" --title "$TITLE" --body-file "$ARTIFACT_DIR/issue-update-body.md"
+              python3 "$RUNTIME_SCRIPT" patch-issue --base "$BASE" --repo "$REPO" --token "$FORGEJO_TOKEN" --issue "$ISSUE" --title "$TITLE" --body-file "$ARTIFACT_DIR/issue-update-body.md"
             fi
           fi
 
@@ -203,8 +213,6 @@ jobs:
           fi
 
       - name: Commit and push
-        env:
-          TOKEN: ${{ secrets.FORGEJO_TOKEN }}
         run: |
           set -o pipefail
           echo "commit" > "$PHASE_FILE"
@@ -217,11 +225,10 @@ jobs:
           git commit -m "feat: implement issue #$ISSUE via Codex
 
           Closes #$ISSUE" 2>&1 | tee -a "$LOG_FILE"
-          git push "http://ai-worker:$TOKEN@localhost:18095/$REPO.git" "HEAD:$REMOTE_BRANCH" 2>&1 | tee -a "$LOG_FILE"
+          git push "http://ai-worker:$FORGEJO_TOKEN@localhost:18095/$REPO.git" "HEAD:$REMOTE_BRANCH" 2>&1 | tee -a "$LOG_FILE"
 
       - name: Create PR and merge
         env:
-          TOKEN: ${{ secrets.FORGEJO_TOKEN }}
           ISSUE_TITLE: ${{ github.event.issue.title }}
         run: |
           set -o pipefail
@@ -234,39 +241,31 @@ jobs:
             printf '%s\n' '**Tool:** OpenAI Codex'
             printf '%s\n' '**Checks:** passed'
           } > "$ARTIFACT_DIR/pr-body.md"
-          python3 "$RUNTIME_SCRIPT" create-pr --base "$BASE" --repo "$REPO" --token "$TOKEN" --title "$PR_TITLE" --body-file "$ARTIFACT_DIR/pr-body.md" --head "$BRANCH" --base-branch main > "$ARTIFACT_DIR/pr.json"
+          python3 "$RUNTIME_SCRIPT" create-pr --base "$BASE" --repo "$REPO" --token "$FORGEJO_TOKEN" --title "$PR_TITLE" --body-file "$ARTIFACT_DIR/pr-body.md" --head "$BRANCH" --base-branch main > "$ARTIFACT_DIR/pr.json"
           PR_NUMBER=$(python3 "$RUNTIME_SCRIPT" json-field --json-file "$ARTIFACT_DIR/pr.json" --field number)
-          python3 "$RUNTIME_SCRIPT" merge-pr --base "$BASE" --repo "$REPO" --token "$TOKEN" --pr-number "$PR_NUMBER" --merge-message "Auto-merged by AI Worker (checks passed)" | tee -a "$LOG_FILE"
-          git push "http://ai-worker:$TOKEN@localhost:18095/$REPO.git" --delete "$BRANCH" 2>&1 | tee -a "$LOG_FILE"
+          python3 "$RUNTIME_SCRIPT" merge-pr --base "$BASE" --repo "$REPO" --token "$FORGEJO_TOKEN" --pr-number "$PR_NUMBER" --merge-message "Auto-merged by AI Worker (checks passed)" | tee -a "$LOG_FILE"
+          git push "http://ai-worker:$FORGEJO_TOKEN@localhost:18095/$REPO.git" --delete "$BRANCH" 2>&1 | tee -a "$LOG_FILE"
 
       - name: Comment success summary
         if: success()
-        env:
-          TOKEN: ${{ secrets.FORGEJO_TOKEN }}
         run: |
           cd "$WORKDIR"
           python3 "$RUNTIME_SCRIPT" success-summary --issue "$ISSUE" --start-ts-file "$START_TS_FILE" --tool-name "$TOOL_NAME" --diff-base refs/cache/origin/main > "$ARTIFACT_DIR/success-summary.md"
-          python3 "$RUNTIME_SCRIPT" comment --base "$BASE" --repo "$REPO" --token "$TOKEN" --issue "$ISSUE" --body-file "$ARTIFACT_DIR/success-summary.md"
+          python3 "$RUNTIME_SCRIPT" comment --base "$BASE" --repo "$REPO" --token "$FORGEJO_TOKEN" --issue "$ISSUE" --body-file "$ARTIFACT_DIR/success-summary.md"
 
       - name: Close issue and label ai:review
         if: success()
-        env:
-          TOKEN: ${{ secrets.FORGEJO_TOKEN }}
         run: |
-          python3 "$RUNTIME_SCRIPT" patch-issue --base "$BASE" --repo "$REPO" --token "$TOKEN" --issue "$ISSUE" --state closed
-          python3 "$RUNTIME_SCRIPT" label-transition --base "$BASE" --repo "$REPO" --token "$TOKEN" --issue "$ISSUE" --remove "ai:running" --remove "ai:blocked" --add "ai:review"
+          python3 "$RUNTIME_SCRIPT" patch-issue --base "$BASE" --repo "$REPO" --token "$FORGEJO_TOKEN" --issue "$ISSUE" --state closed
+          python3 "$RUNTIME_SCRIPT" label-transition --base "$BASE" --repo "$REPO" --token "$FORGEJO_TOKEN" --issue "$ISSUE" --remove "ai:running" --remove "ai:blocked" --add "ai:review"
 
       - name: Label ai:blocked on failure
         if: failure()
-        env:
-          TOKEN: ${{ secrets.FORGEJO_TOKEN }}
         run: |
-          python3 "$RUNTIME_SCRIPT" label-transition --base "$BASE" --repo "$REPO" --token "$TOKEN" --issue "$ISSUE" --remove "ai:running" --remove "ai:ready" --add "ai:blocked"
+          python3 "$RUNTIME_SCRIPT" label-transition --base "$BASE" --repo "$REPO" --token "$FORGEJO_TOKEN" --issue "$ISSUE" --remove "ai:running" --remove "ai:ready" --add "ai:blocked"
 
       - name: Comment failure details
         if: failure()
-        env:
-          TOKEN: ${{ secrets.FORGEJO_TOKEN }}
         run: |
           PHASE=$(cat "$PHASE_FILE" 2>/dev/null || echo "unknown")
           EXCERPT=$(tail -n 40 "$LOG_FILE" 2>/dev/null || echo "No captured log excerpt available.")
@@ -286,7 +285,7 @@ jobs:
             printf '%s\n' "$EXCERPT"
             printf '%s\n' '```'
           } > "$ARTIFACT_DIR/failure-comment.md"
-          python3 "$RUNTIME_SCRIPT" comment --base "$BASE" --repo "$REPO" --token "$TOKEN" --issue "$ISSUE" --body-file "$ARTIFACT_DIR/failure-comment.md"
+          python3 "$RUNTIME_SCRIPT" comment --base "$BASE" --repo "$REPO" --token "$FORGEJO_TOKEN" --issue "$ISSUE" --body-file "$ARTIFACT_DIR/failure-comment.md"
 
       - name: Release worker lock
         if: always()

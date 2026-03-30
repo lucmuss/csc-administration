@@ -40,6 +40,9 @@
             <a href="{% url 'core:dashboard' %}" class="nav-link{% if request.path == '/' %} is-active{% endif %}">Dashboard</a>
             {% if user.role == 'member' %}
               <a href="{% url 'orders:shop' %}" class="nav-link{% if '/orders/shop/' in request.path %} is-active{% endif %}">Shop</a>
+              <a href="{% url 'orders:cart' %}" class="nav-link{% if '/orders/cart/' in request.path or '/orders/checkout/' in request.path %} is-active{% endif %}">
+                Warenkorb{% if request.session.cart %} ({{ request.session.cart|length }}){% endif %}
+              </a>
               <a href="{% url 'orders:list' %}" class="nav-link{% if '/orders/my/' in request.path %} is-active{% endif %}">Bestellungen</a>
               <a href="{% url 'members:profile' %}" class="nav-link{% if '/members/profile/' in request.path %} is-active{% endif %}">Profil</a>
               <a href="{% url 'finance:dashboard' %}" class="nav-link{% if '/finance/' in request.path %} is-active{% endif %}">Finanzen</a>
@@ -61,6 +64,11 @@
 
         <div class="topbar__actions">
           {% if user.is_authenticated %}
+            {% if user.role == 'member' %}
+              <a href="{% url 'orders:cart' %}" class="btn-ghost topbar__utility">
+                Warenkorb{% if request.session.cart %} ({{ request.session.cart|length }}){% endif %}
+              </a>
+            {% endif %}
             <div class="user-chip">
               <span class="role-pill role-pill--{{ user.role }}">{{ user.get_role_display }}</span>
               <span class="user-chip__name">{{ user.first_name|default:user.email }}</span>

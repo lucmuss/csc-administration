@@ -256,6 +256,7 @@
         </p>
         <div class="hero-actions">
           <a href="{% url 'orders:shop' %}" class="btn-primary">Zum Shop</a>
+          <a href="{% url 'orders:cart' %}" class="btn-ghost">Warenkorb{% if request.session.cart %} ({{ request.session.cart|length }}){% endif %}</a>
           <a href="{% url 'members:profile' %}" class="btn-ghost">Profil ansehen</a>
         </div>
       </div>

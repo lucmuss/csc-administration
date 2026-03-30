@@ -7,7 +7,10 @@
         <p class="eyebrow">Mitgliederprofil</p>
         <h1>Persoenliche Daten, Limits und Aktivitaet.</h1>
       </div>
-      <a href="{% url 'orders:shop' %}" class="btn-ghost">Zum Shop</a>
+      <div class="flex gap-2">
+        <a href="{% url 'orders:shop' %}" class="btn-ghost">Zum Shop</a>
+        <a href="{% url 'orders:cart' %}" class="btn-ghost">Warenkorb{% if request.session.cart %} ({{ request.session.cart|length }}){% endif %}</a>
+      </div>
     </div>
 
     <div class="kpi-grid">

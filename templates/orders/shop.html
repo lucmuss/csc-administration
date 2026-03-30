@@ -4,6 +4,10 @@
 <section class="mb-4">
   <h1 class="text-2xl font-bold">Shop</h1>
   <p class="text-base text-slate-700">Hier koennen Sie Ihre Produkte einfach in den Warenkorb legen.</p>
+  <div class="mt-3 flex gap-2">
+    <a href="{% url 'orders:cart' %}" class="btn-primary">Zum Warenkorb{% if request.session.cart %} ({{ request.session.cart|length }}){% endif %}</a>
+    <a href="{% url 'orders:list' %}" class="btn-ghost">Meine Bestellungen</a>
+  </div>
 </section>
 <div class="grid gap-4 md:grid-cols-2">
   {% for strain in strains %}
@@ -17,20 +21,24 @@
     <p>THC {{ strain.thc }}% | CBD {{ strain.cbd }}%</p>
     <p>Preis: {{ strain.price }} EUR pro Gramm</p>
     <p>Bestand: {{ strain.stock }}g</p>
-    <form method="post" action="{% url 'orders:add_to_cart' %}" class="shop-form" aria-label="{{ strain.name }} zum Warenkorb hinzufuegen">
-      {% csrf_token %}
-      <input type="hidden" name="strain_id" value="{{ strain.id }}">
-      <label for="grams-{{ strain.id }}" class="sr-only">Menge in Gramm</label>
-      <select id="grams-{{ strain.id }}" name="grams" class="touch-target field-select">
-        <option value="1">1g</option>
-        <option value="2">2g</option>
-        <option value="3">3g</option>
-        <option value="5">5g</option>
-        <option value="10">10g</option>
-        <option value="25">25g</option>
-      </select>
-      <button class="btn-primary" type="submit">In den Warenkorb</button>
-    </form>
+    {% if strain.stock > 0 %}
+      <form method="post" action="{% url 'orders:add_to_cart' %}" class="shop-form" aria-label="{{ strain.name }} zum Warenkorb hinzufuegen">
+        {% csrf_token %}
+        <input type="hidden" name="strain_id" value="{{ strain.id }}">
+        <label for="grams-{{ strain.id }}" class="sr-only">Menge in Gramm</label>
+        <select id="grams-{{ strain.id }}" name="grams" class="touch-target field-select">
+          <option value="1">1g</option>
+          <option value="2">2g</option>
+          <option value="3">3g</option>
+          <option value="5">5g</option>
+          <option value="10">10g</option>
+          <option value="25">25g</option>
+        </select>
+        <button class="btn-primary" type="submit">In den Warenkorb</button>
+      </form>
+    {% else %}
+      <p class="mt-3 text-sm text-slate-600">Aktuell nicht verfuegbar.</p>
+    {% endif %}
   </article>
   {% empty %}
   <p class="card">Zurzeit sind keine Produkte verfuegbar.</p>

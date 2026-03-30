@@ -7,6 +7,7 @@ from .models import Batch, InventoryCount, InventoryItem, InventoryLocation, Str
 @admin.register(Strain)
 class StrainAdmin(admin.ModelAdmin):
     list_display = ("image_preview", "name", "quality_grade", "thc", "cbd", "price", "stock", "is_active")
+    list_editable = ("price", "stock", "is_active")
     search_fields = ("name",)
     list_filter = ("quality_grade", "is_active")
     readonly_fields = ("image_preview",)

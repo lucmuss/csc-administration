@@ -52,10 +52,9 @@ jobs:
       - name: Pre-flight checks
         env:
           TOKEN: ${{ secrets.FORGEJO_TOKEN }}
-          OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
         run: |
           REPO_URL="http://ai-worker:$TOKEN@localhost:18095/$REPO.git"
-          if ! python3 "$RUNTIME_SCRIPT" preflight --runner-env-file "$RUNNER_ENV_FILE" --forgejo-api-base "$BASE" --repo-url "$REPO_URL" --site-domain forgejo.kolibri-kollektiv.eu --require-openai > "$ARTIFACT_DIR/preflight-errors.txt"; then
+          if ! python3 "$RUNTIME_SCRIPT" preflight --runner-env-file "$RUNNER_ENV_FILE" --forgejo-api-base "$BASE" --repo-url "$REPO_URL" --site-domain forgejo.kolibri-kollektiv.eu > "$ARTIFACT_DIR/preflight-errors.txt"; then
             python3 "$RUNTIME_SCRIPT" log --level ERROR --phase preflight --message "Pre-flight checks failed" --issue "$ISSUE" --log-file "$LOG_FILE" --json-log-file "$JSON_LOG_FILE"
             cat "$ARTIFACT_DIR/preflight-errors.txt"
             exit 1
@@ -109,7 +108,6 @@ jobs:
           TOKEN: ${{ secrets.FORGEJO_TOKEN }}
           ISSUE_TITLE: ${{ github.event.issue.title }}
           ISSUE_BODY: ${{ github.event.issue.body }}
-          OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
         run: |
           set -o pipefail
           export PATH="$HOME/.nvm/versions/node/v22.22.2/bin:$PATH"
@@ -182,8 +180,6 @@ jobs:
           fi
 
       - name: Implement and validate
-        env:
-          OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
         run: |
           set -o pipefail
           export PATH="$HOME/.nvm/versions/node/v22.22.2/bin:$PATH"

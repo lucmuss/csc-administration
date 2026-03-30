@@ -76,6 +76,8 @@ jobs:
         env:
           TOKEN_FROM_SECRET: ${{ secrets.FORGEJO_TOKEN }}
         run: |
+          set -o pipefail
+          echo "labels" > "$PHASE_FILE"
           TOKEN="$TOKEN_FROM_SECRET"
           if [ -z "$TOKEN" ] && [ -f "$RUNNER_ENV_FILE" ]; then
             set -a
@@ -87,7 +89,8 @@ jobs:
             echo "FORGEJO_TOKEN unavailable (secret missing and no local fallback in $RUNNER_ENV_FILE)" >&2
             exit 1
           fi
-          python3 "$RUNTIME_SCRIPT" label-transition --base "$BASE" --repo "$REPO" --token "$TOKEN" --issue "$ISSUE" --remove "ai:ready" --add "ai:running"
+          python3 "$RUNTIME_SCRIPT" log --level INFO --phase labels --message "Attempting ai:ready -> ai:running transition" --issue "$ISSUE" --log-file "$LOG_FILE" --json-log-file "$JSON_LOG_FILE"
+          python3 "$RUNTIME_SCRIPT" label-transition --base "$BASE" --repo "$REPO" --token "$TOKEN" --issue "$ISSUE" --remove "ai:ready" --add "ai:running" 2>&1 | tee -a "$LOG_FILE"
           python3 "$RUNTIME_SCRIPT" log --level INFO --phase labels --message "Swapped ai:ready to ai:running" --issue "$ISSUE" --log-file "$LOG_FILE" --json-log-file "$JSON_LOG_FILE"
 
       - name: Prepare repo from persistent mirror

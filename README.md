@@ -200,6 +200,29 @@ Dies ist ein Template/Beispiel-System für CSC-Verwaltung. Für produktiven Eins
 
 ---
 
+## Forgejo AI Workflow
+
+Dieses Repo kann auf Forgejo ueber einen self-hosted Runner automatisiert Issues durch KI bearbeiten.
+
+Vorgesehener Ablauf:
+
+- Forgejo-Issue anlegen
+- Label `ai:ready` setzen
+- Der Runner startet den Codex-Workflow
+- Die KI erstellt einen Branch `ai/issue-<nummer>`, implementiert die Aenderung, prueft lokale Checks, erstellt PR und merged bei Erfolg
+
+Aktuell als Merge-Gate genutzt:
+
+- `./.venv/bin/python src/manage.py check`
+- `./.venv/bin/pytest tests/test_auth.py tests/test_finance.py tests/test_mobile.py tests/test_orders.py tests/test_limits.py tests/test_automation.py tests/test_inventory_advanced.py -q`
+
+Noch nicht Teil des automatischen Merge-Gates:
+
+- Cultivation/Legacy Seed-to-Sale Bereiche mit bestehender Test- und Modell-Divergenz
+- einzelne Compliance-/Alt-Tests, die noch nicht auf den aktuellen Datenmodellstand angepasst sind
+
+---
+
 **Letzte Aktualisierung**: 2025-03-01
 
 ---

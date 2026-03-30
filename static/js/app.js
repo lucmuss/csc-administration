@@ -79,18 +79,6 @@
     }
   }
 
-  function registerServiceWorker() {
-    if (!("serviceWorker" in navigator)) {
-      return;
-    }
-
-    window.addEventListener("load", function () {
-      navigator.serviceWorker.register("/offline.js").catch(function () {
-        return null;
-      });
-    });
-  }
-
   function wireGovernanceRecordForm() {
     var recordType = document.querySelector("select[name='record_type']");
     if (!recordType) {
@@ -125,7 +113,6 @@
     toggleMobileNav();
     handleCookieConsent();
     maybeLoadAnalytics();
-    registerServiceWorker();
     wireGovernanceRecordForm();
   });
 })();

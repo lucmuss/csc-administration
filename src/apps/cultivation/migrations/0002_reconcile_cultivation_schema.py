@@ -4,6 +4,9 @@ LEGACY_SUFFIX = "_legacy_pre_uuid"
 
 
 def _column_type(connection, table_name, column_name):
+    if connection.vendor != "postgresql":
+        return "uuid"
+
     with connection.cursor() as cursor:
         cursor.execute(
             """

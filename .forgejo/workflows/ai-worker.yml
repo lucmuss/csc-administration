@@ -1,0 +1,298 @@
+name: AI Worker
+
+on:
+  issues:
+    types: [labeled]
+
+concurrency:
+  group: ai-worker-${{ github.repository }}-${{ github.event.issue.number }}
+  cancel-in-progress: false
+
+jobs:
+  run-codex:
+    if: github.event.label.name == 'ai:ready'
+    runs-on: host-codex
+    timeout-minutes: 45
+    env:
+      HOME: /home/skymuss
+      MIRROR: /home/skymuss/ai-runs/mirrors/csc-administration.git
+      WORKDIR: /home/skymuss/ai-runs/issue-${{ github.event.issue.number }}-csc-codex
+      BRANCH: ai/issue-${{ github.event.issue.number }}
+      REMOTE_BRANCH: refs/heads/ai/issue-${{ github.event.issue.number }}
+      ISSUE: ${{ github.event.issue.number }}
+      REPO: skymuss/csc-administration
+      BASE: http://localhost:18095/api/v1
+      ARTIFACT_DIR: /home/skymuss/ai-runs/artifacts/issue-${{ github.event.issue.number }}-csc-codex
+      PROMPT_FILE: /home/skymuss/ai-runs/artifacts/issue-${{ github.event.issue.number }}-csc-codex/prompt.txt
+      PHASE_FILE: /home/skymuss/ai-runs/artifacts/issue-${{ github.event.issue.number }}-csc-codex/phase.txt
+      LOG_FILE: /home/skymuss/ai-runs/artifacts/issue-${{ github.event.issue.number }}-csc-codex/worker.log
+      ISSUE_REFINED_FILE: /home/skymuss/ai-runs/artifacts/issue-${{ github.event.issue.number }}-csc-codex/refined-issue.md
+      FAILURE_PATCH: /home/skymuss/ai-runs/artifacts/issue-${{ github.event.issue.number }}-csc-codex/failure.diff
+      RUNNER_ENV_FILE: /home/skymuss/.config/freya-ai-worker.env
+      RUNTIME_SCRIPT: /srv/projects/web/csc-administration/scripts/ai_worker_runtime.py
+      JSON_LOG_FILE: /home/skymuss/ai-runs/artifacts/issue-${{ github.event.issue.number }}-csc-codex/worker.jsonl
+      START_TS_FILE: /home/skymuss/ai-runs/artifacts/issue-${{ github.event.issue.number }}-csc-codex/run-start.ts
+      RUN_LOCK: /home/skymuss/ai-runs/.worker.lock
+      ARTIFACT_ROOT: /home/skymuss/ai-runs/artifacts
+      TOOL_NAME: OpenAI Codex
+    steps:
+      - name: Prepare artifact directory
+        run: |
+          mkdir -p "$ARTIFACT_DIR"
+          : > "$LOG_FILE"
+          echo "queued" > "$PHASE_FILE"
+          date +%s > "$START_TS_FILE"
+          python3 "$RUNTIME_SCRIPT" cleanup-artifacts --artifact-root "$ARTIFACT_ROOT"
+          python3 "$RUNTIME_SCRIPT" log --level INFO --phase prepare --message "Artifact directory prepared at $ARTIFACT_DIR" --issue "$ISSUE" --log-file "$LOG_FILE" --json-log-file "$JSON_LOG_FILE"
+
+      - name: Acquire worker lock
+        run: |
+          python3 "$RUNTIME_SCRIPT" acquire-lock --lock-file "$RUN_LOCK" --issue "$ISSUE" --log-file "$LOG_FILE" --json-log-file "$JSON_LOG_FILE"
+
+      - name: Pre-flight checks
+        env:
+          TOKEN: ${{ secrets.FORGEJO_TOKEN }}
+          OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+        run: |
+          REPO_URL="http://ai-worker:$TOKEN@localhost:18095/$REPO.git"
+          if ! python3 "$RUNTIME_SCRIPT" preflight --runner-env-file "$RUNNER_ENV_FILE" --forgejo-api-base "$BASE" --repo-url "$REPO_URL" --site-domain forgejo.kolibri-kollektiv.eu --require-openai > "$ARTIFACT_DIR/preflight-errors.txt"; then
+            python3 "$RUNTIME_SCRIPT" log --level ERROR --phase preflight --message "Pre-flight checks failed" --issue "$ISSUE" --log-file "$LOG_FILE" --json-log-file "$JSON_LOG_FILE"
+            cat "$ARTIFACT_DIR/preflight-errors.txt"
+            exit 1
+          fi
+          python3 "$RUNTIME_SCRIPT" log --level INFO --phase preflight --message "All pre-flight checks passed" --issue "$ISSUE" --log-file "$LOG_FILE" --json-log-file "$JSON_LOG_FILE"
+
+      - name: Swap label ai:ready to ai:running
+        env:
+          TOKEN: ${{ secrets.FORGEJO_TOKEN }}
+        run: |
+          python3 "$RUNTIME_SCRIPT" label-transition --base "$BASE" --repo "$REPO" --token "$TOKEN" --issue "$ISSUE" --remove "ai:ready" --add "ai:running"
+          python3 "$RUNTIME_SCRIPT" log --level INFO --phase labels --message "Swapped ai:ready to ai:running" --issue "$ISSUE" --log-file "$LOG_FILE" --json-log-file "$JSON_LOG_FILE"
+
+      - name: Prepare repo from persistent mirror
+        env:
+          TOKEN: ${{ secrets.FORGEJO_TOKEN }}
+        run: |
+          set -o pipefail
+          echo "clone" > "$PHASE_FILE"
+          python3 "$RUNTIME_SCRIPT" log --level INFO --phase clone --message "Preparing repo from persistent mirror" --issue "$ISSUE" --log-file "$LOG_FILE" --json-log-file "$JSON_LOG_FILE"
+          REPO_URL="http://ai-worker:$TOKEN@localhost:18095/$REPO.git"
+          mkdir -p "$(dirname "$WORKDIR")" "$(dirname "$MIRROR")"
+
+          if [ ! -d "$MIRROR" ]; then
+            git init --bare "$MIRROR" 2>&1 | tee -a "$LOG_FILE"
+            git --git-dir="$MIRROR" remote add origin "$REPO_URL" 2>&1 | tee -a "$LOG_FILE"
+          else
+            if git --git-dir="$MIRROR" remote get-url origin >/dev/null 2>&1; then
+              git --git-dir="$MIRROR" remote set-url origin "$REPO_URL" 2>&1 | tee -a "$LOG_FILE"
+            else
+              git --git-dir="$MIRROR" remote add origin "$REPO_URL" 2>&1 | tee -a "$LOG_FILE"
+            fi
+          fi
+
+          git --git-dir="$MIRROR" config --unset-all remote.origin.fetch 2>/dev/null || true
+          git --git-dir="$MIRROR" config remote.origin.fetch "+refs/heads/main:refs/cache/origin/main" 2>&1 | tee -a "$LOG_FILE"
+          git --git-dir="$MIRROR" config --unset remote.origin.mirror 2>/dev/null || true
+          git --git-dir="$MIRROR" worktree prune 2>&1 | tee -a "$LOG_FILE"
+          git --git-dir="$MIRROR" worktree remove --force "$WORKDIR" 2>/dev/null || true
+          rm -rf "$WORKDIR"
+          git --git-dir="$MIRROR" fetch --prune origin +refs/heads/main:refs/cache/origin/main 2>&1 | tee -a "$LOG_FILE"
+          git --git-dir="$MIRROR" worktree add --detach "$WORKDIR" refs/cache/origin/main 2>&1 | tee -a "$LOG_FILE"
+
+          cd "$WORKDIR"
+          git checkout --detach refs/cache/origin/main 2>&1 | tee -a "$LOG_FILE"
+          git config user.email "ai-worker@forgejo.kolibri-kollektiv.eu"
+          git config user.name "AI Worker"
+
+      - name: Refine issue into structured brief
+        env:
+          TOKEN: ${{ secrets.FORGEJO_TOKEN }}
+          ISSUE_TITLE: ${{ github.event.issue.title }}
+          ISSUE_BODY: ${{ github.event.issue.body }}
+          OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+        run: |
+          set -o pipefail
+          export PATH="$HOME/.nvm/versions/node/v22.22.2/bin:$PATH"
+          cd "$WORKDIR"
+          echo "triage" > "$PHASE_FILE"
+          python3 "$RUNTIME_SCRIPT" log --level INFO --phase triage --message "Starting issue refinement" --issue "$ISSUE" --log-file "$LOG_FILE" --json-log-file "$JSON_LOG_FILE"
+          cat > "$ARTIFACT_DIR/refine-prompt.txt" <<'PROMPT_HEREDOC'
+          Rewrite the following Git issue into a clearer, implementation-ready engineering task.
+          Rules:
+          - Keep only facts from the original report.
+          - Preserve uncertainty explicitly instead of inventing details.
+          - Improve the issue title as well as the body.
+          - Return valid JSON only with exactly these keys:
+            {
+              "title": "short, precise issue title",
+              "body": "Markdown body with these sections:\n## AI Refined Brief\n### Summary\n### Current State\n### Desired Change\n### Acceptance Criteria\n### Open Questions\n\n## Original Issue Report\n### Title\n...\n\n### Body\n..."
+            }
+          PROMPT_HEREDOC
+          {
+            echo
+            echo "Original title: $ISSUE_TITLE"
+            echo
+            echo "Original body:"
+            echo "$ISSUE_BODY"
+          } >> "$ARTIFACT_DIR/refine-prompt.txt"
+
+          if timeout 300 codex exec --skip-git-repo-check --dangerously-bypass-approvals-and-sandbox "$(cat "$ARTIFACT_DIR/refine-prompt.txt")" > "$ARTIFACT_DIR/refine-response.json" 2>>"$LOG_FILE"; then
+            if python3 "$RUNTIME_SCRIPT" parse-refinement \
+              --response-file "$ARTIFACT_DIR/refine-response.json" \
+              --issue-title "$ISSUE_TITLE" \
+              --refined-output "$ISSUE_REFINED_FILE" \
+              --json-output "$ARTIFACT_DIR/issue-update.json" \
+              --body-output "$ARTIFACT_DIR/issue-update-body.md"
+            then
+              TITLE=$(python3 "$RUNTIME_SCRIPT" json-field --json-file "$ARTIFACT_DIR/issue-update.json" --field title)
+              python3 "$RUNTIME_SCRIPT" patch-issue --base "$BASE" --repo "$REPO" --token "$TOKEN" --issue "$ISSUE" --title "$TITLE" --body-file "$ARTIFACT_DIR/issue-update-body.md"
+            fi
+          fi
+
+      - name: Write prompt file
+        run: |
+          echo "prompt" > "$PHASE_FILE"
+          python3 "$RUNTIME_SCRIPT" log --level INFO --phase prompt --message "Writing implementation prompt" --issue "$ISSUE" --log-file "$LOG_FILE" --json-log-file "$JSON_LOG_FILE"
+          cat > "$PROMPT_FILE" <<'PROMPT_HEREDOC'
+          You are working on CSC Administration, a Django 5.1 club operations app.
+          Implement the requested issue in the local repo.
+
+          Project rules:
+          - Read AGENTS.md if present and inspect the existing code before editing.
+          - Use src/manage.py for Django commands.
+          - Preserve the existing visual language and German UI copy unless the issue asks otherwise.
+          - Keep changes focused and production-minded.
+          - Add or update tests when behavior changes.
+
+          Validation requirements before finishing:
+          - ./.venv/bin/python src/manage.py check
+          - ./.venv/bin/pytest tests/test_auth.py tests/test_finance.py tests/test_mobile.py tests/test_orders.py tests/test_limits.py tests/test_automation.py tests/test_inventory_advanced.py -q
+
+          Known repo caveats:
+          - Cultivation and some legacy seed-to-sale tests are currently not reliable enough for merge-gating.
+          - Do not solve failures by deleting features or weakening checks.
+          PROMPT_HEREDOC
+          echo >> "$PROMPT_FILE"
+          if [ -s "$ISSUE_REFINED_FILE" ]; then
+            cat "$ISSUE_REFINED_FILE" >> "$PROMPT_FILE"
+          else
+            echo "ISSUE #${{ github.event.issue.number }}: ${{ github.event.issue.title }}" >> "$PROMPT_FILE"
+            echo >> "$PROMPT_FILE"
+            echo "${{ github.event.issue.body }}" >> "$PROMPT_FILE"
+          fi
+
+      - name: Implement and validate
+        env:
+          OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+        run: |
+          set -o pipefail
+          export PATH="$HOME/.nvm/versions/node/v22.22.2/bin:$PATH"
+          cd "$WORKDIR"
+          echo "implement" > "$PHASE_FILE"
+          python3 "$RUNTIME_SCRIPT" log --level INFO --phase implement --message "Starting Codex implementation pass" --issue "$ISSUE" --log-file "$LOG_FILE" --json-log-file "$JSON_LOG_FILE"
+          timeout 1200 codex exec --skip-git-repo-check --dangerously-bypass-approvals-and-sandbox "$(cat "$PROMPT_FILE")" 2>&1 | tee -a "$LOG_FILE"
+
+          run_validation() {
+            echo "tests" > "$PHASE_FILE"
+            : > /tmp/test-results-csc-codex.txt
+            timeout 180 ./.venv/bin/python src/manage.py check 2>&1 | tee -a /tmp/test-results-csc-codex.txt | tee -a "$LOG_FILE"
+            timeout 420 ./.venv/bin/pytest tests/test_auth.py tests/test_finance.py tests/test_mobile.py tests/test_orders.py tests/test_limits.py tests/test_automation.py tests/test_inventory_advanced.py -q 2>&1 | tee -a /tmp/test-results-csc-codex.txt | tee -a "$LOG_FILE"
+          }
+
+          if ! run_validation; then
+            FAILURES=$(tail -n 120 /tmp/test-results-csc-codex.txt)
+            echo "implement" > "$PHASE_FILE"
+            timeout 900 codex exec --skip-git-repo-check --dangerously-bypass-approvals-and-sandbox "Fix the failing CSC validation for issue #$ISSUE. Keep the fix minimal, do not remove tests, and preserve the intended feature. Validation output: $FAILURES" 2>&1 | tee -a "$LOG_FILE"
+            run_validation
+          fi
+
+      - name: Commit and push
+        env:
+          TOKEN: ${{ secrets.FORGEJO_TOKEN }}
+        run: |
+          set -o pipefail
+          echo "commit" > "$PHASE_FILE"
+          cd "$WORKDIR"
+          git add -A
+          if git diff --cached --quiet; then
+            echo "No changes made by AI"
+            exit 1
+          fi
+          git commit -m "feat: implement issue #$ISSUE via Codex
+
+          Closes #$ISSUE" 2>&1 | tee -a "$LOG_FILE"
+          git push "http://ai-worker:$TOKEN@localhost:18095/$REPO.git" "HEAD:$REMOTE_BRANCH" 2>&1 | tee -a "$LOG_FILE"
+
+      - name: Create PR and merge
+        env:
+          TOKEN: ${{ secrets.FORGEJO_TOKEN }}
+          ISSUE_TITLE: ${{ github.event.issue.title }}
+        run: |
+          set -o pipefail
+          echo "deploy" > "$PHASE_FILE"
+          cd "$WORKDIR"
+          PR_TITLE="feat: $ISSUE_TITLE (#$ISSUE)"
+          {
+            printf '%s\n' "Closes #$ISSUE"
+            printf '\n'
+            printf '%s\n' '**Tool:** OpenAI Codex'
+            printf '%s\n' '**Checks:** passed'
+          } > "$ARTIFACT_DIR/pr-body.md"
+          python3 "$RUNTIME_SCRIPT" create-pr --base "$BASE" --repo "$REPO" --token "$TOKEN" --title "$PR_TITLE" --body-file "$ARTIFACT_DIR/pr-body.md" --head "$BRANCH" --base-branch main > "$ARTIFACT_DIR/pr.json"
+          PR_NUMBER=$(python3 "$RUNTIME_SCRIPT" json-field --json-file "$ARTIFACT_DIR/pr.json" --field number)
+          python3 "$RUNTIME_SCRIPT" merge-pr --base "$BASE" --repo "$REPO" --token "$TOKEN" --pr-number "$PR_NUMBER" --merge-message "Auto-merged by AI Worker (checks passed)" | tee -a "$LOG_FILE"
+          git push "http://ai-worker:$TOKEN@localhost:18095/$REPO.git" --delete "$BRANCH" 2>&1 | tee -a "$LOG_FILE"
+
+      - name: Comment success summary
+        if: success()
+        env:
+          TOKEN: ${{ secrets.FORGEJO_TOKEN }}
+        run: |
+          cd "$WORKDIR"
+          python3 "$RUNTIME_SCRIPT" success-summary --issue "$ISSUE" --start-ts-file "$START_TS_FILE" --tool-name "$TOOL_NAME" --diff-base refs/cache/origin/main > "$ARTIFACT_DIR/success-summary.md"
+          python3 "$RUNTIME_SCRIPT" comment --base "$BASE" --repo "$REPO" --token "$TOKEN" --issue "$ISSUE" --body-file "$ARTIFACT_DIR/success-summary.md"
+
+      - name: Close issue and label ai:review
+        if: success()
+        env:
+          TOKEN: ${{ secrets.FORGEJO_TOKEN }}
+        run: |
+          python3 "$RUNTIME_SCRIPT" patch-issue --base "$BASE" --repo "$REPO" --token "$TOKEN" --issue "$ISSUE" --state closed
+          python3 "$RUNTIME_SCRIPT" label-transition --base "$BASE" --repo "$REPO" --token "$TOKEN" --issue "$ISSUE" --remove "ai:running" --remove "ai:blocked" --add "ai:review"
+
+      - name: Label ai:blocked on failure
+        if: failure()
+        env:
+          TOKEN: ${{ secrets.FORGEJO_TOKEN }}
+        run: |
+          python3 "$RUNTIME_SCRIPT" label-transition --base "$BASE" --repo "$REPO" --token "$TOKEN" --issue "$ISSUE" --remove "ai:running" --remove "ai:ready" --add "ai:blocked"
+
+      - name: Comment failure details
+        if: failure()
+        env:
+          TOKEN: ${{ secrets.FORGEJO_TOKEN }}
+        run: |
+          PHASE=$(cat "$PHASE_FILE" 2>/dev/null || echo "unknown")
+          EXCERPT=$(tail -n 40 "$LOG_FILE" 2>/dev/null || echo "No captured log excerpt available.")
+          {
+            printf '%s\n' 'AI worker run failed.'
+            printf '\n'
+            printf '%s\n' "- Failed step group: \`$PHASE\`"
+            printf '%s\n' '- Tool: `OpenAI Codex`'
+            printf '\n'
+            printf '%s\n' "- Runner workspace: \`$WORKDIR\`"
+            printf '%s\n' "- Artifact dir: \`$ARTIFACT_DIR\`"
+            printf '%s\n' "- Failure patch: \`$FAILURE_PATCH\`"
+            printf '%s\n' "- Structured log: \`$JSON_LOG_FILE\`"
+            printf '\n'
+            printf '%s\n' 'Short log excerpt:'
+            printf '%s\n' '```text'
+            printf '%s\n' "$EXCERPT"
+            printf '%s\n' '```'
+          } > "$ARTIFACT_DIR/failure-comment.md"
+          python3 "$RUNTIME_SCRIPT" comment --base "$BASE" --repo "$REPO" --token "$TOKEN" --issue "$ISSUE" --body-file "$ARTIFACT_DIR/failure-comment.md"
+
+      - name: Release worker lock
+        if: always()
+        run: |
+          python3 "$RUNTIME_SCRIPT" release-lock --lock-file "$RUN_LOCK" --issue "$ISSUE" --log-file "$LOG_FILE" --json-log-file "$JSON_LOG_FILE"

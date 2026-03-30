@@ -1,5 +1,6 @@
 from pathlib import Path
 import os
+import sys
 
 BASE_DIR = Path(__file__).resolve().parent.parent.parent
 
@@ -89,7 +90,13 @@ DATABASES = {
     }
 }
 
-if os.getenv("USE_SQLITE", "0") == "1" or os.getenv("USE_SQLITE_FOR_TESTS", "0") == "1":
+RUNNING_PYTEST = any("pytest" in arg for arg in sys.argv)
+
+if (
+    os.getenv("USE_SQLITE", "0") == "1"
+    or os.getenv("USE_SQLITE_FOR_TESTS", "0") == "1"
+    or RUNNING_PYTEST
+):
     DATABASES["default"] = {
         "ENGINE": "django.db.backends.sqlite3",
         "NAME": BASE_DIR / "db.sqlite3",
@@ -113,7 +120,13 @@ STATIC_ROOT = Path(os.getenv("DJANGO_STATIC_ROOT", "/tmp/csc-staticfiles"))
 EXPORT_ROOT = Path(os.getenv("CSC_EXPORT_ROOT", "/tmp/csc-exports"))
 STORAGES = {
     "default": {"BACKEND": "django.core.files.storage.FileSystemStorage"},
-    "staticfiles": {"BACKEND": "whitenoise.storage.CompressedManifestStaticFilesStorage"},
+    "staticfiles": {
+        "BACKEND": (
+            "django.contrib.staticfiles.storage.StaticFilesStorage"
+            if RUNNING_PYTEST
+            else "whitenoise.storage.CompressedManifestStaticFilesStorage"
+        )
+    },
 }
 
 DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"

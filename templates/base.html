@@ -76,7 +76,10 @@
             <a href="{% if user.role == 'member' %}{% url 'members:profile' %}{% else %}{% url 'core:feature_audit' %}{% endif %}" class="btn-ghost topbar__utility">
               {% if user.role == 'member' %}Mein Bereich{% else %}Feature-Audit{% endif %}
             </a>
-            <a href="{% url 'accounts:logout' %}" class="btn-ghost topbar__utility">Abmelden</a>
+            <form method="post" action="{% url 'accounts:logout' %}" class="topbar__utility">
+              {% csrf_token %}
+              <button type="submit" class="btn-ghost">Abmelden</button>
+            </form>
           {% else %}
             <a href="{% url 'accounts:login' %}" class="btn-ghost topbar__utility">Anmelden</a>
             <a href="{% url 'members:register' %}" class="btn-primary topbar__utility">Konto anlegen</a>

@@ -2,7 +2,7 @@
 name: AI Bug Report
 about: Fehler für die automatische KI-Bearbeitung melden
 title: "[Bug] "
-labels: ["ai:ready"]
+labels: ["ai:ready", "ai:codex"]
 ---
 
 ## Beobachtetes Verhalten

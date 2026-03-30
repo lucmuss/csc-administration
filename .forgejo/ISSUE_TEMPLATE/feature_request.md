@@ -2,7 +2,7 @@
 name: AI Feature Request
 about: Neue Funktion für die automatische KI-Umsetzung vorbereiten
 title: "[Feature] "
-labels: ["ai:ready"]
+labels: ["ai:ready", "ai:codex"]
 ---
 
 ## Ziel

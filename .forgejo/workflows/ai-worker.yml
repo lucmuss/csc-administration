@@ -10,7 +10,7 @@ concurrency:
 
 jobs:
   run-codex:
-    if: github.event.label.name == 'ai:ready'
+    if: github.event.label.name == 'ai:ready' && contains(join(github.event.issue.labels.*.name, ','), 'ai:codex')
     runs-on: host-codex
     timeout-minutes: 45
     env:

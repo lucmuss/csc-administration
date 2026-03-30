@@ -176,17 +176,21 @@ if SITE_URL.startswith(("http://", "https://")):
         CSRF_TRUSTED_ORIGINS.append(site_origin)
 
 # E-Mail-Versand
-DEFAULT_FROM_EMAIL = os.getenv("DEFAULT_FROM_EMAIL", "noreply@localhost")
-EMAIL_DELIVERY_MODE = os.getenv("EMAIL_DELIVERY_MODE", "console")  # console | smtp | resend
-USE_RESEND = os.getenv("USE_RESEND", "0") == "1"
+DEFAULT_FROM_EMAIL = _env_first("DEFAULT_FROM_EMAIL", "DJANGO_DEFAULT_FROM_EMAIL", default="noreply@localhost")
+EMAIL_DELIVERY_MODE = _env_first("EMAIL_DELIVERY_MODE", default="console")  # console | smtp | resend
+USE_RESEND = _env_bool("USE_RESEND", default=False)
 
 if EMAIL_DELIVERY_MODE == "smtp" or USE_RESEND:
     EMAIL_BACKEND = "django.core.mail.backends.smtp.EmailBackend"
-    EMAIL_HOST = os.getenv("EMAIL_HOST", "")
-    EMAIL_PORT = int(os.getenv("EMAIL_PORT", "587"))
-    EMAIL_USE_TLS = os.getenv("EMAIL_USE_TLS", "1") == "1"
-    EMAIL_HOST_USER = os.getenv("EMAIL_HOST_USER", "")
-    EMAIL_HOST_PASSWORD = os.getenv("EMAIL_HOST_PASSWORD", "")
+    EMAIL_HOST = _env_first("EMAIL_HOST", "DJANGO_EMAIL_HOST", default="")
+    EMAIL_PORT = int(_env_first("EMAIL_PORT", "DJANGO_EMAIL_PORT", default="587"))
+    EMAIL_USE_TLS = _env_bool("EMAIL_USE_TLS", "DJANGO_EMAIL_USE_TLS", default=True)
+    EMAIL_USE_SSL = _env_bool("EMAIL_USE_SSL", "DJANGO_EMAIL_USE_SSL", default=False)
+    if EMAIL_USE_SSL:
+        EMAIL_USE_TLS = False
+    EMAIL_HOST_USER = _env_first("EMAIL_HOST_USER", "DJANGO_EMAIL_HOST_USER", default="")
+    EMAIL_HOST_PASSWORD = _env_first("EMAIL_HOST_PASSWORD", "DJANGO_EMAIL_HOST_PASSWORD", default="")
+    EMAIL_TIMEOUT = int(_env_first("EMAIL_TIMEOUT", "DJANGO_EMAIL_TIMEOUT", default="10"))
 else:
     EMAIL_BACKEND = "django.core.mail.backends.console.EmailBackend"
 

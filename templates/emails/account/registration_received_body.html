@@ -1,0 +1,11 @@
+<p>Hallo {{ user.email }},</p>
+<p>deine Registrierung bei CSC Administration ist eingegangen.</p>
+{% if is_bootstrap %}
+  <p>Da dies der erste Account im System ist, wurde dein Zugang direkt als Vorstand eingerichtet.</p>
+  <p><a href="{{ login_url }}">Jetzt anmelden</a></p>
+{% else %}
+  <p>Dein Zugang wird nach der internen Verifizierung freigeschaltet.</p>
+  <p>Sobald die Freischaltung erfolgt ist, kannst du dich hier anmelden:</p>
+  <p><a href="{{ login_url }}">Zum Login</a></p>
+{% endif %}
+<p>Viele Gruesse<br>CSC Administration</p>

@@ -1,0 +1,16 @@
+Hallo {{ user.email }},
+
+deine Registrierung bei CSC Administration ist eingegangen.
+
+{% if is_bootstrap %}
+Da dies der erste Account im System ist, wurde dein Zugang direkt als Vorstand eingerichtet.
+Du kannst dich hier anmelden:
+{{ login_url }}
+{% else %}
+Dein Zugang wird nach der internen Verifizierung freigeschaltet.
+Sobald die Freischaltung erfolgt ist, kannst du dich hier anmelden:
+{{ login_url }}
+{% endif %}
+
+Viele Gruesse
+CSC Administration

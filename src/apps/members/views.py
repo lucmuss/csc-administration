@@ -7,6 +7,7 @@ from django.http import HttpResponse
 from django.shortcuts import get_object_or_404, redirect, render
 from django.core.paginator import Paginator
 
+from apps.accounts.emails import send_registration_received_email
 from apps.accounts.models import User
 from apps.finance.models import Invoice
 
@@ -27,6 +28,11 @@ def register(request):
         form = MemberRegistrationForm(request.POST)
         if form.is_valid():
             user = form.save()
+            send_registration_received_email(
+                user,
+                request,
+                is_bootstrap=user.role == User.ROLE_BOARD,
+            )
             if user.role == User.ROLE_BOARD:
                 messages.success(
                     request,

@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import os
 
+from django.conf import settings
 from django.core.mail import EmailMultiAlternatives
 from django.http import HttpRequest
 from django.template.loader import render_to_string
@@ -54,11 +55,33 @@ def send_login_alert_email(user, request: HttpRequest) -> bool:
     text_body = render_to_string("emails/account/login_alert_body.txt", context)
     html_body = render_to_string("emails/account/login_alert_body.html", context)
 
-    from_email = os.getenv("DJANGO_DEFAULT_FROM_EMAIL", "noreply@example.com")
+    from_email = settings.DEFAULT_FROM_EMAIL
     msg = EmailMultiAlternatives(
         subject=subject,
         body=text_body,
         from_email=from_email,
+        to=[user.email],
+    )
+    msg.attach_alternative(html_body, "text/html")
+    return msg.send(fail_silently=True) > 0
+
+
+def send_registration_received_email(user, request: HttpRequest, *, is_bootstrap: bool = False) -> bool:
+    context = {
+        "user": user,
+        "is_bootstrap": is_bootstrap,
+        "login_url": _absolute_url(request, "accounts:login", "/accounts/login/"),
+        "dashboard_url": _absolute_url(request, "core:dashboard", "/"),
+    }
+
+    subject = _render_subject("emails/account/registration_received_subject.txt", context)
+    text_body = render_to_string("emails/account/registration_received_body.txt", context)
+    html_body = render_to_string("emails/account/registration_received_body.html", context)
+
+    msg = EmailMultiAlternatives(
+        subject=subject,
+        body=text_body,
+        from_email=settings.DEFAULT_FROM_EMAIL,
         to=[user.email],
     )
     msg.attach_alternative(html_body, "text/html")

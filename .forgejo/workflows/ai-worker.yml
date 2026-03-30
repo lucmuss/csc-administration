@@ -34,6 +34,7 @@ jobs:
       START_TS_FILE: /home/skymuss/ai-runs/artifacts/issue-${{ github.event.issue.number }}-csc-codex/run-start.ts
       RUN_LOCK: /home/skymuss/ai-runs/.worker.lock
       ARTIFACT_ROOT: /home/skymuss/ai-runs/artifacts
+      HOST_REPO_DIR: /srv/projects/web/csc-administration
       TOOL_NAME: OpenAI Codex
     steps:
       - name: Prepare artifact directory
@@ -138,6 +139,9 @@ jobs:
           git checkout --detach refs/cache/origin/main 2>&1 | tee -a "$LOG_FILE"
           git config user.email "ai-worker@forgejo.kolibri-kollektiv.eu"
           git config user.name "AI Worker"
+          if [ -d "$HOST_REPO_DIR/.venv" ] && [ ! -e "$WORKDIR/.venv" ]; then
+            ln -s "$HOST_REPO_DIR/.venv" "$WORKDIR/.venv"
+          fi
 
       - name: Refine issue into structured brief
         env:

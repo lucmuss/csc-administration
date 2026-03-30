@@ -5,7 +5,7 @@ on:
     types: [labeled]
 
 concurrency:
-  group: ai-worker-${{ github.repository }}-${{ github.event.issue.number }}
+  group: ai-worker-${{ github.repository }}-${{ github.event.label.name }}
   cancel-in-progress: false
 
 jobs:

@@ -9,11 +9,17 @@ Ziele:
 
 Dateien:
 - `users.json`: Nutzer, Profile, Karten, Engagement und SEPA-Stammdaten
-- `catalog.json`: Sorten, Lagerorte, Inventar, Batches, Grow Cycles und Harvest-Batches
-- `activity.json`: Bestellungen, Rechnungen, Shifts, Messaging-, Compliance- und Governance-Daten
+- `catalog.json`: Sorten, Lagerorte, Inventar und Beispiel-Chargen
+- `activity.json`: Beispiel-Bestellungen, Rechnungen, Zahlungen, Inventur und Schichten
 
 Der Import erfolgt ueber:
 
 ```bash
 python src/manage.py seed_demo_data --reset
+```
+
+Automatischer Start-Import:
+
+```bash
+AUTO_SEED_DEMO_DATA=1 bash scripts/start-web.sh
 ```

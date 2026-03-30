@@ -34,4 +34,4 @@ USER csc
 # Security: Don't run as root
 EXPOSE 8000
 
-CMD ["python", "src/manage.py", "runserver", "0.0.0.0:8000"]
+CMD ["bash", "scripts/start-web.sh"]

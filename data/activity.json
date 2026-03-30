@@ -1,189 +1,153 @@
 {
   "shifts": [
     {
-      "title": "Seed Tresor-Inventur",
-      "description": "Wochenzaehlung fuer Tresor und Ausgabe.",
-      "starts_at": "2026-03-24T17:00:00+01:00",
-      "ends_at": "2026-03-24T19:00:00+01:00",
+      "title": "Tresor- und Regalcheck",
+      "description": "Woechentliche Inventur fuer Blueten und Stecklinge.",
+      "starts_at": "2026-04-02T18:00:00+02:00",
+      "ends_at": "2026-04-02T20:00:00+02:00",
       "required_members": 2
     },
     {
-      "title": "Seed Verpackung & Labeling",
-      "description": "Vorbereitung der Ausgabe fuer Freitag.",
-      "starts_at": "2026-03-26T18:30:00+01:00",
-      "ends_at": "2026-03-26T21:00:00+01:00",
+      "title": "Mitgliederausgabe Freitag",
+      "description": "Ausgabevorbereitung, Check-in und Dokumentation.",
+      "starts_at": "2026-04-04T17:30:00+02:00",
+      "ends_at": "2026-04-04T20:30:00+02:00",
       "required_members": 3
-    },
-    {
-      "title": "Seed Mitgliederversammlung Setup",
-      "description": "Bestuhlung, Check-in und Technik.",
-      "starts_at": "2026-04-18T15:00:00+01:00",
-      "ends_at": "2026-04-18T18:00:00+01:00",
-      "required_members": 4
     }
   ],
   "work_hours": [
     {
       "member": "member_active_a",
-      "shift": "Seed Tresor-Inventur",
-      "date": "2026-03-12",
+      "shift": "Tresor- und Regalcheck",
+      "date": "2026-03-27",
       "hours": "2.00",
       "approved": true,
-      "notes": "Inventur und Dokumentation."
-    },
-    {
-      "member": "member_active_a",
-      "shift": "Seed Verpackung & Labeling",
-      "date": "2026-03-14",
-      "hours": "3.50",
-      "approved": true,
-      "notes": "Etiketten und Chargenlisten aktualisiert."
+      "notes": "Kontrolle der Ausgabeplaetze."
     },
     {
       "member": "member_active_b",
-      "shift": "Seed Tresor-Inventur",
-      "date": "2026-03-12",
-      "hours": "2.00",
+      "shift": "Mitgliederausgabe Freitag",
+      "date": "2026-03-28",
+      "hours": "3.00",
       "approved": false,
-      "notes": "Wartet noch auf Freigabe durch Vorstand."
-    },
-    {
-      "member": "member_locked",
-      "shift": "Seed Mitgliederversammlung Setup",
-      "date": "2026-02-20",
-      "hours": "4.00",
-      "approved": true,
-      "notes": "Aufbau und Abbau."
+      "notes": "Wartet auf Freigabe."
     }
   ],
   "inventory_counts": [
     {
-      "date": "2026-03-20",
-      "items_counted": 10,
-      "discrepancies": [
-        {
-          "item": "Sunset Sherbet @ Seed Ausgabe Regal",
-          "expected": "390.00",
-          "counted": "385.00",
-          "delta": "-5.00"
-        },
-        {
-          "item": "Blue Dream @ Seed Ausgabe Regal",
-          "expected": "285.00",
-          "counted": "290.00",
-          "delta": "5.00"
-        }
-      ]
+      "date": "2026-03-30",
+      "items_counted": 16,
+      "discrepancies": []
     }
   ],
   "orders": [
     {
       "member": "member_active_a",
       "status": "reserved",
-      "reserved_until": "2026-03-24T18:00:00+01:00",
-      "paid_with_balance": "67.50",
-      "total": "67.50",
-      "total_grams": "7.50",
+      "reserved_until": "2026-04-01T18:00:00+02:00",
+      "paid_with_balance": "40.00",
+      "total": "40.00",
+      "total_grams": "5.00",
       "invoice": {
-        "invoice_number": "SEED-INV-0001",
-        "amount": "67.50",
-        "due_date": "2026-03-24",
+        "invoice_number": "SEED-INV-2001",
+        "amount": "40.00",
+        "due_date": "2026-04-01",
         "status": "paid",
         "reminder_level": 0,
         "blocked_member": false,
         "payments": [
           {
-            "amount": "67.50",
+            "amount": "40.00",
             "method": "balance",
             "status": "collected",
-            "scheduled_for": "2026-03-22"
+            "scheduled_for": "2026-03-30"
           }
         ]
       },
       "items": [
         {
-          "strain": "sunset_sherbet",
-          "batch": "batch_sunset",
-          "quantity_grams": "5.00",
-          "unit_price": "9.80",
-          "total_price": "49.00"
+          "strain": "orange_bud",
+          "batch": "batch_orange_bud",
+          "quantity_grams": "3.00",
+          "unit_price": "8.00",
+          "total_price": "24.00"
         },
         {
-          "strain": "lemon_haze",
-          "batch": "batch_lemon",
-          "quantity_grams": "2.50",
-          "unit_price": "7.40",
-          "total_price": "18.50"
+          "strain": "wappa",
+          "batch": "batch_wappa",
+          "quantity_grams": "2.00",
+          "unit_price": "8.00",
+          "total_price": "16.00"
         }
       ],
       "prevention_info": {
         "info_version": "CanG-2024",
-        "notes": "Seed Erstinformation fuer Nora."
+        "notes": "Praeventionsinfo bei erster Beispielabgabe dokumentiert."
       }
     },
     {
       "member": "member_active_b",
       "status": "completed",
-      "reserved_until": "2026-03-18T16:00:00+01:00",
+      "reserved_until": "2026-03-26T17:00:00+01:00",
       "paid_with_balance": "0.00",
-      "total": "94.00",
-      "total_grams": "10.00",
+      "total": "45.00",
+      "total_grams": "5.00",
       "invoice": {
-        "invoice_number": "SEED-INV-0002",
-        "amount": "94.00",
-        "due_date": "2026-03-18",
+        "invoice_number": "SEED-INV-2002",
+        "amount": "45.00",
+        "due_date": "2026-03-27",
         "status": "open",
         "reminder_level": 2,
         "blocked_member": false,
         "payments": [
           {
-            "amount": "94.00",
+            "amount": "45.00",
             "method": "sepa",
             "status": "pending",
-            "scheduled_for": "2026-03-26"
+            "scheduled_for": "2026-04-03"
           }
         ],
         "reminders": [
           {
             "level": 1,
             "fee_amount": "0.00",
-            "note": "Seed Erinnerung vor Lastschrift."
+            "note": "Erste freundliche Erinnerung."
           },
           {
             "level": 2,
             "fee_amount": "5.00",
-            "note": "Seed erste Mahnung fuer offene Rechnung."
+            "note": "Mahnung fuer offene Beispielrechnung."
           }
         ]
       },
       "items": [
         {
-          "strain": "gorilla_glue",
-          "batch": "batch_gorilla",
-          "quantity_grams": "6.00",
-          "unit_price": "10.40",
-          "total_price": "62.40"
+          "strain": "sage_n_sour",
+          "batch": "batch_sage_n_sour",
+          "quantity_grams": "3.00",
+          "unit_price": "9.00",
+          "total_price": "27.00"
         },
         {
-          "strain": "blue_dream",
-          "batch": "batch_blue",
-          "quantity_grams": "4.00",
-          "unit_price": "7.90",
-          "total_price": "31.60"
+          "strain": "chocolope",
+          "batch": "batch_chocolope",
+          "quantity_grams": "2.00",
+          "unit_price": "9.00",
+          "total_price": "18.00"
         }
       ]
     },
     {
       "member": "member_locked",
       "status": "cancelled",
-      "reserved_until": "2026-03-12T13:00:00+01:00",
+      "reserved_until": "2026-03-24T12:00:00+01:00",
       "paid_with_balance": "0.00",
-      "total": "44.80",
-      "total_grams": "4.00",
+      "total": "23.00",
+      "total_grams": "3.00",
       "invoice": {
-        "invoice_number": "SEED-INV-0003",
-        "amount": "44.80",
-        "due_date": "2026-03-14",
+        "invoice_number": "SEED-INV-2003",
+        "amount": "23.00",
+        "due_date": "2026-03-25",
         "status": "cancelled",
         "reminder_level": 0,
         "blocked_member": true,
@@ -191,320 +155,20 @@
       },
       "items": [
         {
-          "strain": "wedding_cake",
-          "batch": "batch_wedding",
-          "quantity_grams": "4.00",
-          "unit_price": "11.20",
-          "total_price": "44.80"
-        }
-      ]
-    }
-  ],
-  "email_groups": [
-    {
-      "name": "Seed Aktive Mitglieder",
-      "description": "Aktive Clubmitglieder fuer Newsletter und Versandtests.",
-      "is_active": true,
-      "created_by": "capture_admin",
-      "members": [
-        "member_active_a",
-        "member_active_b",
-        "member_locked"
-      ]
-    },
-    {
-      "name": "Seed Vorstand & Staff",
-      "description": "Interner Verteiler fuer Vorstand und Mitarbeitende.",
-      "is_active": true,
-      "created_by": "capture_admin",
-      "members": [
-        "capture_admin",
-        "board_ops",
-        "staff_finance",
-        "staff_cultivation"
-      ]
-    }
-  ],
-  "mass_emails": [
-    {
-      "subject": "Seed: Fruehlingsupdate fuer Mitglieder",
-      "content": "# Club-Update\n\nHallo {{ first_name }},\n\nam Freitag gibt es frische Sorten im Shop und neue Schichten fuer April.",
-      "recipient_type": "group",
-      "recipient_group": "Seed Aktive Mitglieder",
-      "status": "sent",
-      "total_recipients": 3,
-      "sent_count": 3,
-      "failed_count": 0,
-      "opened_count": 2,
-      "created_by": "capture_admin",
-      "sent_by": "capture_admin",
-      "logs": [
-        {
-          "member": "member_active_a",
-          "recipient_email": "nora.mitglied@csc.local",
-          "status": "opened",
-          "tracking_id": "seedmail001",
-          "error_message": ""
+          "strain": "channel",
+          "batch": "batch_channel",
+          "quantity_grams": "2.00",
+          "unit_price": "7.00",
+          "total_price": "14.00"
         },
         {
-          "member": "member_active_b",
-          "recipient_email": "emir.mitglied@csc.local",
-          "status": "delivered",
-          "tracking_id": "seedmail002",
-          "error_message": ""
-        },
-        {
-          "member": "member_locked",
-          "recipient_email": "sina.gesperrt@csc.local",
-          "status": "opened",
-          "tracking_id": "seedmail003",
-          "error_message": ""
+          "strain": "orange_sherbert",
+          "batch": "batch_orange_sherbert",
+          "quantity_grams": "1.00",
+          "unit_price": "9.00",
+          "total_price": "9.00"
         }
       ]
-    },
-    {
-      "subject": "Seed: Offene Aufgaben Vorstand",
-      "content": "## Fokus diese Woche\n\n- Rechnungen prüfen\n- Meeting vorbereiten\n- Inventur gegenzuzeichnen",
-      "recipient_type": "group",
-      "recipient_group": "Seed Vorstand & Staff",
-      "status": "draft",
-      "total_recipients": 0,
-      "sent_count": 0,
-      "failed_count": 0,
-      "opened_count": 0,
-      "created_by": "board_ops"
-    }
-  ],
-  "sms_providers": [
-    {
-      "name": "Seed Twilio Sandbox",
-      "provider": "twilio",
-      "api_key": "seed-twilio-key",
-      "api_secret": "seed-twilio-secret",
-      "sender_number": "+4915200000001",
-      "webhook_url": "",
-      "cost_per_sms": "0.0725",
-      "is_active": true,
-      "created_by": "capture_admin"
-    }
-  ],
-  "sms_templates": [
-    {
-      "name": "Seed Abholfenster",
-      "description": "Kurze Erinnerung an das reservierte Abholfenster.",
-      "content": "Hallo {{ first_name }}, dein Abholfenster ist heute zwischen 18 und 20 Uhr geoeffnet.",
-      "is_active": true,
-      "created_by": "capture_admin"
-    },
-    {
-      "name": "Seed Schichterinnerung",
-      "description": "Erinnert Mitglieder an ihre Schichten.",
-      "content": "Hi {{ first_name }}, denk bitte an deine Club-Schicht morgen um 18:30 Uhr.",
-      "is_active": true,
-      "created_by": "capture_admin"
-    }
-  ],
-  "sms_messages": [
-    {
-      "recipient_type": "individual",
-      "recipient_member": "member_active_a",
-      "recipient_phone": "+4915201000104",
-      "content": "Hallo Nora, deine Reservierung liegt fuer dich bereit.",
-      "provider": "Seed Twilio Sandbox",
-      "status": "sent",
-      "cost": "0.0725",
-      "created_by": "capture_admin"
-    },
-    {
-      "recipient_type": "group",
-      "recipient_group": "Seed Aktive Mitglieder",
-      "recipient_phone": "",
-      "content": "Seed Erinnerung: Bitte bringt eure Mitgliedskarte zur Ausgabe mit.",
-      "provider": "Seed Twilio Sandbox",
-      "status": "queued",
-      "cost": "0.0000",
-      "created_by": "capture_admin"
-    },
-    {
-      "recipient_type": "individual",
-      "recipient_member": "member_active_b",
-      "recipient_phone": "+4915201000105",
-      "content": "Deine Lastschrift wird morgen eingezogen.",
-      "provider": "Seed Twilio Sandbox",
-      "status": "failed",
-      "cost": "0.0725",
-      "created_by": "staff_finance",
-      "error_message": "Provider timeout in Sandbox"
-    }
-  ],
-  "sms_cost_logs": [
-    {
-      "month": "2026-03",
-      "total_messages": 11,
-      "total_cost": "0.7975",
-      "provider_breakdown": {
-        "Seed Twilio Sandbox": {
-          "messages": 11,
-          "cost": "0.7975"
-        }
-      }
-    }
-  ],
-  "board_meetings": [
-    {
-      "title": "Seed Vorstandssitzung Maerz",
-      "meeting_type": "board",
-      "status": "completed",
-      "scheduled_for": "2026-03-18T19:00:00+01:00",
-      "location": "Clubraum Leipzig",
-      "minutes_summary": "Finanzlage geprueft, April-Schichten freigegeben, neue Sorten fuer Ausgabe beschlossen.",
-      "attendance_notes": "Vollstaendig, keine offenen Vertagungen.",
-      "chairperson": "capture_admin",
-      "created_by": "capture_admin",
-      "agenda_items": [
-        {
-          "order": 1,
-          "title": "Finanzstatus Q1",
-          "description": "Pruefung offener Forderungen und SEPA-Ruecklaeufer.",
-          "status": "closed",
-          "owner": "staff_finance",
-          "planned_duration_minutes": 20
-        },
-        {
-          "order": 2,
-          "title": "Anbau-Update",
-          "description": "Rueckblick Winterernte und Planung Fruehlingslauf.",
-          "status": "closed",
-          "owner": "staff_cultivation",
-          "planned_duration_minutes": 25
-        }
-      ],
-      "resolutions": [
-        {
-          "title": "Ausgabe fuer Freitag freigeben",
-          "decision_text": "Die Ausgabe mit Sunset Sherbet und Wedding Cake wird in voller Menge freigegeben.",
-          "status": "adopted",
-          "vote_result": "4/0/0",
-          "created_by": "capture_admin"
-        }
-      ]
-    }
-  ],
-  "board_tasks": [
-    {
-      "title": "Seed Aufgabenboard: Ruecklaeufer klaeren",
-      "description": "SEPA-Ruecklaeufer bei zwei Mitgliedern gegenpruefen und Rueckmeldung vorbereiten.",
-      "status": "in_progress",
-      "priority": "high",
-      "due_date": "2026-03-27",
-      "owner": "staff_finance",
-      "related_meeting": "Seed Vorstandssitzung Maerz",
-      "created_by": "capture_admin"
-    },
-    {
-      "title": "Seed Aufgabenboard: April-Ausgabe planen",
-      "description": "Sortenmix, Mengen und Labeling fuer die erste Aprilwoche fixieren.",
-      "status": "todo",
-      "priority": "medium",
-      "due_date": "2026-03-29",
-      "owner": "staff_cultivation",
-      "related_meeting": "Seed Vorstandssitzung Maerz",
-      "created_by": "board_ops"
-    },
-    {
-      "title": "Seed Aufgabenboard: Meeting-Protokoll finalisieren",
-      "description": "Kurzprotokoll und Beschluesse an Vorstand und Staff verteilen.",
-      "status": "done",
-      "priority": "low",
-      "due_date": "2026-03-21",
-      "owner": "board_ops",
-      "related_meeting": "Seed Vorstandssitzung Maerz",
-      "created_by": "capture_admin"
-    }
-  ],
-  "integration_endpoints": [
-    {
-      "name": "Seed Buchhaltung Export",
-      "integration_type": "bookkeeping",
-      "endpoint_url": "https://example.invalid/bookkeeping",
-      "auth_header_name": "Authorization",
-      "auth_token": "Bearer seed-bookkeeping-token",
-      "subscribed_events": [
-        "finance.invoice.created",
-        "finance.payment.collected"
-      ],
-      "resource_scope": [
-        "invoices",
-        "members"
-      ],
-      "enabled": true,
-      "created_by": "capture_admin"
-    }
-  ],
-  "operational_records": [
-    {
-      "reference": "SEED-TR-0001",
-      "record_type": "transport",
-      "status": "executed",
-      "strain": "sunset_sherbet",
-      "related_member": "member_active_a",
-      "quantity_grams": "150.00",
-      "origin": "Seed Tresor A",
-      "destination": "Seed Ausgabe Regal",
-      "operator_name": "Clara Bergmann",
-      "witness_name": "Jonas Kraft",
-      "vehicle_identifier": "L-CSC-204",
-      "destruction_method": "",
-      "notes": "Transport zur Freitagsausgabe.",
-      "created_by": "capture_admin",
-      "approved_by": "board_ops"
-    },
-    {
-      "reference": "SEED-VE-0001",
-      "record_type": "destruction",
-      "status": "approved",
-      "strain": "blue_dream",
-      "related_member": null,
-      "quantity_grams": "42.00",
-      "origin": "Seed Trockenraum",
-      "destination": "Reststoffbehaelter",
-      "operator_name": "Levin Aydin",
-      "witness_name": "Mara Schulze",
-      "vehicle_identifier": "",
-      "destruction_method": "Dokumentierte Vernichtung wegen Qualitaetsabweichung",
-      "notes": "Kleiner Fehlbatch nach Sichtpruefung separiert.",
-      "created_by": "staff_cultivation",
-      "approved_by": "capture_admin"
-    }
-  ],
-  "suspicious_activities": [
-    {
-      "member": "member_locked",
-      "month_key": "2026-03",
-      "consumed_grams": "54.00",
-      "threshold_grams": "50.00",
-      "is_reported": false,
-      "notes": "Mehrfach hohe Nachfrage trotz Bestellsperre."
-    }
-  ],
-  "compliance_reports": [
-    {
-      "year": 2026
-    }
-  ],
-  "audit_logs": [
-    {
-      "actor": "capture_admin",
-      "domain": "seed",
-      "action": "bootstrap",
-      "target_model": "SeedData",
-      "target_id": "2026-q1",
-      "summary": "[Seed] Demo-Daten fuer Screenshot-Umgebung aufgebaut.",
-      "metadata": {
-        "users": 10,
-        "strains": 5,
-        "harvest_kilograms": "4.00"
-      }
     }
   ]
 }

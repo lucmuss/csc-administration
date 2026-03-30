@@ -221,6 +221,17 @@ Noch nicht Teil des automatischen Merge-Gates:
 - Cultivation/Legacy Seed-to-Sale Bereiche mit bestehender Test- und Modell-Divergenz
 - einzelne Compliance-/Alt-Tests, die noch nicht auf den aktuellen Datenmodellstand angepasst sind
 
+## Demo Seed Data
+
+Fuer lokale Umgebungen und Docker-Starts gibt es reproduzierbare Seed-Daten im Repo:
+
+```bash
+python src/manage.py seed_demo_data
+python src/manage.py seed_demo_data --reset
+```
+
+Wenn `AUTO_SEED_DEMO_DATA=1` gesetzt ist, fuehrt `scripts/start-web.sh` den Import beim Start automatisch aus. Die Seed-Daten sind idempotent und aktualisieren bestehende Demo-Eintraege statt sie zu duplizieren.
+
 ---
 
 **Letzte Aktualisierung**: 2025-03-01

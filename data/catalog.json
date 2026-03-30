@@ -2,51 +2,41 @@
   "locations": [
     {
       "key": "vault_main",
-      "name": "Seed Tresor A",
+      "name": "Haupttresor",
       "type": "vault",
       "capacity": "2500.00"
     },
     {
       "key": "dispense_shelf",
-      "name": "Seed Ausgabe Regal",
+      "name": "Ausgabe Regal Blueten",
       "type": "shelf",
-      "capacity": "1200.00"
+      "capacity": "900.00"
     },
     {
-      "key": "dry_room",
-      "name": "Seed Trockenraum",
-      "type": "dry_room",
-      "capacity": "1800.00"
+      "key": "cutting_shelf",
+      "name": "Ausgabe Regal Stecklinge",
+      "type": "shelf",
+      "capacity": "900.00"
     }
   ],
   "strains": [
     {
-      "key": "sunset_sherbet",
-      "name": "Sunset Sherbet",
-      "thc": "24.50",
+      "key": "orange_bud",
+      "name": "Orange Bud",
+      "thc": "20.50",
       "cbd": "0.30",
-      "price": "9.80",
-      "stock": "905.00",
-      "quality_grade": "A+",
-      "is_active": true
-    },
-    {
-      "key": "lemon_haze",
-      "name": "Lemon Haze",
-      "thc": "21.30",
-      "cbd": "0.60",
-      "price": "8.90",
-      "stock": "775.00",
+      "price": "8.00",
+      "stock": "0.00",
       "quality_grade": "A",
       "is_active": true
     },
     {
-      "key": "gorilla_glue",
-      "name": "Gorilla Glue",
-      "thc": "25.80",
+      "key": "sage_n_sour",
+      "name": "Sage n Sour",
+      "thc": "23.80",
       "cbd": "0.20",
-      "price": "10.40",
-      "stock": "830.00",
+      "price": "9.00",
+      "stock": "0.00",
       "quality_grade": "A+",
       "is_active": true
     },
@@ -55,366 +45,304 @@
       "name": "Blue Dream",
       "thc": "19.70",
       "cbd": "0.80",
-      "price": "9.30",
-      "stock": "700.00",
+      "price": "8.00",
+      "stock": "0.00",
       "quality_grade": "A",
       "is_active": true
     },
     {
-      "key": "wedding_cake",
-      "name": "Wedding Cake",
-      "thc": "26.10",
-      "cbd": "0.10",
-      "price": "11.20",
-      "stock": "790.00",
+      "key": "orange_sherbert",
+      "name": "Orange Sherbert",
+      "thc": "22.10",
+      "cbd": "0.20",
+      "price": "9.00",
+      "stock": "0.00",
+      "quality_grade": "A",
+      "is_active": true
+    },
+    {
+      "key": "orange_hill_special",
+      "name": "Orange Hill Special",
+      "thc": "24.20",
+      "cbd": "0.20",
+      "price": "9.00",
+      "stock": "0.00",
       "quality_grade": "A+",
+      "is_active": true
+    },
+    {
+      "key": "wappa",
+      "name": "Wappa",
+      "thc": "18.90",
+      "cbd": "0.40",
+      "price": "8.00",
+      "stock": "0.00",
+      "quality_grade": "A",
+      "is_active": true
+    },
+    {
+      "key": "chocolope",
+      "name": "Chocolope",
+      "thc": "21.60",
+      "cbd": "0.30",
+      "price": "9.00",
+      "stock": "0.00",
+      "quality_grade": "A",
+      "is_active": true
+    },
+    {
+      "key": "channel",
+      "name": "Channel",
+      "thc": "17.40",
+      "cbd": "0.50",
+      "price": "7.00",
+      "stock": "0.00",
+      "quality_grade": "B",
+      "is_active": true
+    },
+    {
+      "key": "cutting_orange_bud",
+      "name": "Steckling: Orange Bud",
+      "thc": "0.00",
+      "cbd": "0.00",
+      "price": "5.00",
+      "stock": "0.00",
+      "quality_grade": "B",
+      "is_active": true
+    },
+    {
+      "key": "cutting_sage_n_sour",
+      "name": "Steckling: Sage n Sour",
+      "thc": "0.00",
+      "cbd": "0.00",
+      "price": "5.00",
+      "stock": "0.00",
+      "quality_grade": "B",
+      "is_active": true
+    },
+    {
+      "key": "cutting_blue_dream",
+      "name": "Steckling: Blue Dream",
+      "thc": "0.00",
+      "cbd": "0.00",
+      "price": "5.00",
+      "stock": "0.00",
+      "quality_grade": "B",
+      "is_active": true
+    },
+    {
+      "key": "cutting_orange_sherbert",
+      "name": "Steckling: Orange Sherbert",
+      "thc": "0.00",
+      "cbd": "0.00",
+      "price": "5.00",
+      "stock": "0.00",
+      "quality_grade": "B",
+      "is_active": true
+    },
+    {
+      "key": "cutting_orange_hill_special",
+      "name": "Steckling: Orange Hill Special",
+      "thc": "0.00",
+      "cbd": "0.00",
+      "price": "5.00",
+      "stock": "0.00",
+      "quality_grade": "B",
+      "is_active": true
+    },
+    {
+      "key": "cutting_wappa",
+      "name": "Steckling: Wappa",
+      "thc": "0.00",
+      "cbd": "0.00",
+      "price": "5.00",
+      "stock": "0.00",
+      "quality_grade": "B",
+      "is_active": true
+    },
+    {
+      "key": "cutting_chocolope",
+      "name": "Steckling: Chocolope",
+      "thc": "0.00",
+      "cbd": "0.00",
+      "price": "5.00",
+      "stock": "0.00",
+      "quality_grade": "B",
+      "is_active": true
+    },
+    {
+      "key": "cutting_channel",
+      "name": "Steckling: Channel",
+      "thc": "0.00",
+      "cbd": "0.00",
+      "price": "5.00",
+      "stock": "0.00",
+      "quality_grade": "B",
       "is_active": true
     }
   ],
   "inventory_items": [
     {
-      "strain": "sunset_sherbet",
-      "location": "vault_main",
-      "quantity": "520.00",
-      "last_counted": "2026-03-20"
-    },
-    {
-      "strain": "sunset_sherbet",
+      "strain": "orange_bud",
       "location": "dispense_shelf",
-      "quantity": "385.00",
-      "last_counted": "2026-03-20"
+      "quantity": "0.00",
+      "last_counted": "2026-03-30"
     },
     {
-      "strain": "lemon_haze",
-      "location": "vault_main",
-      "quantity": "510.00",
-      "last_counted": "2026-03-20"
-    },
-    {
-      "strain": "lemon_haze",
+      "strain": "sage_n_sour",
       "location": "dispense_shelf",
-      "quantity": "265.00",
-      "last_counted": "2026-03-20"
-    },
-    {
-      "strain": "gorilla_glue",
-      "location": "vault_main",
-      "quantity": "560.00",
-      "last_counted": "2026-03-20"
-    },
-    {
-      "strain": "gorilla_glue",
-      "location": "dispense_shelf",
-      "quantity": "270.00",
-      "last_counted": "2026-03-20"
-    },
-    {
-      "strain": "blue_dream",
-      "location": "vault_main",
-      "quantity": "410.00",
-      "last_counted": "2026-03-20"
+      "quantity": "0.00",
+      "last_counted": "2026-03-30"
     },
     {
       "strain": "blue_dream",
       "location": "dispense_shelf",
-      "quantity": "290.00",
-      "last_counted": "2026-03-20"
+      "quantity": "0.00",
+      "last_counted": "2026-03-30"
     },
     {
-      "strain": "wedding_cake",
-      "location": "vault_main",
-      "quantity": "490.00",
-      "last_counted": "2026-03-20"
-    },
-    {
-      "strain": "wedding_cake",
+      "strain": "orange_sherbert",
       "location": "dispense_shelf",
-      "quantity": "300.00",
-      "last_counted": "2026-03-20"
+      "quantity": "0.00",
+      "last_counted": "2026-03-30"
+    },
+    {
+      "strain": "orange_hill_special",
+      "location": "dispense_shelf",
+      "quantity": "0.00",
+      "last_counted": "2026-03-30"
+    },
+    {
+      "strain": "wappa",
+      "location": "dispense_shelf",
+      "quantity": "0.00",
+      "last_counted": "2026-03-30"
+    },
+    {
+      "strain": "chocolope",
+      "location": "dispense_shelf",
+      "quantity": "0.00",
+      "last_counted": "2026-03-30"
+    },
+    {
+      "strain": "channel",
+      "location": "dispense_shelf",
+      "quantity": "0.00",
+      "last_counted": "2026-03-30"
+    },
+    {
+      "strain": "cutting_orange_bud",
+      "location": "cutting_shelf",
+      "quantity": "0.00",
+      "last_counted": "2026-03-30"
+    },
+    {
+      "strain": "cutting_sage_n_sour",
+      "location": "cutting_shelf",
+      "quantity": "0.00",
+      "last_counted": "2026-03-30"
+    },
+    {
+      "strain": "cutting_blue_dream",
+      "location": "cutting_shelf",
+      "quantity": "0.00",
+      "last_counted": "2026-03-30"
+    },
+    {
+      "strain": "cutting_orange_sherbert",
+      "location": "cutting_shelf",
+      "quantity": "0.00",
+      "last_counted": "2026-03-30"
+    },
+    {
+      "strain": "cutting_orange_hill_special",
+      "location": "cutting_shelf",
+      "quantity": "0.00",
+      "last_counted": "2026-03-30"
+    },
+    {
+      "strain": "cutting_wappa",
+      "location": "cutting_shelf",
+      "quantity": "0.00",
+      "last_counted": "2026-03-30"
+    },
+    {
+      "strain": "cutting_chocolope",
+      "location": "cutting_shelf",
+      "quantity": "0.00",
+      "last_counted": "2026-03-30"
+    },
+    {
+      "strain": "cutting_channel",
+      "location": "cutting_shelf",
+      "quantity": "0.00",
+      "last_counted": "2026-03-30"
     }
   ],
   "batches": [
     {
-      "key": "batch_sunset",
-      "strain": "sunset_sherbet",
-      "code": "SEED-BATCH-SS-202602",
-      "quantity": "520.00",
-      "harvested_at": "2026-02-18",
+      "key": "batch_orange_bud",
+      "strain": "orange_bud",
+      "code": "SEED-OB-202603",
+      "quantity": "0.00",
+      "harvested_at": "2026-03-15",
       "is_active": true
     },
     {
-      "key": "batch_lemon",
-      "strain": "lemon_haze",
-      "code": "SEED-BATCH-LH-202602",
-      "quantity": "510.00",
-      "harvested_at": "2026-02-21",
+      "key": "batch_sage_n_sour",
+      "strain": "sage_n_sour",
+      "code": "SEED-SNS-202603",
+      "quantity": "0.00",
+      "harvested_at": "2026-03-15",
       "is_active": true
     },
     {
-      "key": "batch_gorilla",
-      "strain": "gorilla_glue",
-      "code": "SEED-BATCH-GG-202602",
-      "quantity": "560.00",
-      "harvested_at": "2026-02-24",
-      "is_active": true
-    },
-    {
-      "key": "batch_blue",
+      "key": "batch_blue_dream",
       "strain": "blue_dream",
-      "code": "SEED-BATCH-BD-202602",
-      "quantity": "410.00",
-      "harvested_at": "2026-02-26",
+      "code": "SEED-BD-202603",
+      "quantity": "0.00",
+      "harvested_at": "2026-03-15",
       "is_active": true
     },
     {
-      "key": "batch_wedding",
-      "strain": "wedding_cake",
-      "code": "SEED-BATCH-WC-202603",
-      "quantity": "490.00",
-      "harvested_at": "2026-03-01",
+      "key": "batch_orange_sherbert",
+      "strain": "orange_sherbert",
+      "code": "SEED-OS-202603",
+      "quantity": "0.00",
+      "harvested_at": "2026-03-15",
       "is_active": true
-    }
-  ],
-  "grow_cycles": [
-    {
-      "key": "winter_cycle",
-      "name": "Seed Winterernte 2026",
-      "description": "Abgeschlossener Indoor-Lauf mit fokus auf Club-Standardware fuer das erste Quartal.",
-      "start_date": "2025-11-18",
-      "expected_harvest_date": "2026-02-18",
-      "actual_harvest_date": "2026-02-24",
-      "completion_date": "2026-03-08",
-      "status": "completed",
-      "responsible_user": "staff_cultivation",
-      "location": "Blueteraum 1",
-      "notes": "Ertrag stabil, zwei Sorten mit leichtem Trimmverlust.",
-      "compliance_notes": "Dokumentation fuer CanG abgeschlossen.",
-      "created_by": "capture_admin",
-      "plants": [
-        {
-          "plant_number": "SEED-W-SS-01",
-          "strain": "sunset_sherbet",
-          "planting_date": "2025-11-22",
-          "status": "completed",
-          "expected_yield_grams": "470.00",
-          "actual_yield_grams": "455.00",
-          "notes": "Breite Krone, dichter Trimm.",
-          "created_by": "staff_cultivation",
-          "logs": [
-            {
-              "log_type": "watering",
-              "date": "2026-01-10T08:00:00+01:00",
-              "notes": "EC leicht reduziert, Pflanzen reagierten gut.",
-              "products_used": "Osmosewasser, Ca/Mg"
-            },
-            {
-              "log_type": "harvest",
-              "date": "2026-02-18T09:30:00+01:00",
-              "notes": "Handernte mit Vortrimmen.",
-              "products_used": "Trimmschere"
-            }
-          ]
-        },
-        {
-          "plant_number": "SEED-W-LH-01",
-          "strain": "lemon_haze",
-          "planting_date": "2025-11-22",
-          "status": "completed",
-          "expected_yield_grams": "410.00",
-          "actual_yield_grams": "398.00",
-          "notes": "Zitroniges Terpenprofil.",
-          "created_by": "staff_cultivation"
-        },
-        {
-          "plant_number": "SEED-W-GG-01",
-          "strain": "gorilla_glue",
-          "planting_date": "2025-11-24",
-          "status": "completed",
-          "expected_yield_grams": "430.00",
-          "actual_yield_grams": "422.00",
-          "notes": "Hoher Harzbesatz.",
-          "created_by": "staff_cultivation"
-        },
-        {
-          "plant_number": "SEED-W-BD-01",
-          "strain": "blue_dream",
-          "planting_date": "2025-11-24",
-          "status": "completed",
-          "expected_yield_grams": "360.00",
-          "actual_yield_grams": "348.00",
-          "notes": "Luftigerer Wuchs, aber sauberer Lauf.",
-          "created_by": "staff_cultivation"
-        },
-        {
-          "plant_number": "SEED-W-WC-01",
-          "strain": "wedding_cake",
-          "planting_date": "2025-11-26",
-          "status": "completed",
-          "expected_yield_grams": "405.00",
-          "actual_yield_grams": "390.00",
-          "notes": "Sehr kompakte Blueten.",
-          "created_by": "staff_cultivation"
-        }
-      ]
     },
     {
-      "key": "spring_cycle",
-      "name": "Seed Fruehlingslauf 2026",
-      "description": "Aktiver Folgezyklus fuer frische Bestandsaufstockung im spaeten Fruehjahr.",
-      "start_date": "2026-03-01",
-      "expected_harvest_date": "2026-05-20",
-      "actual_harvest_date": null,
-      "completion_date": null,
-      "status": "active",
-      "responsible_user": "staff_cultivation",
-      "location": "Vegiraum 2",
-      "notes": "Zwei Mutterpflanzen und vier produktive Slots in Veg.",
-      "compliance_notes": "Laufende Dokumentation, QR-Tags vergeben.",
-      "created_by": "capture_admin",
-      "plants": [
-        {
-          "plant_number": "SEED-S-SS-01",
-          "strain": "sunset_sherbet",
-          "planting_date": "2026-03-02",
-          "status": "vegetative",
-          "expected_yield_grams": "460.00",
-          "actual_yield_grams": "0.00",
-          "notes": "LST fuer flaches Dach im Aufbau.",
-          "created_by": "staff_cultivation"
-        },
-        {
-          "plant_number": "SEED-S-LH-01",
-          "strain": "lemon_haze",
-          "planting_date": "2026-03-03",
-          "status": "vegetative",
-          "expected_yield_grams": "390.00",
-          "actual_yield_grams": "0.00",
-          "notes": "Etwas stretchiger Wuchs.",
-          "created_by": "staff_cultivation"
-        },
-        {
-          "plant_number": "SEED-S-GG-01",
-          "strain": "gorilla_glue",
-          "planting_date": "2026-03-03",
-          "status": "growing",
-          "expected_yield_grams": "420.00",
-          "actual_yield_grams": "0.00",
-          "notes": "Kompakte Internodien.",
-          "created_by": "staff_cultivation"
-        }
-      ]
-    }
-  ],
-  "harvest_batches": [
-    {
-      "batch_number": "SEED-H-SS-202602",
-      "name": "Seed Sunset Sherbet Februar",
-      "harvest_date": "2026-02-18",
-      "plants": [
-        "SEED-W-SS-01"
-      ],
-      "total_weight_fresh": "1380.00",
-      "total_weight_dried": "920.00",
-      "quality_grade": "A+",
-      "drying_start_date": "2026-02-19",
-      "drying_end_date": "2026-02-28",
-      "curing_start_date": "2026-03-01",
-      "curing_end_date": "2026-03-15",
-      "assigned_to_inventory": true,
-      "inventory_item": {
-        "strain": "sunset_sherbet",
-        "location": "vault_main"
-      },
-      "notes": "Sehr gleichmaessige Tops, dichter Trichombesatz.",
-      "created_by": "staff_cultivation"
+      "key": "batch_orange_hill_special",
+      "strain": "orange_hill_special",
+      "code": "SEED-OHS-202603",
+      "quantity": "0.00",
+      "harvested_at": "2026-03-15",
+      "is_active": true
     },
     {
-      "batch_number": "SEED-H-LH-202602",
-      "name": "Seed Lemon Haze Februar",
-      "harvest_date": "2026-02-21",
-      "plants": [
-        "SEED-W-LH-01"
-      ],
-      "total_weight_fresh": "1220.00",
-      "total_weight_dried": "780.00",
-      "quality_grade": "A",
-      "drying_start_date": "2026-02-22",
-      "drying_end_date": "2026-03-01",
-      "curing_start_date": "2026-03-02",
-      "curing_end_date": "2026-03-16",
-      "assigned_to_inventory": true,
-      "inventory_item": {
-        "strain": "lemon_haze",
-        "location": "vault_main"
-      },
-      "notes": "Leichter Foxtail, dennoch starkes Aroma.",
-      "created_by": "staff_cultivation"
+      "key": "batch_wappa",
+      "strain": "wappa",
+      "code": "SEED-WAP-202603",
+      "quantity": "0.00",
+      "harvested_at": "2026-03-15",
+      "is_active": true
     },
     {
-      "batch_number": "SEED-H-GG-202602",
-      "name": "Seed Gorilla Glue Februar",
-      "harvest_date": "2026-02-24",
-      "plants": [
-        "SEED-W-GG-01"
-      ],
-      "total_weight_fresh": "1290.00",
-      "total_weight_dried": "840.00",
-      "quality_grade": "A+",
-      "drying_start_date": "2026-02-25",
-      "drying_end_date": "2026-03-04",
-      "curing_start_date": "2026-03-05",
-      "curing_end_date": "2026-03-18",
-      "assigned_to_inventory": true,
-      "inventory_item": {
-        "strain": "gorilla_glue",
-        "location": "vault_main"
-      },
-      "notes": "Harziger Batch mit hoher Nachfrage im Shop.",
-      "created_by": "staff_cultivation"
+      "key": "batch_chocolope",
+      "strain": "chocolope",
+      "code": "SEED-CHO-202603",
+      "quantity": "0.00",
+      "harvested_at": "2026-03-15",
+      "is_active": true
     },
     {
-      "batch_number": "SEED-H-BD-202602",
-      "name": "Seed Blue Dream Februar",
-      "harvest_date": "2026-02-26",
-      "plants": [
-        "SEED-W-BD-01"
-      ],
-      "total_weight_fresh": "1115.00",
-      "total_weight_dried": "690.00",
-      "quality_grade": "A",
-      "drying_start_date": "2026-02-27",
-      "drying_end_date": "2026-03-05",
-      "curing_start_date": "2026-03-06",
-      "curing_end_date": "2026-03-19",
-      "assigned_to_inventory": true,
-      "inventory_item": {
-        "strain": "blue_dream",
-        "location": "vault_main"
-      },
-      "notes": "Mildes Aroma, gute Standardware.",
-      "created_by": "staff_cultivation"
-    },
-    {
-      "batch_number": "SEED-H-WC-202603",
-      "name": "Seed Wedding Cake Maerz",
-      "harvest_date": "2026-03-01",
-      "plants": [
-        "SEED-W-WC-01"
-      ],
-      "total_weight_fresh": "1180.00",
-      "total_weight_dried": "770.00",
-      "quality_grade": "A+",
-      "drying_start_date": "2026-03-02",
-      "drying_end_date": "2026-03-08",
-      "curing_start_date": "2026-03-09",
-      "curing_end_date": "2026-03-20",
-      "assigned_to_inventory": true,
-      "inventory_item": {
-        "strain": "wedding_cake",
-        "location": "vault_main"
-      },
-      "notes": "Kräftiger Duft, starkes Premium-Regal.",
-      "created_by": "staff_cultivation"
+      "key": "batch_channel",
+      "strain": "channel",
+      "code": "SEED-CHA-202603",
+      "quantity": "0.00",
+      "harvested_at": "2026-03-15",
+      "is_active": true
     }
   ]
 }

@@ -123,7 +123,7 @@ def send_sepa_prenotifications(today: date | None = None) -> int:
                 f"Ihre Lastschrift ueber {payment.amount} EUR fuer {payment.invoice.invoice_number} "
                 f"wird am {payment.scheduled_for:%d.%m.%Y} eingezogen."
             ),
-            from_email="noreply@csc.local",
+            from_email=settings.DEFAULT_FROM_EMAIL,
             recipient_list=[payment.profile.user.email],
             fail_silently=True,
         )
@@ -269,7 +269,7 @@ def send_due_reminders(today: date | None = None) -> int:
                 f"Rechnung {invoice.invoice_number} ist ueberfaellig. "
                 f"Mahnstufe {new_level}, offene Summe: {invoice.amount} EUR."
             ),
-            from_email="noreply@csc.local",
+            from_email=settings.DEFAULT_FROM_EMAIL,
             recipient_list=[invoice.profile.user.email],
             fail_silently=True,
         )

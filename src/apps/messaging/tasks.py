@@ -47,7 +47,10 @@ def send_mass_email_task(email_id):
             personalized_html = template.render(Context(context))
             
             # Füge Tracking-Pixel hinzu
-            tracking_pixel = f'<img src="{settings.SITE_URL}/messaging/track/{log.tracking_id}.gif" width="1" height="1" alt="" />'
+            tracking_pixel = (
+                f'<img src="{settings.SITE_URL.rstrip("/")}/messaging/track/{log.tracking_id}.gif" '
+                'width="1" height="1" alt="" />'
+            )
             personalized_html += tracking_pixel
             
             # Sende E-Mail

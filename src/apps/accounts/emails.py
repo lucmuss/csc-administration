@@ -1,8 +1,7 @@
 from __future__ import annotations
 
-import os
-
 from django.conf import settings
+from django.core.exceptions import DisallowedHost
 from django.core.mail import EmailMultiAlternatives
 from django.http import HttpRequest
 from django.template.loader import render_to_string
@@ -21,15 +20,13 @@ def _request_meta(request: HttpRequest) -> tuple[str, str]:
 
 
 def _app_public_url() -> str:
-    return (os.getenv("APP_PUBLIC_URL", "http://localhost:8080") or "http://localhost:8080").rstrip(
-        "/"
-    )
+    return (settings.SITE_URL or "http://localhost:8000").rstrip("/")
 
 
 def _absolute_url(request: HttpRequest, route_name: str, fallback_path: str) -> str:
     try:
         return request.build_absolute_uri(reverse(route_name))
-    except NoReverseMatch:
+    except (NoReverseMatch, DisallowedHost):
         return f"{_app_public_url()}{fallback_path}"
 
 

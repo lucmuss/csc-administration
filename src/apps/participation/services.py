@@ -1,6 +1,7 @@
 from datetime import date, timedelta
 from decimal import Decimal
 
+from django.conf import settings
 from django.core.mail import send_mail
 from django.db.models import Max, Sum
 from django.template.loader import render_to_string
@@ -47,7 +48,7 @@ class MeetingService:
             send_mail(
                 subject="Einladung zur Mitgliederversammlung",
                 message="Bitte HTML-Version anzeigen.",
-                from_email="noreply@csc.local",
+                from_email=settings.DEFAULT_FROM_EMAIL,
                 recipient_list=[engagement.profile.user.email],
                 html_message=body,
                 fail_silently=True,
@@ -77,7 +78,7 @@ class MeetingService:
             send_mail(
                 subject="Erinnerung: Mitgliederversammlung",
                 message="Bitte HTML-Version anzeigen.",
-                from_email="noreply@csc.local",
+                from_email=settings.DEFAULT_FROM_EMAIL,
                 recipient_list=[engagement.profile.user.email],
                 html_message=body,
                 fail_silently=True,
@@ -124,7 +125,7 @@ class InactivityService:
             send_mail(
                 subject="Wir haben Sie laenger nicht gesehen",
                 message="Bitte HTML-Version anzeigen.",
-                from_email="noreply@csc.local",
+                from_email=settings.DEFAULT_FROM_EMAIL,
                 recipient_list=[profile.user.email],
                 html_message=body,
                 fail_silently=True,
@@ -157,7 +158,7 @@ class DeadlineService:
                 message=(
                     f"Die Registrierung ist noch offen. Frist: {engagement.registration_deadline:%d.%m.%Y}."
                 ),
-                from_email="noreply@csc.local",
+                from_email=settings.DEFAULT_FROM_EMAIL,
                 recipient_list=[engagement.profile.user.email],
                 fail_silently=True,
             )

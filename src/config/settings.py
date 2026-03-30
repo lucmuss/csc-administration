@@ -4,27 +4,49 @@ import sys
 
 BASE_DIR = Path(__file__).resolve().parent.parent.parent
 
+
+def _env_first(*names: str, default: str = "") -> str:
+    for name in names:
+        value = os.getenv(name)
+        if value is not None and value != "":
+            return value
+    return default
+
+
+def _env_bool(*names: str, default: bool = False) -> bool:
+    raw = _env_first(*names)
+    if raw == "":
+        return default
+    return raw.strip().lower() in {"1", "true", "yes", "on"}
+
+
+def _env_csv(*names: str) -> list[str]:
+    raw = _env_first(*names)
+    if not raw:
+        return []
+    return [item.strip() for item in raw.split(",") if item.strip()]
+
 # SECURITY WARNING: keep the secret key used in production secret!
 # In production, DJANGO_SECRET_KEY must be set and DJANGO_DEBUG must be "0"
 SECRET_KEY = os.getenv("DJANGO_SECRET_KEY")
 if not SECRET_KEY:
-    if os.getenv("DJANGO_DEBUG", "1") == "1":
+    if _env_bool("DJANGO_DEBUG", default=True):
         # Only use fallback in development
         SECRET_KEY = "dev-secret-key-not-for-production"
     else:
         raise ValueError("DJANGO_SECRET_KEY environment variable must be set in production!")
 
-DEBUG = os.getenv("DJANGO_DEBUG", "1") == "1"
+DEBUG = _env_bool("DJANGO_DEBUG", default=True)
 
 # SECURITY WARNING: don't run with debug turned on in production!
 if DEBUG:
     ALLOWED_HOSTS = ["localhost", "127.0.0.1", "[::1]"]
 else:
-    allowed_hosts_env = os.getenv("ALLOWED_HOSTS", "")
-    if allowed_hosts_env:
-        ALLOWED_HOSTS = [host.strip() for host in allowed_hosts_env.split(",") if host.strip()]
+    allowed_hosts = _env_csv("ALLOWED_HOSTS", "DJANGO_ALLOWED_HOSTS")
+    if allowed_hosts:
+        ALLOWED_HOSTS = allowed_hosts
     else:
-        raise ValueError("ALLOWED_HOSTS environment variable must be set in production!")
+        raise ValueError("ALLOWED_HOSTS or DJANGO_ALLOWED_HOSTS environment variable must be set in production!")
 
 INSTALLED_APPS = [
     "django.contrib.admin",
@@ -135,6 +157,9 @@ LOGIN_URL = "accounts:login"
 LOGIN_REDIRECT_URL = "core:dashboard"
 LOGOUT_REDIRECT_URL = "accounts:login"
 
+SECURE_PROXY_SSL_HEADER = ("HTTP_X_FORWARDED_PROTO", "https")
+USE_X_FORWARDED_HOST = True
+
 # Google Analytics
 GA_TRACKING_ID = os.getenv("GA_TRACKING_ID", "")
 
@@ -143,7 +168,12 @@ TEST_USER_EMAIL = os.getenv("TEST_USER_EMAIL", "")
 DEV_LOGIN_ALLOWED_DOMAIN = os.getenv("DEV_LOGIN_ALLOWED_DOMAIN", "@test.local")
 
 # Site-URL fuer absolute Links (z.B. Tracking-Pixel in E-Mails)
-SITE_URL = os.getenv("SITE_URL", "http://localhost:8000")
+SITE_URL = _env_first("SITE_URL", "APP_PUBLIC_URL", default="http://localhost:8000")
+CSRF_TRUSTED_ORIGINS = _env_csv("CSRF_TRUSTED_ORIGINS", "DJANGO_CSRF_TRUSTED_ORIGINS")
+if SITE_URL.startswith(("http://", "https://")):
+    site_origin = SITE_URL.rstrip("/")
+    if site_origin not in CSRF_TRUSTED_ORIGINS:
+        CSRF_TRUSTED_ORIGINS.append(site_origin)
 
 # E-Mail-Versand
 DEFAULT_FROM_EMAIL = os.getenv("DEFAULT_FROM_EMAIL", "noreply@localhost")

@@ -1,4 +1,4 @@
-const CACHE_NAME = 'csc-pwa-v1';
+const CACHE_NAME = 'csc-pwa-v2';
 const CORE_ASSETS = [
   '/',
   '/offline/',
@@ -7,6 +7,8 @@ const CORE_ASSETS = [
   '/static/manifest/icon-192x192.png',
   '/static/manifest/icon-512x512.png'
 ];
+
+const BYPASS_PREFIXES = ['/accounts/', '/members/register/'];
 
 self.addEventListener('install', (event) => {
   event.waitUntil(
@@ -33,6 +35,11 @@ self.addEventListener('fetch', (event) => {
     return;
   }
 
+  const requestUrl = new URL(event.request.url);
+  if (BYPASS_PREFIXES.some((prefix) => requestUrl.pathname.startsWith(prefix))) {
+    return;
+  }
+
   if (event.request.mode === 'navigate') {
     event.respondWith(
       fetch(event.request).catch(() => caches.match('/offline/'))
@@ -49,6 +56,10 @@ self.addEventListener('fetch', (event) => {
       return fetch(event.request)
         .then((networkResponse) => {
           if (!networkResponse || networkResponse.status !== 200 || networkResponse.type !== 'basic') {
+            return networkResponse;
+          }
+          const contentType = networkResponse.headers.get('content-type') || '';
+          if (contentType.includes('text/html')) {
             return networkResponse;
           }
           const responseClone = networkResponse.clone();

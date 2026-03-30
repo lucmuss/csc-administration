@@ -123,7 +123,7 @@
     <script>
       if ("serviceWorker" in navigator) {
         window.addEventListener("load", function () {
-          navigator.serviceWorker.register('/offline.js').catch(function () {
+          navigator.serviceWorker.register('/offline.js?v=2').catch(function () {
             return null;
           });
         });

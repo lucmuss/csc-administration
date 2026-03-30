@@ -19,7 +19,8 @@ def test_manifest_and_service_worker_are_available(client):
     assert worker_response.status_code == 200
     assert 'application/javascript' in worker_response['Content-Type']
     worker_source = worker_response.content.decode('utf-8')
-    assert "const CACHE_NAME = 'csc-pwa-v1'" in worker_source
+    assert "const CACHE_NAME = 'csc-pwa-v2'" in worker_source
+    assert "const BYPASS_PREFIXES = ['/accounts/', '/members/register/']" in worker_source
     assert "caches.match('/offline/')" in worker_source
 
 
@@ -32,7 +33,7 @@ def test_base_template_contains_pwa_and_mobile_navigation(client):
     assert 'rel="manifest"' in html
     assert 'id="mobile-menu-button"' in html
     assert 'aria-controls="main-nav"' in html
-    assert "navigator.serviceWorker.register('/offline.js')" in html
+    assert "navigator.serviceWorker.register('/offline.js?v=2')" in html
 
 
 def test_touch_target_styles_are_present():

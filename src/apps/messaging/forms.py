@@ -1,8 +1,21 @@
-# messaging/forms.py
-from django import forms
-from .models import EmailGroup, MassEmail, SmsMessage, SmsTemplate, SmsProviderConfig
-from apps.members.models import Profile
 import markdown
+import re
+
+from django import forms
+
+from apps.members.models import Profile
+
+from .models import EmailGroup, MassEmail, SmsMessage, SmsProviderConfig, SmsTemplate
+
+
+_HTML_TAG_RE = re.compile(r"[<>]")
+
+
+def _validate_plain_text(value: str, *, field_label: str) -> str:
+    value = value.strip()
+    if _HTML_TAG_RE.search(value):
+        raise forms.ValidationError(f"{field_label} darf keine HTML-Tags enthalten.")
+    return value
 
 
 class EmailGroupForm(forms.ModelForm):
@@ -24,6 +37,18 @@ class EmailGroupForm(forms.ModelForm):
                 "class": "h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
             }),
         }
+
+    def clean_name(self):
+        name = _validate_plain_text(self.cleaned_data["name"], field_label="Der Gruppenname")
+        if len(name) < 2:
+            raise forms.ValidationError("Bitte gib einen Gruppennamen mit mindestens 2 Zeichen ein.")
+        return name
+
+    def clean_description(self):
+        description = self.cleaned_data.get("description", "").strip()
+        if description:
+            return _validate_plain_text(description, field_label="Die Beschreibung")
+        return description
 
 
 class EmailGroupMemberForm(forms.Form):

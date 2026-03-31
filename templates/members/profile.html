@@ -1,15 +1,30 @@
 {% extends 'base.html' %}
-{% block title %}Mein Profil{% endblock %}
+{% block title %}{% if is_admin_view %}Mitgliederprofil{% else %}Mein Profil{% endif %}{% endblock %}
 {% block content %}
   <section class="page-shell">
     <div class="page-heading">
       <div>
-        <p class="eyebrow">Mitgliederprofil</p>
-        <h1>Persoenliche Daten, Limits und Aktivitaet.</h1>
+        <p class="eyebrow">{% if is_admin_view %}Mitgliederverwaltung{% else %}Mitgliederprofil{% endif %}</p>
+        <h1>{% if is_admin_view %}Profil, Historie und Status eines Mitglieds.{% else %}Persoenliche Daten, Limits und Aktivitaet.{% endif %}</h1>
       </div>
       <div class="flex gap-2">
-        <a href="{% url 'orders:shop' %}" class="btn-ghost">Zum Shop</a>
-        <a href="{% url 'orders:cart' %}" class="btn-ghost">Warenkorb{% if request.session.cart %} ({{ request.session.cart|length }}){% endif %}</a>
+        {% if is_admin_view %}
+          <a href="{% url 'members:directory' %}" class="btn-ghost">Zur Mitgliederliste</a>
+          <a href="{% url 'orders:admin_list' %}?q={{ profile.user.email }}" class="btn-ghost">Bestellungen</a>
+        {% else %}
+          <a href="{% url 'orders:shop' %}" class="btn-ghost">Zum Shop</a>
+          <a href="{% url 'orders:cart' %}" class="btn-ghost">Warenkorb{% if request.session.cart %} ({{ request.session.cart|length }}){% endif %}</a>
+          {% if show_profile_edit_callout %}
+            <a href="#profilpflege" class="btn-primary">Profil bearbeiten</a>
+          {% endif %}
+          {% if show_public_directory_link %}
+            <a href="{% url 'members:directory' %}" class="btn-ghost">Mitglieder</a>
+          {% endif %}
+          <form method="post" action="{% url 'accounts:logout' %}" class="inline-actions">
+            {% csrf_token %}
+            <button type="submit" class="btn-ghost">Abmelden</button>
+          </form>
+        {% endif %}
       </div>
     </div>
 
@@ -19,16 +34,29 @@
         <strong class="kpi-card__value">{{ profile.get_status_display }}</strong>
         <small class="kpi-card__detail">Mitgliedsnummer {{ profile.member_number|default:"wird vergeben" }}</small>
       </article>
-      <article class="kpi-card kpi-card--sand">
-        <span class="kpi-card__label">Guthaben</span>
-        <strong class="kpi-card__value">{{ profile.balance }} EUR</strong>
-        <small class="kpi-card__detail">SEPA und Rechnungen im Finanzbereich</small>
-      </article>
-      <article class="kpi-card kpi-card--ink">
-        <span class="kpi-card__label">Monatsverbrauch</span>
-        <strong class="kpi-card__value">{{ profile.monthly_used }} g</strong>
-        <small class="kpi-card__detail">von 50 g im laufenden Monat</small>
-      </article>
+      {% if show_private_profile_details %}
+        <article class="kpi-card kpi-card--sand">
+          <span class="kpi-card__label">Guthaben</span>
+          <strong class="kpi-card__value">{{ profile.balance }} EUR</strong>
+          <small class="kpi-card__detail">SEPA und Rechnungen im Finanzbereich</small>
+        </article>
+        <article class="kpi-card kpi-card--ink">
+          <span class="kpi-card__label">Monatsverbrauch</span>
+          <strong class="kpi-card__value">{{ profile.monthly_used }} g</strong>
+          <small class="kpi-card__detail">von 50 g im laufenden Monat</small>
+        </article>
+      {% else %}
+        <article class="kpi-card kpi-card--sand">
+          <span class="kpi-card__label">Aufnahmedatum</span>
+          <strong class="kpi-card__value">{{ profile.desired_join_date|date:'d.m.Y'|default:'-' }}</strong>
+          <small class="kpi-card__detail">sichtbar fuer Vereinsmitglieder</small>
+        </article>
+        <article class="kpi-card kpi-card--ink">
+          <span class="kpi-card__label">Letzte Aktivitaet</span>
+          <strong class="kpi-card__value">{{ profile.last_activity|date:'d.m.Y'|default:'-' }}</strong>
+          <small class="kpi-card__detail">ohne Finanz- und Verbrauchsdaten</small>
+        </article>
+      {% endif %}
     </div>
 
     <div class="board-grid">
@@ -42,25 +70,312 @@
         <ul class="detail-list">
           <li><span>Name</span><strong>{{ profile.user.full_name }}</strong></li>
           <li><span>E-Mail</span><strong>{{ profile.user.email }}</strong></li>
+          <li><span>Aufnahmedatum</span><strong>{{ profile.desired_join_date|date:'d.m.Y'|default:'-' }}</strong></li>
           <li><span>Verifiziert</span><strong>{{ profile.is_verified|yesno:'Ja,Nein' }}</strong></li>
+          <li><span>Registriert seit</span><strong>{{ profile.user.date_joined|date:'d.m.Y H:i' }}</strong></li>
           <li><span>Letzte Aktivitaet</span><strong>{{ profile.last_activity|date:'d.m.Y H:i'|default:'-' }}</strong></li>
         </ul>
+      </article>
+
+      {% if show_private_profile_details %}
+        <article class="panel">
+          <div class="panel__header">
+            <div>
+              <p class="panel__eyebrow">Limits</p>
+              <h2>Abgabe und Konto</h2>
+            </div>
+          </div>
+          <ul class="detail-list">
+            <li><span>Tagesverbrauch</span><strong>{{ profile.daily_used }} g / 25 g</strong></li>
+            <li><span>Monatsverbrauch</span><strong>{{ profile.monthly_used }} g / 50 g</strong></li>
+            <li><span>Bestellungen gesperrt</span><strong>{{ profile.is_locked_for_orders|yesno:'Ja,Nein' }}</strong></li>
+            <li><span>Pflichtstunden</span><strong>{{ profile.work_hours_done }} h</strong></li>
+          </ul>
+        </article>
+      {% endif %}
+
+      {% if show_private_profile_details %}
+        <article class="panel">
+          <div class="panel__header">
+            <div>
+              <p class="panel__eyebrow">Registrierung</p>
+              <h2>Adresse und Vereinsangaben</h2>
+            </div>
+          </div>
+          <ul class="detail-list">
+            <li><span>Adresse</span><strong>{{ profile.street_address|default:'-' }}</strong></li>
+            <li><span>PLZ / Stadt</span><strong>{% if profile.postal_code or profile.city %}{{ profile.postal_code }} {{ profile.city }}{% else %}-{% endif %}</strong></li>
+            <li><span>Telefon</span><strong>{{ profile.phone|default:'-' }}</strong></li>
+            <li><span>Anderer CSC</span><strong>{{ profile.no_other_csc_membership|yesno:'Nein,Ja' }}</strong></li>
+            <li><span>Pflichtinfos per E-Mail</span><strong>{{ profile.important_newsletter_opt_in|yesno:'Ja,Nein' }}</strong></li>
+            <li><span>Angebote / Preislisten</span><strong>{{ profile.optional_newsletter_opt_in|yesno:'Ja,Nein' }}</strong></li>
+          </ul>
+        </article>
+      {% endif %}
+    </div>
+
+    {% if is_admin_view and can_manage %}
+      <section class="panel">
+        <div class="panel__header">
+          <div>
+            <p class="panel__eyebrow">Verwaltung</p>
+            <h2>Mitglied steuern</h2>
+          </div>
+        </div>
+        <form method="post" action="{% url 'members:action' profile.id %}" class="inline-actions inline-actions--stacked">
+          {% csrf_token %}
+          <input type="hidden" name="next" value="{{ request.get_full_path }}">
+          {% if profile.status == 'pending' %}
+            <button type="submit" name="action" value="verify" class="btn-primary">Mitglied freischalten</button>
+            <button type="submit" name="action" value="reject" class="btn-ghost">Ablehnen</button>
+          {% endif %}
+          {% if profile.is_locked_for_orders %}
+            <button type="submit" name="action" value="unlock_orders" class="btn-ghost">Bestellungen freigeben</button>
+          {% else %}
+            <button type="submit" name="action" value="lock_orders" class="btn-ghost">Bestellungen sperren</button>
+          {% endif %}
+          <button type="submit" name="action" value="delete_member" class="btn-ghost">Mitglied loeschen</button>
+        </form>
+      </section>
+    {% endif %}
+
+    {% if can_view_sensitive_finance %}
+      <section class="panel">
+        <div class="panel__header">
+          <div>
+            <p class="panel__eyebrow">Finanzdaten</p>
+            <h2>Bankverbindung und Lastschrift</h2>
+          </div>
+        </div>
+        <div class="split-cards">
+          <div class="mini-panel">
+            <h3>Aktive Bankdaten</h3>
+            <ul class="detail-list">
+              <li><span>Kontoinhaber</span><strong>{{ profile.account_holder_name|default:'-' }}</strong></li>
+              <li><span>Kreditinstitut</span><strong>{{ profile.bank_name|default:'-' }}</strong></li>
+              <li><span>IBAN</span><strong>{% if profile.sepa_mandate %}{{ profile.sepa_mandate.iban_masked }}{% else %}-{% endif %}</strong></li>
+              {% if show_full_bic %}
+                <li><span>BIC</span><strong>{% if profile.sepa_mandate %}{{ profile.sepa_mandate.bic }}{% else %}-{% endif %}</strong></li>
+              {% endif %}
+            </ul>
+          </div>
+          <div class="mini-panel">
+            <h3>Registrierungsstatus</h3>
+            <ul class="detail-list">
+              <li><span>Onboarding komplett</span><strong>{{ profile.onboarding_complete|yesno:'Ja,Nein' }}</strong></li>
+              <li><span>SEPA aktiv</span><strong>{% if profile.sepa_mandate %}Ja{% else %}Nein{% endif %}</strong></li>
+              <li><span>Abgeschlossen am</span><strong>{{ profile.registration_completed_at|date:'d.m.Y H:i'|default:'-' }}</strong></li>
+            </ul>
+          </div>
+        </div>
+      </section>
+    {% endif %}
+
+    {% if profile_form %}
+      <section id="profilpflege" class="panel">
+        <div class="panel__header">
+          <div>
+            <p class="panel__eyebrow">Profilpflege</p>
+            <h2>Bearbeitbare Angaben</h2>
+          </div>
+        </div>
+        <form method="post" class="form-stack">
+          {% csrf_token %}
+          <div class="field-grid">
+            <div class="field">
+              <label for="{{ profile_form.first_name.id_for_label }}">Vorname</label>
+              {{ profile_form.first_name }}
+              {{ profile_form.first_name.errors }}
+            </div>
+            <div class="field">
+              <label for="{{ profile_form.last_name.id_for_label }}">Nachname</label>
+              {{ profile_form.last_name }}
+              {{ profile_form.last_name.errors }}
+            </div>
+          </div>
+          <div class="field">
+            <label for="{{ profile_form.email.id_for_label }}">E-Mail</label>
+            {{ profile_form.email }}
+            {{ profile_form.email.errors }}
+          </div>
+          <div class="field-grid">
+            <div class="field">
+              <label for="{{ profile_form.phone.id_for_label }}">Telefonnummer</label>
+              {{ profile_form.phone }}
+              {{ profile_form.phone.errors }}
+            </div>
+            <div class="field">
+              <label for="{{ profile.desired_join_date }}">Aufnahmedatum</label>
+              <input type="text" value="{{ profile.desired_join_date|date:'d.m.Y'|default:'-' }}" disabled>
+            </div>
+          </div>
+          <div class="field">
+            <label for="{{ profile_form.street_address.id_for_label }}">Strasse, Hausnummer</label>
+            {{ profile_form.street_address }}
+            {{ profile_form.street_address.errors }}
+          </div>
+          <div class="field-grid">
+            <div class="field">
+              <label for="{{ profile_form.postal_code.id_for_label }}">Postleitzahl</label>
+              {{ profile_form.postal_code }}
+              {{ profile_form.postal_code.errors }}
+            </div>
+            <div class="field">
+              <label for="{{ profile_form.city.id_for_label }}">Stadt</label>
+              {{ profile_form.city }}
+              {{ profile_form.city.errors }}
+            </div>
+          </div>
+          <div class="panel">
+            <div class="panel__header">
+              <div>
+                <p class="panel__eyebrow">SEPA</p>
+                <h2>Bankdaten aktualisieren</h2>
+              </div>
+            </div>
+            <div class="form-stack">
+              <div class="field-grid">
+                <div class="field">
+                  <label for="{{ profile_form.iban.id_for_label }}">IBAN</label>
+                  {{ profile_form.iban }}
+                  {{ profile_form.iban.errors }}
+                </div>
+                <div class="field">
+                  <label for="{{ profile_form.bic.id_for_label }}">BIC</label>
+                  {{ profile_form.bic }}
+                  {{ profile_form.bic.errors }}
+                </div>
+              </div>
+              <div class="field-grid">
+                <div class="field">
+                  <label for="{{ profile_form.bank_name.id_for_label }}">Kreditinstitut</label>
+                  {{ profile_form.bank_name }}
+                  {{ profile_form.bank_name.errors }}
+                </div>
+                <div class="field">
+                  <label for="{{ profile_form.account_holder_name.id_for_label }}">Kontoinhaber</label>
+                  {{ profile_form.account_holder_name }}
+                  {{ profile_form.account_holder_name.errors }}
+                </div>
+              </div>
+            </div>
+          </div>
+          <div class="panel">
+            <div class="panel__header">
+              <div>
+                <p class="panel__eyebrow">Benachrichtigungen</p>
+                <h2>Optionale Angebote</h2>
+              </div>
+            </div>
+            {{ profile_form.optional_newsletter_opt_in }}
+            {{ profile_form.optional_newsletter_opt_in.errors }}
+          </div>
+          <div class="field">
+            <label for="{{ profile_form.application_notes.id_for_label }}">Weitere Hinweise</label>
+            {{ profile_form.application_notes }}
+            {{ profile_form.application_notes.errors }}
+          </div>
+          <button type="submit" class="btn-primary">Profil speichern</button>
+        </form>
+      </section>
+    {% endif %}
+
+    {% if show_order_history or can_view_sensitive_finance %}
+    <div class="board-grid">
+      {% if show_order_history %}
+      <article class="panel panel--span-2">
+        <div class="panel__header">
+          <div>
+            <p class="panel__eyebrow">Bestellungen</p>
+            <h2>Historie und Reservierungen</h2>
+          </div>
+        </div>
+        {% if recent_orders %}
+          <div class="table-card">
+            <table class="table">
+              <thead>
+                <tr>
+                  <th>Bestellung</th>
+                  <th>Status</th>
+                  <th>Positionen</th>
+                  <th>Gesamt</th>
+                </tr>
+              </thead>
+              <tbody>
+                {% for order in recent_orders %}
+                  <tr>
+                    <td>
+                      <a href="{% url 'orders:detail' order.id %}" class="text-link"><strong>#{{ order.id }}</strong></a>
+                      <div class="table-meta">{{ order.created_at|date:"d.m.Y H:i" }}</div>
+                    </td>
+                    <td><span class="status-pill status-pill--ink">{{ order.get_status_display }}</span></td>
+                    <td>
+                      {% for item in order.items.all %}
+                        <div class="table-meta">{{ item.strain.name }} · {{ item.quantity_display }}</div>
+                      {% endfor %}
+                    </td>
+                    <td>{{ order.total }} EUR</td>
+                  </tr>
+                {% endfor %}
+              </tbody>
+            </table>
+          </div>
+        {% else %}
+          <p class="empty-copy">Noch keine Bestellungen vorhanden.</p>
+        {% endif %}
+      </article>
+      {% endif %}
+
+      {% if can_view_sensitive_finance %}
+      <article class="panel">
+        <div class="panel__header">
+          <div>
+            <p class="panel__eyebrow">Rechnungen</p>
+            <h2>Offene und vergangene Belege</h2>
+          </div>
+        </div>
+        {% if invoices %}
+          <ul class="stack-list stack-list--compact">
+            {% for invoice in invoices %}
+              <li class="stack-list__item">
+                <div>
+                  <a href="{% url 'finance:invoice_detail' invoice.id %}" class="text-link"><strong>{{ invoice.invoice_number }}</strong></a>
+                  <small>Faellig {{ invoice.due_date|date:"d.m.Y" }}</small>
+                </div>
+                <span class="status-pill status-pill--sand">{{ invoice.amount }} EUR</span>
+              </li>
+            {% endfor %}
+          </ul>
+        {% else %}
+          <p class="empty-copy">Keine Rechnungen vorhanden.</p>
+        {% endif %}
       </article>
 
       <article class="panel">
         <div class="panel__header">
           <div>
-            <p class="panel__eyebrow">Limits</p>
-            <h2>Abgabe und Konto</h2>
+            <p class="panel__eyebrow">Zahlungen</p>
+            <h2>Letzte Bewegungen</h2>
           </div>
         </div>
-        <ul class="detail-list">
-          <li><span>Tagesverbrauch</span><strong>{{ profile.daily_used }} g / 25 g</strong></li>
-          <li><span>Monatsverbrauch</span><strong>{{ profile.monthly_used }} g / 50 g</strong></li>
-          <li><span>Bestellungen gesperrt</span><strong>{{ profile.is_locked_for_orders|yesno:'Ja,Nein' }}</strong></li>
-          <li><span>Pflichtstunden</span><strong>{{ profile.work_hours_done }} h</strong></li>
-        </ul>
+        {% if payments %}
+          <ul class="stack-list stack-list--compact">
+            {% for payment in payments %}
+              <li class="stack-list__item">
+                <div>
+                  <strong>{{ payment.amount }} EUR</strong>
+                  <small>{{ payment.get_method_display }} · {{ payment.invoice.invoice_number|default:"ohne Rechnung" }}</small>
+                </div>
+                <span class="status-pill status-pill--ink">{{ payment.get_status_display }}</span>
+              </li>
+            {% endfor %}
+          </ul>
+        {% else %}
+          <p class="empty-copy">Keine Zahlungen vorhanden.</p>
+        {% endif %}
       </article>
+      {% endif %}
     </div>
+    {% endif %}
   </section>
 {% endblock %}

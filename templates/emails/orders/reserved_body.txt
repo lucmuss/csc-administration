@@ -1,0 +1,12 @@
+Hallo {{ user.first_name|default:user.email }},
+
+deine Bestellung #{{ order.id }} wurde erfolgreich reserviert.
+
+Reserviert bis: {{ order.reserved_until|date:"d.m.Y H:i" }}
+Bestellwert: {{ order.total }} EUR
+Verfuegbares Restguthaben: {{ balance_breakdown.available_balance }} EUR
+
+Bestelldetails:
+{{ order_url }}
+
+Die zugehoerige Rechnung ist dieser E-Mail als PDF angehaengt.

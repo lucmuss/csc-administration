@@ -1,0 +1,77 @@
+{% extends 'base.html' %}
+{% block title %}Bestellung bestaetigen{% endblock %}
+{% block content %}
+  <section class="page-shell">
+    <div class="page-heading">
+      <div>
+        <p class="eyebrow">Bestellbestaetigung</p>
+        <h1>Bitte pruefe deine Reservierung noch einmal.</h1>
+      </div>
+      <div class="hero-actions">
+        <a href="{% url 'orders:cart' %}" class="btn-ghost">Zurueck zum Warenkorb</a>
+      </div>
+    </div>
+
+    <section class="board-grid">
+      <article class="panel panel--span-2">
+        <div class="panel__header">
+          <div>
+            <p class="panel__eyebrow">Uebersicht</p>
+            <h2>Das wird fuer 48 Stunden reserviert</h2>
+          </div>
+        </div>
+        <div class="table-card">
+          <table class="table">
+            <thead>
+              <tr>
+                <th>Produkt</th>
+                <th>Typ</th>
+                <th>Menge</th>
+                <th>Preis</th>
+              </tr>
+            </thead>
+            <tbody>
+              {% for row in rows %}
+                <tr>
+                  <td>{{ row.strain.name }}</td>
+                  <td>{{ row.strain.get_product_type_display }}</td>
+                  <td>{{ row.quantity }} {{ row.strain.unit_label }}</td>
+                  <td>{{ row.line_total }} EUR</td>
+                </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+        <div class="info-strip">
+          {% if total_grams > 0 %}<span>Blueten: {{ total_grams }} g</span>{% endif %}
+          {% if total_pieces > 0 %}<span>Stecklinge/Produkte: {{ total_pieces }} Stk.</span>{% endif %}
+          <span>Gesamtpreis: {{ total }} EUR</span>
+        </div>
+        <div class="hero-actions">
+          <form method="post" action="{% url 'orders:checkout' %}">
+            {% csrf_token %}
+            <button class="btn-primary" type="submit" name="confirm" value="yes">Jetzt verbindlich reservieren</button>
+          </form>
+          <a href="{% url 'orders:cart' %}" class="btn-ghost">Noch einmal pruefen</a>
+        </div>
+      </article>
+
+      {% if balance_breakdown %}
+        <article class="panel">
+          <div class="panel__header">
+            <div>
+              <p class="panel__eyebrow">Guthaben</p>
+              <h2>Vor der Reservierung</h2>
+            </div>
+          </div>
+          <ul class="detail-list">
+            <li><span>Gesamtguthaben</span><strong>{{ balance_breakdown.current_balance }} EUR</strong></li>
+            <li><span>Bereits reserviert</span><strong>{{ balance_breakdown.reserved_orders }} EUR</strong></li>
+            <li><span>Aktuell verfuegbar</span><strong>{{ balance_breakdown.available_balance }} EUR</strong></li>
+          </ul>
+          <p class="empty-copy">Das Guthaben wird erst bei Ausgabe belastet. Die Reservierung blockiert aber bereits verfuegbare Mittel.</p>
+        </article>
+      {% endif %}
+    </section>
+  </section>
+{% endblock %}

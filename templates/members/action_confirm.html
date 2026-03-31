@@ -1,0 +1,46 @@
+{% extends 'base.html' %}
+{% block title %}Mitgliederaktion bestaetigen{% endblock %}
+{% block content %}
+  <section class="page-shell">
+    <div class="page-heading">
+      <div>
+        <p class="eyebrow">Mitgliederverwaltung</p>
+        <h1>Bitte bestaetige diese Aktion.</h1>
+      </div>
+      <div class="hero-actions">
+        <a href="{{ next }}" class="btn-ghost">Zurueck</a>
+      </div>
+    </div>
+
+    <section class="board-grid">
+      <article class="panel panel--span-2">
+        <div class="panel__header">
+          <div>
+            <p class="panel__eyebrow">Sicherheitsabfrage</p>
+            <h2>{{ profile.user.full_name|default:profile.user.email }}</h2>
+          </div>
+        </div>
+        <ul class="detail-list">
+          <li><span>E-Mail</span><strong>{{ profile.user.email }}</strong></li>
+          <li><span>Status</span><strong>{{ profile.get_status_display }}</strong></li>
+          <li><span>Mitgliedsnummer</span><strong>{{ profile.member_number|default:'-' }}</strong></li>
+        </ul>
+        <p class="empty-copy">
+          {% if action == 'verify' %}Der Account wird freigeschaltet und aktiviert.{% endif %}
+          {% if action == 'activate' %}Der Account wird aktiviert.{% endif %}
+          {% if action == 'reject' %}Die Registrierung wird abgelehnt.{% endif %}
+          {% if action == 'lock_orders' %}Bestellungen werden fuer dieses Mitglied gesperrt.{% endif %}
+          {% if action == 'unlock_orders' %}Die Bestellsperre wird aufgehoben.{% endif %}
+          {% if action == 'delete_member' %}Der Benutzeraccount und das Mitglied werden dauerhaft geloescht.{% endif %}
+        </p>
+        <form method="post" action="{% url 'members:action' profile.id %}" class="inline-actions inline-actions--stacked">
+          {% csrf_token %}
+          <input type="hidden" name="action" value="{{ action }}">
+          <input type="hidden" name="next" value="{{ next }}">
+          <button type="submit" name="confirm" value="yes" class="btn-primary">Aktion bestaetigen</button>
+          <button type="submit" name="confirm" value="no" class="btn-ghost">Abbrechen</button>
+        </form>
+      </article>
+    </section>
+  </section>
+{% endblock %}

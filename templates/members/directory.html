@@ -1,14 +1,16 @@
 {% extends 'base.html' %}
-{% block title %}Mitglieder-Cockpit{% endblock %}
+{% block title %}{% if is_member_directory %}Mitglieder{% else %}Mitglieder-Cockpit{% endif %}{% endblock %}
 {% block content %}
   <section class="page-shell">
     <div class="page-heading">
       <div>
-        <p class="eyebrow">Mitglieder-Cockpit</p>
-        <h1>Suche, Statussteuerung und Export fuer Vorstand und Administration.</h1>
+        <p class="eyebrow">{% if is_member_directory %}Vereinsmitglieder{% else %}Mitglieder-Cockpit{% endif %}</p>
+        <h1>{% if is_member_directory %}Aktive Mitglieder und Profile im Verein auf einen Blick.{% else %}Suche, Statussteuerung und Export fuer Vorstand und Administration.{% endif %}</h1>
       </div>
       <div class="hero-actions">
-        <a href="{% url 'members:export' %}" class="btn-ghost">CSV-Export</a>
+        {% if not is_member_directory %}
+          <a href="{% url 'members:export' %}" class="btn-ghost">CSV-Export</a>
+        {% endif %}
         <a href="{% url 'core:dashboard' %}" class="btn-primary">Zurueck zum Cockpit</a>
       </div>
     </div>
@@ -17,33 +19,38 @@
       <div class="panel__header">
         <div>
           <p class="panel__eyebrow">Filter</p>
-          <h2>Mitglieder finden</h2>
+          <h2>{% if is_member_directory %}Mitglieder finden{% else %}Mitglieder finden{% endif %}</h2>
         </div>
       </div>
       <form method="get" class="filter-grid">
         <div class="field">
           <label for="q">Suche</label>
-          <input id="q" type="text" name="q" value="{{ filters.q }}" placeholder="Name, E-Mail oder Mitgliedsnummer">
+          <input id="q" type="text" name="q" value="{{ filters.q }}" placeholder="Name, E-Mail oder Mitgliedsnummer" autocomplete="off">
         </div>
-        <div class="field">
-          <label for="status">Status</label>
-          <select id="status" name="status">
-            <option value="">Alle Status</option>
-            {% for value, label in status_choices %}
-              <option value="{{ value }}"{% if filters.status == value %} selected{% endif %}>{{ label }}</option>
-            {% endfor %}
-          </select>
-        </div>
-        <div class="field">
-          <label for="locked">Bestellsperre</label>
-          <select id="locked" name="locked">
-            <option value="">Alle</option>
-            <option value="yes"{% if filters.locked == 'yes' %} selected{% endif %}>Nur gesperrte</option>
-            <option value="no"{% if filters.locked == 'no' %} selected{% endif %}>Nur freigegebene</option>
-          </select>
+        {% if not is_member_directory %}
+          <div class="field">
+            <label for="status">Status</label>
+            <select id="status" name="status">
+              <option value="">Alle Status</option>
+              {% for value, label in status_choices %}
+                <option value="{{ value }}"{% if filters.status == value %} selected{% endif %}>{{ label }}</option>
+              {% endfor %}
+            </select>
+          </div>
+          <div class="field">
+            <label for="locked">Bestellsperre</label>
+            <select id="locked" name="locked">
+              <option value="">Alle</option>
+              <option value="yes"{% if filters.locked == 'yes' %} selected{% endif %}>Nur gesperrte</option>
+              <option value="no"{% if filters.locked == 'no' %} selected{% endif %}>Nur freigegebene</option>
+            </select>
+          </div>
+        {% endif %}
+        <div class="field field--actions">
+          <button type="submit" class="btn-primary btn-block">{% if is_member_directory %}Mitglieder filtern{% else %}Filter anwenden{% endif %}</button>
         </div>
         <div class="field field--actions">
-          <button type="submit" class="btn-primary btn-block">Filter anwenden</button>
+          <a href="{% url 'members:directory' %}" class="btn-ghost btn-block">Filter zuruecksetzen</a>
         </div>
       </form>
     </section>
@@ -52,7 +59,7 @@
       <div class="panel__header">
         <div>
           <p class="panel__eyebrow">Verzeichnis</p>
-          <h2>{{ page_obj.paginator.count }} Mitglieder im Treffer</h2>
+          <h2>{{ page_obj.paginator.count }} {% if is_member_directory %}Mitglieder sichtbar{% else %}Mitglieder im Treffer{% endif %}</h2>
         </div>
       </div>
       <div class="table-card">
@@ -61,8 +68,8 @@
             <tr>
               <th>Mitglied</th>
               <th>Status</th>
-              <th>Guthaben</th>
-              <th>Verbrauch</th>
+              <th>{% if is_member_directory %}Aufnahme{% else %}Guthaben{% endif %}</th>
+              <th>{% if is_member_directory %}Letzte Aktivitaet{% else %}Verbrauch{% endif %}</th>
               <th>Hinweise</th>
               <th>Aktion</th>
             </tr>
@@ -71,7 +78,9 @@
             {% for profile in page_obj %}
               <tr>
                 <td>
-                  <strong>{{ profile.user.full_name|default:profile.user.email }}</strong>
+                  <a href="{% url 'members:detail' profile.id %}" class="text-link">
+                    <strong>{{ profile.user.full_name|default:profile.user.email }}</strong>
+                  </a>
                   <div class="table-meta">
                     {{ profile.user.email }}
                     {% if profile.member_number %}· Nr. {{ profile.member_number }}{% endif %}
@@ -88,12 +97,16 @@
                     <span class="status-pill status-pill--ink">{{ profile.get_status_display }}</span>
                   {% endif %}
                 </td>
-                <td>{{ profile.balance }} EUR</td>
-                <td>{{ profile.monthly_used }} g / 50 g</td>
+                <td>{% if is_member_directory %}{{ profile.desired_join_date|date:"d.m.Y"|default:"-" }}{% else %}{{ profile.balance }} EUR{% endif %}</td>
+                <td>{% if is_member_directory %}{{ profile.last_activity|date:"d.m.Y H:i"|default:"-" }}{% else %}{{ profile.monthly_used }} g / 50 g{% endif %}</td>
                 <td>
                   <div class="table-meta">
-                    {% if profile.is_locked_for_orders %}Bestellungen gesperrt · {% endif %}
-                    {{ profile.open_invoice_count }} offene Rechnungen · {{ profile.suspicious_count }} Risiken
+                    {% if is_member_directory %}
+                      Verifiziert: {{ profile.is_verified|yesno:"Ja,Nein" }}
+                    {% else %}
+                      {% if profile.is_locked_for_orders %}Bestellungen gesperrt · {% endif %}
+                      {{ profile.open_invoice_count }} offene Rechnungen · {{ profile.suspicious_count }} Risiken
+                    {% endif %}
                   </div>
                 </td>
                 <td>
@@ -101,6 +114,7 @@
                     <form method="post" action="{% url 'members:action' profile.id %}" class="inline-actions">
                       {% csrf_token %}
                       <input type="hidden" name="next" value="{{ request.get_full_path }}">
+                      <a href="{% url 'members:detail' profile.id %}" class="btn-ghost btn-ghost--small">Profil</a>
                       {% if profile.status == 'pending' %}
                         <button type="submit" name="action" value="verify" class="btn-ghost btn-ghost--small">Freischalten</button>
                         <button type="submit" name="action" value="reject" class="btn-ghost btn-ghost--small">Ablehnen</button>
@@ -111,7 +125,7 @@
                       {% endif %}
                     </form>
                   {% else %}
-                    <span class="table-meta">Nur Ansicht</span>
+                    <a href="{% url 'members:detail' profile.id %}" class="btn-ghost btn-ghost--small">Profil</a>
                   {% endif %}
                 </td>
               </tr>
@@ -127,11 +141,11 @@
       {% if page_obj.paginator.num_pages > 1 %}
         <div class="pagination-bar">
           {% if page_obj.has_previous %}
-            <a href="?page={{ page_obj.previous_page_number }}&q={{ filters.q }}&status={{ filters.status }}&locked={{ filters.locked }}" class="btn-ghost btn-ghost--small">Zurueck</a>
+            <a href="?page={{ page_obj.previous_page_number }}&q={{ filters.q|urlencode }}&status={{ filters.status|urlencode }}&locked={{ filters.locked|urlencode }}" class="btn-ghost btn-ghost--small">Zurueck</a>
           {% endif %}
           <span>Seite {{ page_obj.number }} von {{ page_obj.paginator.num_pages }}</span>
           {% if page_obj.has_next %}
-            <a href="?page={{ page_obj.next_page_number }}&q={{ filters.q }}&status={{ filters.status }}&locked={{ filters.locked }}" class="btn-ghost btn-ghost--small">Weiter</a>
+            <a href="?page={{ page_obj.next_page_number }}&q={{ filters.q|urlencode }}&status={{ filters.status|urlencode }}&locked={{ filters.locked|urlencode }}" class="btn-ghost btn-ghost--small">Weiter</a>
           {% endif %}
         </div>
       {% endif %}

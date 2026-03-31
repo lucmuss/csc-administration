@@ -1,5 +1,6 @@
 from datetime import timedelta
 
+from django.conf import settings
 from django.contrib import messages
 from django.contrib.auth.decorators import user_passes_test
 from django.http import Http404, HttpResponse, JsonResponse
@@ -33,6 +34,9 @@ from .services import (
     member_card_qr_svg,
     record_audit_event,
     render_operational_record_pdf,
+    send_due_meeting_notifications,
+    send_general_meeting_invitation,
+    send_general_meeting_reminder,
 )
 
 
@@ -42,6 +46,7 @@ def _is_staff_or_board(user: User) -> bool:
 
 @user_passes_test(_is_staff_or_board)
 def dashboard(request):
+    send_due_meeting_notifications()
     now = timezone.now()
     context = {
         "upcoming_meetings": BoardMeeting.objects.order_by("scheduled_for")[:6],
@@ -70,6 +75,8 @@ def meetings(request):
         if form.is_valid():
             meeting = form.save(commit=False)
             meeting.created_by = request.user
+            if not meeting.agenda_submission_email:
+                meeting.agenda_submission_email = settings.GENERAL_MEETING_AGENDA_SUBMISSION_EMAIL or request.user.email
             meeting.save()
             record_audit_event(
                 actor=request.user,
@@ -83,7 +90,14 @@ def meetings(request):
             messages.success(request, "Sitzung angelegt.")
             return redirect("governance:meeting_detail", pk=meeting.pk)
     else:
-        form = BoardMeetingForm()
+        form = BoardMeetingForm(
+            initial={
+                "meeting_type": BoardMeeting.TYPE_GENERAL,
+                "invitation_lead_days": settings.GENERAL_MEETING_INVITATION_LEAD_DAYS,
+                "reminder_lead_hours": settings.GENERAL_MEETING_REMINDER_LEAD_HOURS,
+                "agenda_submission_email": settings.GENERAL_MEETING_AGENDA_SUBMISSION_EMAIL,
+            }
+        )
 
     return render(
         request,
@@ -95,12 +109,23 @@ def meetings(request):
 @user_passes_test(_is_staff_or_board)
 def meeting_detail(request, pk: int):
     meeting = get_object_or_404(BoardMeeting.objects.select_related("chairperson"), pk=pk)
+    meeting_form = BoardMeetingForm(instance=meeting)
 
     if request.method == "POST":
         action = request.POST.get("action")
-        if action == "agenda":
+        if action == "update":
+            meeting_form = BoardMeetingForm(request.POST, instance=meeting)
+            agenda_form = MeetingAgendaItemForm(initial={"order": meeting.agenda_items.count() + 1})
+            resolution_form = MeetingResolutionForm()
+            resolution_form.fields["agenda_item"].queryset = meeting.agenda_items.all()
+            if meeting_form.is_valid():
+                meeting_form.save()
+                messages.success(request, "Versammlungsdaten aktualisiert.")
+                return redirect("governance:meeting_detail", pk=meeting.pk)
+        elif action == "agenda":
             agenda_form = MeetingAgendaItemForm(request.POST)
             resolution_form = MeetingResolutionForm(initial={"agenda_item": meeting.agenda_items.first()})
+            meeting_form = BoardMeetingForm(instance=meeting)
             if agenda_form.is_valid():
                 item = agenda_form.save(commit=False)
                 item.meeting = meeting
@@ -119,6 +144,7 @@ def meeting_detail(request, pk: int):
         elif action == "resolution":
             agenda_form = MeetingAgendaItemForm(initial={"order": meeting.agenda_items.count() + 1})
             resolution_form = MeetingResolutionForm(request.POST)
+            meeting_form = BoardMeetingForm(instance=meeting)
             resolution_form.fields["agenda_item"].queryset = meeting.agenda_items.all()
             if resolution_form.is_valid():
                 resolution = resolution_form.save(commit=False)
@@ -137,19 +163,42 @@ def meeting_detail(request, pk: int):
                 messages.success(request, "Beschluss gespeichert.")
                 return redirect("governance:meeting_detail", pk=meeting.pk)
         elif action == "send_invitation":
-            meeting.invitation_sent_at = timezone.now()
-            meeting.save(update_fields=["invitation_sent_at", "updated_at"])
+            agenda_form = MeetingAgendaItemForm(initial={"order": meeting.agenda_items.count() + 1})
+            resolution_form = MeetingResolutionForm()
+            resolution_form.fields["agenda_item"].queryset = meeting.agenda_items.all()
+            meeting_form = BoardMeetingForm(instance=meeting)
+            sent = send_general_meeting_invitation(meeting=meeting)
             record_audit_event(
                 actor=request.user,
                 domain="governance",
                 action="meeting.invited",
                 target=meeting,
-                summary=f"Einladung fuer {meeting.title} dokumentiert.",
+                summary=f"Einladung fuer {meeting.title} versendet.",
                 request=request,
             )
-            messages.success(request, "Einladungszeitpunkt gespeichert.")
+            messages.success(request, f"Einladung an {sent} Mitglieder versendet.")
+            return redirect("governance:meeting_detail", pk=meeting.pk)
+        elif action == "send_reminder":
+            agenda_form = MeetingAgendaItemForm(initial={"order": meeting.agenda_items.count() + 1})
+            resolution_form = MeetingResolutionForm()
+            resolution_form.fields["agenda_item"].queryset = meeting.agenda_items.all()
+            meeting_form = BoardMeetingForm(instance=meeting)
+            sent = send_general_meeting_reminder(meeting=meeting)
+            record_audit_event(
+                actor=request.user,
+                domain="governance",
+                action="meeting.reminded",
+                target=meeting,
+                summary=f"Reminder fuer {meeting.title} versendet.",
+                request=request,
+            )
+            messages.success(request, f"Reminder an {sent} Mitglieder versendet.")
             return redirect("governance:meeting_detail", pk=meeting.pk)
         elif action == "complete":
+            agenda_form = MeetingAgendaItemForm(initial={"order": meeting.agenda_items.count() + 1})
+            resolution_form = MeetingResolutionForm()
+            resolution_form.fields["agenda_item"].queryset = meeting.agenda_items.all()
+            meeting_form = BoardMeetingForm(instance=meeting)
             meeting.status = BoardMeeting.STATUS_COMPLETED
             meeting.minutes_summary = request.POST.get("minutes_summary", meeting.minutes_summary)
             meeting.attendance_notes = request.POST.get("attendance_notes", meeting.attendance_notes)
@@ -174,6 +223,7 @@ def meeting_detail(request, pk: int):
         "governance/meeting_detail.html",
         {
             "meeting": meeting,
+            "meeting_form": meeting_form,
             "agenda_form": agenda_form,
             "resolution_form": resolution_form,
             "agenda_items": meeting.agenda_items.select_related("owner"),
@@ -218,6 +268,20 @@ def tasks(request):
             )
             messages.success(request, "Aufgabenstatus aktualisiert.")
             return redirect("governance:tasks")
+        elif action == "delete":
+            task = get_object_or_404(BoardTask, pk=request.POST.get("task_id"))
+            title = task.title
+            record_audit_event(
+                actor=request.user,
+                domain="governance",
+                action="task.deleted",
+                target=task,
+                summary=f"Aufgabe {title} geloescht.",
+                request=request,
+            )
+            task.delete()
+            messages.warning(request, "Aufgabe geloescht.")
+            return redirect("governance:tasks")
     else:
         form = BoardTaskForm(initial={"status": BoardTask.STATUS_TODO})
 
@@ -225,7 +289,7 @@ def tasks(request):
         {
             "status": status,
             "label": label,
-            "tasks": BoardTask.objects.filter(status=status).select_related("owner", "related_meeting"),
+            "tasks": BoardTask.objects.filter(status=status).select_related("owner"),
         }
         for status, label in BoardTask.STATUS_CHOICES
     ]

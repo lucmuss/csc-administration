@@ -1,0 +1,80 @@
+{% extends 'base.html' %}
+{% block title %}Bestellung #{{ order.id }}{% endblock %}
+{% block content %}
+  <section class="page-shell">
+    <div class="page-heading">
+      <div>
+        <p class="eyebrow">Bestellung</p>
+        <h1>#{{ order.id }} · {{ order.get_status_display }}</h1>
+        <p class="lede">{{ order.created_at|date:"d.m.Y H:i" }}{% if is_admin_view %} · {{ order.member.full_name|default:order.member.email }}{% endif %}</p>
+      </div>
+      <div class="hero-actions">
+        <a href="{% if is_admin_view %}{% url 'orders:admin_list' %}{% else %}{% url 'orders:list' %}{% endif %}" class="btn-ghost">Zurueck</a>
+        {% if not is_admin_view and order.can_self_cancel %}
+          <form method="post" action="{% url 'orders:cancel' order.id %}">
+            {% csrf_token %}
+            <button type="submit" class="btn-ghost">Reservierung stornieren</button>
+          </form>
+        {% endif %}
+        {% if order.invoice %}
+          <a href="{% url 'finance:invoice_detail' order.invoice.id %}" class="btn-primary">Rechnung</a>
+        {% endif %}
+      </div>
+    </div>
+
+    <section class="board-grid">
+      <article class="panel panel--span-2">
+        <div class="panel__header">
+          <div>
+            <p class="panel__eyebrow">Positionen</p>
+            <h2>Was in der Bestellung enthalten ist</h2>
+          </div>
+        </div>
+        <div class="table-card">
+          <table class="table">
+            <thead>
+              <tr>
+                <th>Produkt</th>
+                <th>Menge</th>
+                <th>Einzelpreis</th>
+                <th>Gesamt</th>
+              </tr>
+            </thead>
+            <tbody>
+              {% for item in order.items.all %}
+                <tr>
+                  <td>
+                    <a href="{% url 'inventory:strain_detail' item.strain.id %}" class="text-link"><strong>{{ item.strain.name }}</strong></a>
+                    <div class="table-meta">{{ item.strain.get_product_type_display }}</div>
+                  </td>
+                  <td>{{ item.quantity_display }}</td>
+                  <td>{{ item.unit_price }} EUR</td>
+                  <td>{{ item.total_price }} EUR</td>
+                </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+      </article>
+
+      <article class="panel">
+        <div class="panel__header">
+          <div>
+            <p class="panel__eyebrow">Uebersicht</p>
+            <h2>Bestellstatus</h2>
+          </div>
+        </div>
+        <ul class="detail-list">
+          <li><span>Status</span><strong>{{ order.get_status_display }}</strong></li>
+          <li><span>Gesamt</span><strong>{{ order.total }} EUR</strong></li>
+          <li><span>Belastet</span><strong>{{ order.paid_with_balance }} EUR</strong></li>
+          <li><span>Reserviert bis</span><strong>{{ order.reserved_until|date:"d.m.Y H:i" }}</strong></li>
+          {% if not is_admin_view %}
+            <li><span>Selbst stornierbar bis</span><strong>{{ order.self_cancel_deadline|date:"d.m.Y H:i" }}</strong></li>
+          {% endif %}
+          <li><span>Gramm relevant</span><strong>{{ order.total_grams }} g</strong></li>
+        </ul>
+      </article>
+    </section>
+  </section>
+{% endblock %}

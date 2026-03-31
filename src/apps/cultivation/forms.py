@@ -1,11 +1,24 @@
 # cultivation/forms.py
+from datetime import date
+from decimal import Decimal
+
 from django import forms
 from django.core.validators import MinValueValidator
-from decimal import Decimal
 
 from .models import GrowCycle, Plant, PlantLog, HarvestBatch
 from apps.members.models import Profile
 from apps.inventory.models import Strain
+
+
+def _apply_control_classes(field: forms.Field) -> None:
+    widget = field.widget
+    existing = widget.attrs.get("class", "")
+    if isinstance(widget, forms.Select):
+        widget.attrs["class"] = f"{existing} form-input form-select".strip()
+    elif isinstance(widget, forms.Textarea):
+        widget.attrs["class"] = f"{existing} form-input form-textarea".strip()
+    else:
+        widget.attrs["class"] = f"{existing} form-input".strip()
 
 
 class GrowCycleForm(forms.ModelForm):
@@ -54,6 +67,32 @@ class GrowCycleForm(forms.ModelForm):
         self.fields["responsible_member"].queryset = Profile.objects.filter(
             status="active"
         ).order_by("user__last_name", "user__first_name")
+        self.fields["name"].help_text = "Pflichtfeld, z. B. ein Quartal oder ein Raumbezug."
+        self.fields["start_date"].help_text = "Das Startdatum darf nicht in der Vergangenheit liegen."
+        self.fields["expected_harvest_date"].help_text = "Muss nach dem Startdatum liegen."
+        self.fields["responsible_member"].help_text = "Optional. Du kannst spaeter immer noch ein verantwortliches Mitglied zuweisen."
+        for field in self.fields.values():
+            _apply_control_classes(field)
+
+    def clean_name(self):
+        value = (self.cleaned_data.get("name") or "").strip()
+        if len(value) < 3:
+            raise forms.ValidationError("Bitte einen Namen mit mindestens 3 Zeichen angeben.")
+        return value
+
+    def clean_start_date(self):
+        start_date = self.cleaned_data.get("start_date")
+        if start_date and start_date < date.today():
+            raise forms.ValidationError("Das Startdatum darf nicht in der Vergangenheit liegen.")
+        return start_date
+
+    def clean(self):
+        cleaned_data = super().clean()
+        start_date = cleaned_data.get("start_date")
+        expected_harvest_date = cleaned_data.get("expected_harvest_date")
+        if start_date and expected_harvest_date and expected_harvest_date <= start_date:
+            self.add_error("expected_harvest_date", "Das erwartete Erntedatum muss nach dem Startdatum liegen.")
+        return cleaned_data
 
 
 class PlantForm(forms.ModelForm):

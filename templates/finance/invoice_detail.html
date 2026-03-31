@@ -1,0 +1,86 @@
+{% extends 'base.html' %}
+{% block title %}{{ invoice.invoice_number }}{% endblock %}
+{% block content %}
+  <section class="page-shell">
+    <div class="page-heading">
+      <div>
+        <p class="eyebrow">Rechnung</p>
+        <h1>{{ invoice.invoice_number }}</h1>
+        <p class="lede">{{ invoice.profile.user.full_name|default:invoice.profile.user.email }} · faellig {{ invoice.due_date|date:"d.m.Y" }}</p>
+      </div>
+      <div class="hero-actions">
+        <a href="{% url 'finance:invoice_pdf' invoice.id %}" class="btn-primary">PDF herunterladen</a>
+        <a href="{% url 'finance:invoice_list' %}" class="btn-ghost">Zurueck</a>
+      </div>
+    </div>
+
+    <section class="board-grid">
+      <article class="panel">
+        <div class="panel__header">
+          <div>
+            <p class="panel__eyebrow">Status</p>
+            <h2>Rechnungsdaten</h2>
+          </div>
+        </div>
+        <ul class="detail-list">
+          <li><span>Betrag</span><strong>{{ invoice.amount }} EUR</strong></li>
+          <li><span>Status</span><strong>{{ invoice.get_status_display }}</strong></li>
+          <li><span>Mahnstufe</span><strong>{{ invoice.reminder_level }}</strong></li>
+          <li><span>Erstellt</span><strong>{{ invoice.created_at|date:"d.m.Y H:i" }}</strong></li>
+          {% if invoice.order %}
+            <li><span>Bestellung</span><strong><a href="{% url 'orders:detail' invoice.order.id %}" class="text-link">#{{ invoice.order.id }}</a></strong></li>
+          {% endif %}
+        </ul>
+      </article>
+
+      <article class="panel panel--span-2">
+        <div class="panel__header">
+          <div>
+            <p class="panel__eyebrow">Positionen</p>
+            <h2>Leistungen und Zahlungen</h2>
+          </div>
+        </div>
+        {% if invoice.order %}
+          <div class="table-card">
+            <table class="table">
+              <thead>
+                <tr>
+                  <th>Produkt</th>
+                  <th>Menge</th>
+                  <th>Einzelpreis</th>
+                  <th>Gesamt</th>
+                </tr>
+              </thead>
+              <tbody>
+                {% for item in invoice.order.items.all %}
+                  <tr>
+                    <td>{{ item.strain.name }}</td>
+                    <td>{{ item.quantity_display }}</td>
+                    <td>{{ item.unit_price }} EUR</td>
+                    <td>{{ item.total_price }} EUR</td>
+                  </tr>
+                {% endfor %}
+              </tbody>
+            </table>
+          </div>
+        {% else %}
+          <p class="empty-copy">Diese Rechnung ist keiner Bestellung zugeordnet.</p>
+        {% endif %}
+
+        {% if invoice.payments.all %}
+          <ul class="stack-list stack-list--compact">
+            {% for payment in invoice.payments.all %}
+              <li class="stack-list__item">
+                <div>
+                  <strong>{{ payment.amount }} EUR</strong>
+                  <small>{{ payment.get_method_display }} · {{ payment.created_at|date:"d.m.Y H:i" }}</small>
+                </div>
+                <span class="status-pill status-pill--ink">{{ payment.get_status_display }}</span>
+              </li>
+            {% endfor %}
+          </ul>
+        {% endif %}
+      </article>
+    </section>
+  </section>
+{% endblock %}

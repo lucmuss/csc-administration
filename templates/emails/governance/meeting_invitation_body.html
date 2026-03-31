@@ -1,0 +1,21 @@
+<p>Sehr geehrtes Mitglied,</p>
+<p>wir laden Sie hiermit herzlich zu unserer naechsten ordentlichen Mitgliederversammlung ein.</p>
+<p>
+  <strong>Termin:</strong> {{ meeting_date|date:"d.m.Y" }} um {{ meeting_date|date:"H:i" }} Uhr<br>
+  {% if meeting_url %}<strong>Teilnahmelink:</strong> <a href="{{ meeting_url }}">{{ meeting_url }}</a><br>{% endif %}
+  {% if meeting.location %}<strong>Ort:</strong> {{ meeting.location }}{% endif %}
+</p>
+<p>
+  Bitte bereiten Sie sich auf die Tagesordnungspunkte vor und testen Sie vorab Mikrofon und Webcam.
+  Tagesordnungspunkte muessen spaetestens bis <strong>{{ agenda_deadline|date:"d.m.Y H:i" }}</strong>
+  bei <a href="mailto:{{ agenda_submission_email }}">{{ agenda_submission_email }}</a> eingereicht werden.
+</p>
+{% if minutes_url %}
+  <p>Protokolle bisheriger Versammlungen: <a href="{{ minutes_url }}">{{ minutes_url }}</a></p>
+{% endif %}
+<p>
+  Bei Rueckfragen erreichen Sie uns unter <a href="mailto:{{ club_contact_email }}">{{ club_contact_email }}</a>
+  {% if club_contact_phone %}oder {{ club_contact_phone }}{% endif %}.
+  {% if club_contact_address %}<br>{{ club_contact_address }}{% endif %}
+</p>
+<p>Wir freuen uns auf Ihre Teilnahme.</p>

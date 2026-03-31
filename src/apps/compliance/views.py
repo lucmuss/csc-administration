@@ -1,5 +1,11 @@
+from datetime import datetime
+import csv
+
 from django.contrib.auth.decorators import user_passes_test
+from django.contrib import messages
+from django.http import HttpResponse
 from django.shortcuts import render
+from django.template.defaultfilters import date as date_filter
 from django.utils import timezone
 
 from apps.accounts.models import User
@@ -31,8 +37,52 @@ def dashboard(request):
 
 @user_passes_test(_is_board)
 def annual_report(request):
-    selected_year = int(request.GET.get("year", timezone.localdate().year))
+    current_year = timezone.localdate().year
+    raw_year = request.GET.get("year", current_year)
+    try:
+        selected_year = int(raw_year)
+    except (TypeError, ValueError):
+        selected_year = current_year
+        messages.warning(request, "Das Berichtsjahr war ungueltig und wurde auf das aktuelle Jahr zurueckgesetzt.")
+
+    if selected_year < 2024 or selected_year > current_year + 1:
+        selected_year = current_year
+        messages.warning(request, "Das Berichtsjahr lag ausserhalb des erlaubten Bereichs.")
+
     report = generate_annual_report(year=selected_year, generated_by=request.user)
+    monthly_rows = []
+    for row in report.report_data.get("monthly_stats", []):
+        month_value = row.get("month")
+        month_display = month_value
+        if month_value:
+            try:
+                month_display = date_filter(datetime.fromisoformat(month_value), "F Y")
+            except ValueError:
+                month_display = month_value
+        monthly_rows.append(
+            {
+                **row,
+                "month_display": month_display,
+            }
+        )
+
+    if request.GET.get("format") == "csv":
+        response = HttpResponse(content_type="text/csv; charset=utf-8")
+        response["Content-Disposition"] = f'attachment; filename="cang-jahresmeldung-{selected_year}.csv"'
+        writer = csv.writer(response)
+        writer.writerow(["Berichtsjahr", selected_year])
+        writer.writerow(["Generiert am", report.generated_at.strftime("%d.%m.%Y %H:%M")])
+        writer.writerow([])
+        writer.writerow(["Kennzahl", "Wert"])
+        writer.writerow(["Abgaben", report.total_orders])
+        writer.writerow(["Mitglieder", report.total_members])
+        writer.writerow(["Gesamtmenge (g)", report.total_grams])
+        writer.writerow(["Verdachtsfaelle", report.suspicious_cases])
+        writer.writerow([])
+        writer.writerow(["Monat", "Abgaben", "Gesamtmenge (g)"])
+        for row in monthly_rows:
+            writer.writerow([row["month_display"], row["total_orders"], row["total_grams"]])
+        return response
 
     return render(
         request,
@@ -40,6 +90,7 @@ def annual_report(request):
         {
             "report": report,
             "selected_year": selected_year,
+            "monthly_rows": monthly_rows,
         },
     )
 

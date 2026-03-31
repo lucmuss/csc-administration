@@ -6,10 +6,17 @@
       <div>
         <p class="eyebrow">Inventar</p>
         <h1>Sorten, Qualitaet und verfuergbare Mengen.</h1>
+        {% if can_manage_inventory %}
+          <p class="empty-copy">Produktarten, Preise, Bilder, Bestand und Aktiv-Status verwaltest du jetzt direkt hier in der App.</p>
+        {% endif %}
       </div>
       <div class="hero-actions">
+        {% if can_manage_inventory %}
+          <a href="{% url 'inventory:strain_create' %}" class="btn-primary">Neues Produkt anlegen</a>
+          <a href="{% url 'inventory:strain_list' %}" class="btn-ghost">Produkte verwalten</a>
+        {% endif %}
         <a href="{% url 'inventory:location_list' %}" class="btn-ghost">Lagerorte</a>
-        <a href="{% url 'inventory:inventory_count_form' %}" class="btn-primary">Inventur erfassen</a>
+        <a href="{% url 'inventory:inventory_count_form' %}" class="{% if can_manage_inventory %}btn-ghost{% else %}btn-primary{% endif %}">Inventur erfassen</a>
       </div>
     </div>
 
@@ -19,10 +26,15 @@
           <p class="panel__eyebrow">Sortenkatalog</p>
           <h2>Aktive Sorten</h2>
         </div>
-        <a href="{% url 'inventory:discrepancy_report' %}" class="text-link">Abweichungsbericht</a>
+        <div class="hero-actions">
+          <a href="{% url 'inventory:discrepancy_report' %}" class="text-link">Abweichungsbericht</a>
+          {% if can_manage_inventory %}
+            <a href="{% url 'inventory:strain_create' %}" class="text-link">Typen, Preise und Bestand pflegen</a>
+          {% endif %}
+        </div>
       </div>
       <div class="table-card">
-        <div class="mb-4 flex flex-wrap gap-2">
+        <div class="filter-row">
           <a href="{% url 'inventory:strain_list' %}" class="{% if active_type == 'all' %}btn-primary{% else %}btn-ghost{% endif %}">Alle</a>
           <a href="{% url 'inventory:strain_list' %}?type=flower" class="{% if active_type == 'flower' %}btn-primary{% else %}btn-ghost{% endif %}">Blueten</a>
           <a href="{% url 'inventory:strain_list' %}?type=cutting" class="{% if active_type == 'cutting' %}btn-primary{% else %}btn-ghost{% endif %}">Stecklinge</a>
@@ -42,8 +54,20 @@
           <tbody>
             {% for strain in strains %}
               <tr>
-                <td><strong>{{ strain.name }}</strong></td>
-                <td>{{ strain.get_product_type_display }}</td>
+                <td>
+                  {% if can_manage_inventory %}
+                    <a href="{% url 'inventory:strain_edit' strain.id %}" class="text-link"><strong>{{ strain.name }}</strong></a>
+                  {% else %}
+                    <strong>{{ strain.name }}</strong>
+                  {% endif %}
+                </td>
+                <td>
+                  {% if can_manage_inventory %}
+                    <a href="{% url 'inventory:strain_edit' strain.id %}" class="text-link">{{ strain.get_product_type_display }}</a>
+                  {% else %}
+                    {{ strain.get_product_type_display }}
+                  {% endif %}
+                </td>
                 <td><span class="status-pill status-pill--ink">{{ strain.quality_grade }}</span></td>
                 <td>{{ strain.thc }}% / {{ strain.cbd }}%</td>
                 <td>{{ strain.price }} EUR {{ strain.unit_price_label }}</td>

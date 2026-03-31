@@ -6,6 +6,7 @@
       <div>
         <p class="eyebrow">Integrationen</p>
         <h1>API- und Webhook-Layer fuer Buchhaltung, Drucker und externe Club-Apps.</h1>
+        <p class="lede">Lege hier sichere Endpunkte fuer Drittsysteme an. Die wichtigsten Hinweise zu Token, Test-Hooks und erreichbaren URLs findest du direkt auf dieser Seite.</p>
       </div>
       <div class="hero-actions">
         <a href="{% url 'governance:dashboard' %}" class="btn-ghost">Governance</a>
@@ -19,6 +20,10 @@
             <p class="panel__eyebrow">Neue Integration</p>
             <h2>Webhook oder API-Client</h2>
           </div>
+        </div>
+        <div class="info-strip">
+          <span>Empfehlung: Nutze pro Zielsystem einen eigenen Namen und einen separaten Token.</span>
+          <span>Test-Hook: <code>governance.task.updated</code></span>
         </div>
         <form method="post" class="form-stack">
           {% csrf_token %}
@@ -67,6 +72,16 @@
         <div>
           <p class="panel__eyebrow">API-Schnittstellen</p>
           <h2>Verfuegbare Ressourcen</h2>
+        </div>
+      </div>
+      <div class="split-cards">
+        <div class="mini-panel">
+          <h3>Token & Header</h3>
+          <p class="empty-copy">Der Auth-Header kann frei benannt werden, typischerweise <code>Authorization</code> oder <code>X-Api-Key</code>. Hinterlege Tokens nur fuer das jeweilige Zielsystem.</p>
+        </div>
+        <div class="mini-panel">
+          <h3>Erreichbarkeit</h3>
+          <p class="empty-copy">Webhook-Ziele muessen aus dem Container erreichbar sein. Fuer interne Ziele nutze am besten eine LAN-IP oder einen DNS-Namen statt <code>127.0.0.1</code>.</p>
         </div>
       </div>
       <div class="api-doc-grid">

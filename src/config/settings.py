@@ -75,6 +75,7 @@ MIDDLEWARE = [
     "django.middleware.common.CommonMiddleware",
     "django.middleware.csrf.CsrfViewMiddleware",
     "django.contrib.auth.middleware.AuthenticationMiddleware",
+    "apps.members.middleware.MemberOnboardingMiddleware",
     "django.contrib.messages.middleware.MessageMiddleware",
     "django.middleware.clickjacking.XFrameOptionsMiddleware",
 ]
@@ -199,3 +200,27 @@ else:
 # Vereins-Konfiguration
 MEMBER_CAPACITY = int(os.getenv("MEMBER_CAPACITY", "500"))  # Maximale Mitgliederzahl
 LOW_STOCK_THRESHOLD_EUR = os.getenv("LOW_STOCK_THRESHOLD_EUR", "25.00")  # Mindestbestand in EUR
+MEMBER_MINIMUM_AGE = int(_env_first("MEMBER_MINIMUM_AGE", "DJANGO_MEMBER_MINIMUM_AGE", default="21"))
+MEMBER_MONTHLY_FEE = _env_first("MEMBER_MONTHLY_FEE", default="24.00")
+STRIPE_SECRET_KEY = _env_first("STRIPE_SECRET_KEY", default="")
+STRIPE_PUBLISHABLE_KEY = _env_first("STRIPE_PUBLISHABLE_KEY", default="")
+ORDER_SELF_CANCEL_HOURS = int(_env_first("ORDER_SELF_CANCEL_HOURS", default="24"))
+CLUB_NAME = _env_first("CLUB_NAME", default="Cannabis Social Club Leipzig Sued e.V.")
+CLUB_BOARD_REPRESENTATIVES = _env_first("CLUB_BOARD_REPRESENTATIVES", default="")
+CLUB_REGISTER_ENTRY = _env_first("CLUB_REGISTER_ENTRY", default="")
+CLUB_VAT_ID = _env_first("CLUB_VAT_ID", default="")
+CLUB_SUPERVISORY_AUTHORITY = _env_first("CLUB_SUPERVISORY_AUTHORITY", default="")
+CLUB_CONTENT_RESPONSIBLE = _env_first("CLUB_CONTENT_RESPONSIBLE", default="")
+GENERAL_MEETING_INVITATION_LEAD_DAYS = int(
+    _env_first("GENERAL_MEETING_INVITATION_LEAD_DAYS", default="14")
+)
+GENERAL_MEETING_REMINDER_LEAD_HOURS = int(
+    _env_first("GENERAL_MEETING_REMINDER_LEAD_HOURS", default="24")
+)
+GENERAL_MEETING_AGENDA_SUBMISSION_EMAIL = _env_first(
+    "GENERAL_MEETING_AGENDA_SUBMISSION_EMAIL",
+    default=DEFAULT_FROM_EMAIL,
+)
+CLUB_CONTACT_EMAIL = _env_first("CLUB_CONTACT_EMAIL", default=DEFAULT_FROM_EMAIL)
+CLUB_CONTACT_PHONE = _env_first("CLUB_CONTACT_PHONE", default="")
+CLUB_CONTACT_ADDRESS = _env_first("CLUB_CONTACT_ADDRESS", default="")

@@ -7,9 +7,36 @@
       return;
     }
 
-    button.addEventListener("click", function () {
-      var isOpen = nav.classList.toggle("is-open");
+    function setOpenState(isOpen) {
+      nav.classList.toggle("is-open", isOpen);
       button.setAttribute("aria-expanded", isOpen ? "true" : "false");
+    }
+
+    button.addEventListener("click", function () {
+      var isOpen = !nav.classList.contains("is-open");
+      setOpenState(isOpen);
+    });
+
+    nav.querySelectorAll("a").forEach(function (link) {
+      link.addEventListener("click", function () {
+        setOpenState(false);
+      });
+    });
+
+    document.addEventListener("keydown", function (event) {
+      if (event.key === "Escape") {
+        setOpenState(false);
+      }
+    });
+
+    document.addEventListener("click", function (event) {
+      if (!nav.classList.contains("is-open")) {
+        return;
+      }
+      if (nav.contains(event.target) || button.contains(event.target)) {
+        return;
+      }
+      setOpenState(false);
     });
   }
 

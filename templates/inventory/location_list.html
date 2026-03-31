@@ -1,24 +1,65 @@
 {% extends 'base.html' %}
 {% block title %}Lagerorte{% endblock %}
 {% block content %}
-<div class="card">
-  <h1 class="mb-4 text-xl font-semibold">Lagerorte</h1>
-  <table class="w-full text-left text-sm">
-    <thead>
-      <tr><th>Name</th><th>Typ</th><th>Kapazität (g)</th><th>Positionen</th></tr>
-    </thead>
-    <tbody>
-      {% for location in locations %}
-      <tr>
-        <td>{{ location.name }}</td>
-        <td>{{ location.get_type_display }}</td>
-        <td>{{ location.capacity }}</td>
-        <td>{{ location.items.count }}</td>
-      </tr>
-      {% empty %}
-      <tr><td colspan="4">Keine Lagerorte vorhanden.</td></tr>
-      {% endfor %}
-    </tbody>
-  </table>
-</div>
+  <section class="page-shell">
+    <div class="page-heading">
+      <div>
+        <p class="eyebrow">Inventar</p>
+        <h1>Lagerorte, Kapazitaeten und belegte Positionen.</h1>
+      </div>
+      <div class="hero-actions">
+        <a href="{% url 'inventory:strain_list' %}" class="btn-ghost">Zurueck zu Sorten</a>
+        {% if can_manage_inventory %}
+          <a href="{% url 'inventory:location_create' %}" class="btn-primary">Neuen Lagerort anlegen</a>
+        {% endif %}
+      </div>
+    </div>
+
+    <section class="panel">
+      <div class="panel__header">
+        <div>
+          <p class="panel__eyebrow">Bestandsstruktur</p>
+          <h2>Alle Lagerorte</h2>
+        </div>
+      </div>
+      <div class="table-card">
+        <table class="table">
+          <thead>
+            <tr>
+              <th>Name</th>
+              <th>Typ</th>
+              <th>Kapazitaet (g)</th>
+              <th>Positionen</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for location in locations %}
+              <tr>
+                <td>
+                  {% if can_manage_inventory %}
+                    <a href="{% url 'inventory:location_edit' location.id %}" class="text-link"><strong>{{ location.name }}</strong></a>
+                  {% else %}
+                    <strong>{{ location.name }}</strong>
+                  {% endif %}
+                </td>
+                <td>
+                  {% if can_manage_inventory %}
+                    <a href="{% url 'inventory:location_edit' location.id %}" class="text-link">{{ location.get_type_display }}</a>
+                  {% else %}
+                    {{ location.get_type_display }}
+                  {% endif %}
+                </td>
+                <td>{{ location.capacity }}</td>
+                <td>{{ location.items.count }}</td>
+              </tr>
+            {% empty %}
+              <tr>
+                <td colspan="4">Keine Lagerorte vorhanden.</td>
+              </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </section>
+  </section>
 {% endblock %}

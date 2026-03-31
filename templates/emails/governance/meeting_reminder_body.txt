@@ -1,0 +1,8 @@
+Erinnerung zur Mitgliederversammlung
+
+Die naechste Mitgliederversammlung startet am {{ meeting_date|date:"d.m.Y" }} um {{ meeting_date|date:"H:i" }} Uhr.
+{% if meeting_url %}Teilnahmelink: {{ meeting_url }}{% endif %}
+{% if meeting.location %}Ort: {{ meeting.location }}{% endif %}
+
+Bitte halten Sie zum Termin einen gueltigen Ausweis bereit und pruefen Sie vorab Ihre Video- und Audioverbindung.
+Bei Rueckfragen: {{ club_contact_email }}{% if club_contact_phone %} / {{ club_contact_phone }}{% endif %}

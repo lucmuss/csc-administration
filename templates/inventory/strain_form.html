@@ -1,0 +1,111 @@
+{% extends 'base.html' %}
+{% block title %}{{ title }}{% endblock %}
+{% block content %}
+  <section class="page-shell">
+    <div class="page-heading">
+      <div>
+        <p class="eyebrow">Inventar</p>
+        <h1>{{ title }}</h1>
+      </div>
+      <div class="hero-actions">
+        <a href="{% url 'inventory:strain_list' %}" class="btn-ghost">Zurueck zu Sorten</a>
+        {% if strain %}
+          <a href="{% url 'inventory:inventory_count_form' %}" class="btn-ghost">Inventur erfassen</a>
+        {% endif %}
+      </div>
+    </div>
+
+    <section class="board-grid">
+      <article class="panel">
+        <div class="panel__header">
+          <div>
+            <p class="panel__eyebrow">Produktdaten</p>
+            <h2>Typ, Preis und Verfuegbarkeit</h2>
+          </div>
+        </div>
+        <form method="post" enctype="multipart/form-data" class="form-stack">
+          {% csrf_token %}
+          <div class="field">
+            <label for="{{ form.name.id_for_label }}">{{ form.name.label }}</label>
+            {{ form.name }}
+            {{ form.name.errors }}
+          </div>
+          <div class="field-grid">
+            <div class="field">
+              <label for="{{ form.product_type.id_for_label }}">{{ form.product_type.label }}</label>
+              {{ form.product_type }}
+              {{ form.product_type.errors }}
+            </div>
+            <div class="field">
+              <label for="{{ form.card_tone.id_for_label }}">{{ form.card_tone.label }}</label>
+              {{ form.card_tone }}
+              {{ form.card_tone.errors }}
+            </div>
+          </div>
+          <div class="field-grid">
+            <div class="field">
+              <label for="{{ form.price.id_for_label }}">{{ form.price.label }}</label>
+              {{ form.price }}
+              {{ form.price.errors }}
+            </div>
+            <div class="field">
+              <label for="{{ form.stock.id_for_label }}">{{ form.stock.label }}</label>
+              {{ form.stock }}
+              {% if form.stock.help_text %}<small class="field-hint">{{ form.stock.help_text }}</small>{% endif %}
+              {{ form.stock.errors }}
+            </div>
+          </div>
+          <div class="field-grid">
+            <div class="field">
+              <label for="{{ form.thc.id_for_label }}">{{ form.thc.label }}</label>
+              {{ form.thc }}
+              {{ form.thc.errors }}
+            </div>
+            <div class="field">
+              <label for="{{ form.cbd.id_for_label }}">{{ form.cbd.label }}</label>
+              {{ form.cbd }}
+              {{ form.cbd.errors }}
+            </div>
+          </div>
+          <div class="field-grid">
+            <div class="field">
+              <label for="{{ form.quality_grade.id_for_label }}">{{ form.quality_grade.label }}</label>
+              {{ form.quality_grade }}
+              {{ form.quality_grade.errors }}
+            </div>
+            <div class="field">
+              <label for="{{ form.image.id_for_label }}">{{ form.image.label }}</label>
+              {{ form.image }}
+              {{ form.image.errors }}
+            </div>
+          </div>
+          <label>{{ form.is_active }} {{ form.is_active.label }}</label>
+          {{ form.is_active.errors }}
+          <button type="submit" class="btn-primary">Produkt speichern</button>
+        </form>
+      </article>
+
+      <article class="panel">
+        <div class="panel__header">
+          <div>
+            <p class="panel__eyebrow">Vorschau</p>
+            <h2>Shop-Ansicht</h2>
+          </div>
+        </div>
+        {% if strain and strain.image %}
+          <img src="{{ strain.image.url }}" alt="{{ strain.name }}" style="width: 100%; max-width: 24rem; border-radius: 1.25rem; object-fit: cover;">
+        {% else %}
+          <p class="empty-copy">Noch kein Shop-Bild hochgeladen.</p>
+        {% endif %}
+        {% if strain %}
+          <ul class="detail-list">
+            <li><span>Produkttyp</span><strong>{{ strain.get_product_type_display }}</strong></li>
+            <li><span>Preis</span><strong>{{ strain.price }} EUR {{ strain.unit_price_label }}</strong></li>
+            <li><span>Bestand</span><strong>{{ strain.stock_display }}</strong></li>
+            <li><span>Qualitaet</span><strong>{{ strain.quality_grade }}</strong></li>
+          </ul>
+        {% endif %}
+      </article>
+    </section>
+  </section>
+{% endblock %}

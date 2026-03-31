@@ -8,46 +8,55 @@
         <h1>Vorstandsbetrieb, Nachweise, Ausweise und Integrationen an einem Ort.</h1>
       </div>
       <div class="hero-actions">
+        <a href="{% url 'governance:meetings' %}#meeting-form" class="btn-ghost">Neue Mitgliederversammlung planen</a>
         <a href="{% url 'governance:meetings' %}" class="btn-primary">Versammlungen</a>
         <a href="{% url 'governance:tasks' %}" class="btn-ghost">Aufgabenboard</a>
       </div>
     </div>
 
+    <nav class="anchor-nav" aria-label="Governance-Sprungnavigation">
+      <a href="#governance-meetings" class="btn-ghost btn-ghost--small">Sitzungen</a>
+      <a href="#governance-records" class="btn-ghost btn-ghost--small">Nachweise</a>
+      <a href="#governance-integrations" class="btn-ghost btn-ghost--small">Integrationen</a>
+      <a href="#governance-tasks" class="btn-ghost btn-ghost--small">Aufgaben</a>
+      <a href="#governance-audit" class="btn-ghost btn-ghost--small">Audit</a>
+    </nav>
+
     <section class="kpi-grid">
       <article class="kpi-card kpi-card--forest">
         <span class="kpi-card__label">Offene Aufgaben</span>
         <strong class="kpi-card__value">{{ task_counts.todo|default:0 }}</strong>
-        <small class="kpi-card__detail">{{ task_counts.in_progress|default:0 }} in Arbeit</small>
+        <small class="kpi-card__detail">{% if task_counts.todo|default:0 %}{{ task_counts.in_progress|default:0 }} in Arbeit{% else %}Noch keine offenen Aufgaben angelegt{% endif %}</small>
       </article>
       <article class="kpi-card kpi-card--sand">
         <span class="kpi-card__label">Geplante Sitzungen</span>
         <strong class="kpi-card__value">{{ meeting_counts.planned|default:0 }}</strong>
-        <small class="kpi-card__detail">{{ meeting_counts.completed|default:0 }} abgeschlossen</small>
+        <small class="kpi-card__detail">{% if meeting_counts.planned|default:0 %}{{ meeting_counts.completed|default:0 }} abgeschlossen{% else %}Noch kein naechster Termin geplant{% endif %}</small>
       </article>
       <article class="kpi-card kpi-card--ink">
         <span class="kpi-card__label">Offene Nachweise</span>
         <strong class="kpi-card__value">{{ pending_records|length }}</strong>
-        <small class="kpi-card__detail">Transport und Vernichtung</small>
+        <small class="kpi-card__detail">{% if pending_records|length %}Transport und Vernichtung{% else %}Keine offenen Nachweise vorhanden{% endif %}</small>
       </article>
     </section>
 
     <section class="module-grid module-grid--three">
-      <a href="{% url 'governance:meetings' %}" class="module-tile module-tile--forest">
+      <a href="{% url 'governance:meetings' %}" class="module-tile module-tile--forest" id="governance-meetings">
         <strong>Versammlungen</strong>
         <span>Tagesordnung, Protokolle, Beschlusshistorie und Einladungslauf.</span>
       </a>
-      <a href="{% url 'governance:records' %}" class="module-tile module-tile--sand">
+      <a href="{% url 'governance:records' %}" class="module-tile module-tile--sand" id="governance-records" title="PDF-Nachweise fuer Transport- und Vernichtungsdokumente" aria-label="PDF-Nachweise fuer Transport- und Vernichtungsdokumente">
         <strong>PDF-Nachweise</strong>
         <span>Transport- und Vernichtungsnachweise mit Freigabe und PDF-Abruf.</span>
       </a>
-      <a href="{% url 'governance:integrations' %}" class="module-tile module-tile--ink">
+      <a href="{% url 'governance:integrations' %}" class="module-tile module-tile--ink" id="governance-integrations" title="APIs und Webhooks fuer externe Buchhaltung, Drucker und Club-Apps" aria-label="APIs und Webhooks fuer externe Buchhaltung, Drucker und Club-Apps">
         <strong>APIs & Webhooks</strong>
         <span>Exportschnittstellen fuer Buchhaltung, Drucker und externe Club-Apps.</span>
       </a>
     </section>
 
     <section class="board-grid">
-      <article class="panel panel--span-2">
+      <article class="panel panel--span-2" id="governance-tasks">
         <div class="panel__header">
           <div>
             <p class="panel__eyebrow">Naechste Termine</p>
@@ -83,7 +92,7 @@
         {% endif %}
       </article>
 
-      <article class="panel">
+      <article class="panel" id="governance-audit">
         <div class="panel__header">
           <div>
             <p class="panel__eyebrow">Ausweise</p>

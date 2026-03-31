@@ -1,0 +1,52 @@
+{% extends 'base.html' %}
+{% block title %}Bestellaktion bestaetigen{% endblock %}
+{% block content %}
+  <section class="page-shell">
+    <div class="page-heading">
+      <div>
+        <p class="eyebrow">Bestellungen</p>
+        <h1>Bitte bestaetige diese Aktion.</h1>
+      </div>
+      <div class="hero-actions">
+        <a href="{{ next }}" class="btn-ghost">Zurueck zur Liste</a>
+      </div>
+    </div>
+
+    <section class="board-grid">
+      <article class="panel panel--span-2">
+        <div class="panel__header">
+          <div>
+            <p class="panel__eyebrow">Sicherheitsabfrage</p>
+            <h2>
+              {% if action == 'complete' %}
+                Bestellung #{{ order.id }} ausgeben und Guthaben abbuchen
+              {% else %}
+                Bestellung #{{ order.id }} stornieren
+              {% endif %}
+            </h2>
+          </div>
+        </div>
+        <ul class="detail-list">
+          <li><span>Mitglied</span><strong>{{ order.member.full_name|default:order.member.email }}</strong></li>
+          <li><span>Status</span><strong>{{ order.get_status_display }}</strong></li>
+          <li><span>Gesamt</span><strong>{{ order.total }} EUR</strong></li>
+          <li><span>Positionen</span><strong>{{ order.items.count }}</strong></li>
+        </ul>
+        <p class="empty-copy">
+          {% if action == 'complete' %}
+            Diese Aktion belastet das Guthaben und markiert die Reservierung als ausgegeben.
+          {% else %}
+            Diese Aktion gibt den Bestand wieder frei und storniert die Reservierung.
+          {% endif %}
+        </p>
+        <form method="post" action="{% url 'orders:admin_action' order.id %}" class="inline-actions inline-actions--stacked">
+          {% csrf_token %}
+          <input type="hidden" name="action" value="{{ action }}">
+          <input type="hidden" name="next" value="{{ next }}">
+          <button type="submit" name="confirm" value="yes" class="btn-primary">Aktion jetzt ausfuehren</button>
+          <button type="submit" name="confirm" value="no" class="btn-ghost">Abbrechen</button>
+        </form>
+      </article>
+    </section>
+  </section>
+{% endblock %}

@@ -1,31 +1,55 @@
 {% extends 'base.html' %}
 {% block title %}Schichtkalender{% endblock %}
 {% block content %}
-<div class="card">
-  <h1 class="mb-4 text-xl font-semibold">Schichtplanung</h1>
-  {% if shifts %}
-    <table class="w-full text-sm">
-      <thead>
-        <tr>
-          <th class="text-left">Titel</th>
-          <th class="text-left">Start</th>
-          <th class="text-left">Ende</th>
-          <th class="text-left">Benoetigt</th>
-        </tr>
-      </thead>
-      <tbody>
-        {% for shift in shifts %}
-          <tr>
-            <td>{{ shift.title }}</td>
-            <td>{{ shift.starts_at|date:'d.m.Y H:i' }}</td>
-            <td>{{ shift.ends_at|date:'d.m.Y H:i' }}</td>
-            <td>{{ shift.required_members }}</td>
-          </tr>
-        {% endfor %}
-      </tbody>
-    </table>
-  {% else %}
-    <p>Keine Schichten geplant.</p>
-  {% endif %}
-</div>
+  <section class="page-shell">
+    <div class="page-heading">
+      <div>
+        <p class="eyebrow">Mitwirkung</p>
+        <h1>Kommende Schichten im Verein.</h1>
+      </div>
+      <div class="hero-actions">
+        {% if can_manage_shifts %}
+          <a href="{% url 'participation:shift_create' %}" class="btn-primary">Neue Schicht anlegen</a>
+        {% endif %}
+        <a href="{% url 'participation:dashboard' %}" class="btn-ghost">Zurueck zur Mitwirkung</a>
+      </div>
+    </div>
+
+    <section class="panel">
+      <div class="panel__header">
+        <div>
+          <p class="panel__eyebrow">Planung</p>
+          <h2>Schichtkalender</h2>
+        </div>
+      </div>
+      {% if shifts %}
+        <div class="table-card">
+          <table class="table">
+            <thead>
+              <tr>
+                <th>Titel</th>
+                <th>Start</th>
+                <th>Ende</th>
+                <th>Benoetigt</th>
+                <th>Beschreibung</th>
+              </tr>
+            </thead>
+            <tbody>
+              {% for shift in shifts %}
+                <tr>
+                  <td><a href="{% url 'participation:shift_detail' shift.id %}" class="text-link">{{ shift.title }}</a></td>
+                  <td>{{ shift.starts_at|date:'d.m.Y H:i' }}</td>
+                  <td>{{ shift.ends_at|date:'d.m.Y H:i' }}</td>
+                  <td>{{ shift.required_members }}</td>
+                  <td>{{ shift.description|default:'-' }}</td>
+                </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+      {% else %}
+        <p class="empty-copy">Keine Schichten geplant.</p>
+      {% endif %}
+    </section>
+  </section>
 {% endblock %}

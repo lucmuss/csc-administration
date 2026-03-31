@@ -15,27 +15,59 @@
     <a href="{% url 'orders:list' %}" class="btn-ghost">Meine Bestellungen</a>
   </div>
 </section>
-<div class="grid gap-4 md:grid-cols-2">
+<div class="grid gap-4 lg:grid-cols-2 xl:grid-cols-3">
   {% for strain in strains %}
-  <article class="card card-shop">
+  <article
+    class="card card-shop shop-card-compact"
+    style="--shop-card-bg: {{ strain.card_palette.background }}; --shop-card-border: {{ strain.card_palette.border }}; --shop-card-badge-bg: {{ strain.card_palette.badge }}; --shop-card-badge-text: {{ strain.card_palette.badge_text }};"
+  >
+    <div class="shop-card-compact__header">
+      <div>
+        <h2 class="text-lg font-semibold leading-tight">
+          <a href="{% url 'inventory:strain_detail' strain.id %}" class="text-link">{{ strain.name }}</a>
+        </h2>
+      </div>
+      <span class="shop-card-compact__badge">{{ strain.get_product_type_display }}</span>
+    </div>
     {% if strain.image %}
-    <div class="mb-3 overflow-hidden rounded-2xl border border-slate-200 bg-slate-100">
-      <img src="{{ strain.image.url }}" alt="{{ strain.name }}" class="h-48 w-full object-cover">
+    <div class="shop-card-compact__media">
+      <img src="{{ strain.image.url }}" alt="{{ strain.name }}" class="shop-card-compact__image">
     </div>
     {% endif %}
-    <h2 class="text-lg font-semibold">{{ strain.name }}</h2>
-    <p class="text-sm text-slate-600">{{ strain.get_product_type_display }}</p>
-    <p>THC {{ strain.thc }}% | CBD {{ strain.cbd }}%</p>
-    <p>Preis: {{ strain.price }} EUR {{ strain.unit_price_label }}</p>
-    <p>Bestand: {{ strain.stock_display }}</p>
+    <div class="shop-card-compact__stats">
+      {% if strain.is_weight_based %}
+        <div class="shop-card-compact__stat">
+          <span class="shop-card-compact__label">THC</span>
+          <strong>{{ strain.thc }}%</strong>
+        </div>
+      {% else %}
+        <div class="shop-card-compact__stat">
+          <span class="shop-card-compact__label">Typ</span>
+          <strong>{{ strain.get_product_type_display }}</strong>
+        </div>
+      {% endif %}
+      <div class="shop-card-compact__stat">
+        <span class="shop-card-compact__label">Preis</span>
+        <strong>{{ strain.price }} EUR</strong>
+      </div>
+      <div class="shop-card-compact__stat">
+        <span class="shop-card-compact__label">Bestand</span>
+        <strong>{{ strain.stock_display }}</strong>
+      </div>
+      <div class="shop-card-compact__stat">
+        <span class="shop-card-compact__label">{% if strain.is_weight_based %}CBD{% else %}Einheit{% endif %}</span>
+        <strong>{% if strain.is_weight_based %}{{ strain.cbd }}%{% else %}pro Stueck{% endif %}</strong>
+      </div>
+    </div>
+    <p class="shop-card-compact__meta">{{ strain.unit_price_label }} · Qualitaet {{ strain.quality_grade }}</p>
     {% if strain.stock > 0 %}
-      <form method="post" action="{% url 'orders:add_to_cart' %}" class="shop-form" aria-label="{{ strain.name }} zum Warenkorb hinzufuegen">
+      <form method="post" action="{% url 'orders:add_to_cart' %}" class="shop-form" aria-label="{{ strain.name }} zum Warenkorb hinzufuegen" data-price="{{ strain.price }}" data-line-preview>
         {% csrf_token %}
         <input type="hidden" name="strain_id" value="{{ strain.id }}">
         <label for="quantity-{{ strain.id }}" class="sr-only">
           {% if strain.is_weight_based %}Menge in Gramm{% else %}Menge in Stueck{% endif %}
         </label>
-        <select id="quantity-{{ strain.id }}" name="quantity" class="touch-target field-select">
+        <select id="quantity-{{ strain.id }}" name="quantity" class="touch-target field-select" data-quantity-select>
           {% if strain.is_weight_based %}
             <option value="1">1g</option>
             <option value="2">2g</option>
@@ -50,7 +82,10 @@
             <option value="5">5 Stk.</option>
           {% endif %}
         </select>
-        <button class="btn-primary" type="submit">In den Warenkorb</button>
+        <div class="shop-form__footer">
+          <button class="btn-primary" type="submit">In den Warenkorb</button>
+          <strong class="shop-form__total" data-line-total>{{ strain.price }} EUR</strong>
+        </div>
       </form>
     {% else %}
       <p class="mt-3 text-sm text-slate-600">Aktuell nicht verfuegbar.</p>
@@ -60,4 +95,23 @@
   <p class="card">Zurzeit sind keine Produkte verfuegbar.</p>
   {% endfor %}
 </div>
+{% endblock %}
+{% block extra_js %}
+  <script>
+    (function () {
+      document.querySelectorAll("[data-line-preview]").forEach(function (form) {
+        var select = form.querySelector("[data-quantity-select]");
+        var total = form.querySelector("[data-line-total]");
+        var unitPrice = parseFloat(form.dataset.price || "0");
+        if (!select || !total || Number.isNaN(unitPrice)) return;
+        var update = function () {
+          var qty = parseFloat(select.value || "0");
+          var sum = unitPrice * qty;
+          total.textContent = sum.toFixed(2).replace(".", ",") + " EUR";
+        };
+        select.addEventListener("change", update);
+        update();
+      });
+    })();
+  </script>
 {% endblock %}

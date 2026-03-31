@@ -1,6 +1,6 @@
 from django.contrib import admin
 
-from .models import Invoice, Payment, Reminder, SepaMandate
+from .models import BalanceTopUp, BalanceTransaction, Invoice, Payment, Reminder, SepaMandate
 
 
 @admin.register(SepaMandate)
@@ -29,3 +29,17 @@ class ReminderAdmin(admin.ModelAdmin):
     list_display = ("invoice", "level", "fee_amount", "sent_at")
     search_fields = ("invoice__invoice_number", "invoice__profile__user__email")
     list_filter = ("level",)
+
+
+@admin.register(BalanceTransaction)
+class BalanceTransactionAdmin(admin.ModelAdmin):
+    list_display = ("profile", "amount", "kind", "reference", "created_at")
+    search_fields = ("profile__user__email", "reference", "note")
+    list_filter = ("kind",)
+
+
+@admin.register(BalanceTopUp)
+class BalanceTopUpAdmin(admin.ModelAdmin):
+    list_display = ("profile", "amount", "provider", "status", "checkout_session_id", "created_at")
+    search_fields = ("profile__user__email", "checkout_session_id")
+    list_filter = ("provider", "status")

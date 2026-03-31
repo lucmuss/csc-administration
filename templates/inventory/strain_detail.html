@@ -1,0 +1,54 @@
+{% extends 'base.html' %}
+{% block title %}{{ strain.name }}{% endblock %}
+{% block content %}
+  <section class="page-shell">
+    <div class="page-heading">
+      <div>
+        <p class="eyebrow">Produkt</p>
+        <h1>{{ strain.name }}</h1>
+        <p class="lede">{{ strain.get_product_type_display }} · {{ strain.price }} EUR {{ strain.unit_price_label }}</p>
+      </div>
+      <div class="hero-actions">
+        <a href="{% url 'orders:shop' %}" class="btn-ghost">Zum Shop</a>
+        {% if can_manage_inventory %}
+          <a href="{% url 'inventory:strain_edit' strain.id %}" class="btn-primary">Produkt bearbeiten</a>
+        {% endif %}
+      </div>
+    </div>
+
+    <section class="board-grid">
+      <article class="panel">
+        <div class="panel__header">
+          <div>
+            <p class="panel__eyebrow">Produktansicht</p>
+            <h2>Shop-Vorschau</h2>
+          </div>
+        </div>
+        {% if strain.image %}
+          <img src="{{ strain.image.url }}" alt="{{ strain.name }}" style="width: 100%; max-width: 28rem; border-radius: 1.25rem; object-fit: cover;">
+        {% else %}
+          <p class="empty-copy">Zu diesem Produkt ist noch kein Shop-Bild hinterlegt.</p>
+        {% endif %}
+      </article>
+
+      <article class="panel">
+        <div class="panel__header">
+          <div>
+            <p class="panel__eyebrow">Details</p>
+            <h2>Preis, Einheit und Verfuegbarkeit</h2>
+          </div>
+        </div>
+        <ul class="detail-list">
+          <li><span>Typ</span><strong>{{ strain.get_product_type_display }}</strong></li>
+          {% if strain.is_weight_based %}
+            <li><span>THC</span><strong>{{ strain.thc }}%</strong></li>
+            <li><span>CBD</span><strong>{{ strain.cbd }}%</strong></li>
+          {% endif %}
+          <li><span>Preis</span><strong>{{ strain.price }} EUR {{ strain.unit_price_label }}</strong></li>
+          <li><span>Bestand</span><strong>{{ strain.stock_display }}</strong></li>
+          <li><span>Qualitaet</span><strong>{{ strain.quality_grade }}</strong></li>
+        </ul>
+      </article>
+    </section>
+  </section>
+{% endblock %}

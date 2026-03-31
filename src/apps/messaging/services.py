@@ -1,9 +1,56 @@
 # messaging/services.py
-"""SMS Gateway Services"""
-import requests
+"""Messaging helper services."""
 from typing import Optional, Dict, Any
 from django.conf import settings
-from .models import SmsProviderConfig, SmsMessage
+from .models import EmailGroup, EmailGroupMember, SmsProviderConfig, SmsMessage
+
+
+IMPORTANT_EMAIL_GROUP = "Wichtige Vereinsinfos"
+MARKETING_EMAIL_GROUP = "Preislisten und Angebote"
+
+
+def _ensure_email_group(name: str, description: str):
+    group, _ = EmailGroup.objects.get_or_create(
+        name=name,
+        defaults={"description": description, "is_active": True},
+    )
+    if not group.is_active:
+        group.is_active = True
+        group.save(update_fields=["is_active", "updated_at"])
+    return group
+
+
+def sync_member_messaging_preferences(profile) -> None:
+    """Synchronisiert Profil-Opt-ins in die E-Mail-Gruppen."""
+    if not getattr(profile, "pk", None):
+        return
+
+    status = getattr(profile, "status", "")
+    is_verified = bool(getattr(profile, "is_verified", False))
+    receives_club_updates = status in {"active", "verified"} or is_verified
+
+    important_group = _ensure_email_group(
+        IMPORTANT_EMAIL_GROUP,
+        "Pflichtkommunikation fuer organisatorische Vereinsinformationen.",
+    )
+    marketing_group = _ensure_email_group(
+        MARKETING_EMAIL_GROUP,
+        "Optionale Preislisten, Angebots- und Verfuegbarkeitsmails.",
+    )
+
+    memberships = [
+        (important_group, receives_club_updates),
+        (marketing_group, bool(profile.optional_newsletter_opt_in)),
+    ]
+    for group, should_be_member in memberships:
+        if should_be_member:
+            EmailGroupMember.objects.get_or_create(
+                group=group,
+                member=profile,
+                defaults={"added_by": None},
+            )
+        else:
+            EmailGroupMember.objects.filter(group=group, member=profile).delete()
 
 
 class SmsService:
@@ -33,6 +80,7 @@ class TwilioService(SmsService):
     
     def send_sms(self, to: str, message: str) -> Dict[str, Any]:
         """Sendet eine SMS über Twilio"""
+        import requests
         url = f"{self.BASE_URL}/Accounts/{self.account_sid}/Messages.json"
         
         payload = {
@@ -66,6 +114,7 @@ class TwilioService(SmsService):
     
     def get_status(self, external_id: str) -> Dict[str, Any]:
         """Holt den Status einer Twilio SMS"""
+        import requests
         url = f"{self.BASE_URL}/Accounts/{self.account_sid}/Messages/{external_id}.json"
         
         try:
@@ -97,6 +146,7 @@ class VonageService(SmsService):
     
     def send_sms(self, to: str, message: str) -> Dict[str, Any]:
         """Sendet eine SMS über Vonage"""
+        import requests
         payload = {
             "api_key": self.api_key,
             "api_secret": self.api_secret,
@@ -148,6 +198,7 @@ class CustomWebhookService(SmsService):
     
     def send_sms(self, to: str, message: str) -> Dict[str, Any]:
         """Sendet eine SMS über Custom Webhook"""
+        import requests
         payload = {
             "to": to,
             "from": self.provider.sender_number,
@@ -185,6 +236,7 @@ class CustomWebhookService(SmsService):
     
     def get_status(self, external_id: str) -> Dict[str, Any]:
         """Status-Check über Custom Webhook"""
+        import requests
         # Annahme: Webhook unterstützt GET für Status
         url = f"{self.webhook_url}/status/{external_id}"
         

@@ -17,6 +17,7 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,600;9..144,700&family=Space+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="{% static 'css/legacy-app.css' %}">
     <link rel="stylesheet" href="{% static 'dist/styles.css' %}">
     <script src="{% static 'js/app.js' %}" defer></script>
     {% block extra_head %}{% endblock %}
@@ -37,21 +38,23 @@
 
         <nav id="main-nav" class="nav-cluster" data-mobile-nav aria-label="Hauptnavigation">
           {% if user.is_authenticated %}
-            <a href="{% url 'core:dashboard' %}" class="nav-link{% if request.path == '/' %} is-active{% endif %}">Dashboard</a>
             {% if user.role == 'member' %}
               <a href="{% url 'orders:shop' %}" class="nav-link{% if '/orders/shop/' in request.path %} is-active{% endif %}">Shop</a>
+              <a href="{% url 'orders:list' %}" class="nav-link{% if '/orders/my/' in request.path %} is-active{% endif %}">Bestellungen</a>
               <a href="{% url 'orders:cart' %}" class="nav-link{% if '/orders/cart/' in request.path or '/orders/checkout/' in request.path %} is-active{% endif %}">
                 Warenkorb{% if request.session.cart %} ({{ request.session.cart|length }}){% endif %}
               </a>
-              <a href="{% url 'orders:list' %}" class="nav-link{% if '/orders/my/' in request.path %} is-active{% endif %}">Bestellungen</a>
-              <a href="{% url 'members:profile' %}" class="nav-link{% if '/members/profile/' in request.path %} is-active{% endif %}">Profil</a>
+              <a href="{% url 'finance:dashboard' %}#guthaben" class="nav-link{% if '/finance/' in request.path %} is-active{% endif %}">Guthaben</a>
               <a href="{% url 'finance:dashboard' %}" class="nav-link{% if '/finance/' in request.path %} is-active{% endif %}">Finanzen</a>
+              <a href="{% url 'members:profile' %}" class="nav-link{% if '/members/profile/' in request.path %} is-active{% endif %}">Profil</a>
               <a href="{% url 'participation:dashboard' %}" class="nav-link{% if '/participation/' in request.path %} is-active{% endif %}">Mitwirkung</a>
             {% else %}
               <a href="{% url 'members:directory' %}" class="nav-link{% if '/members/admin/' in request.path %} is-active{% endif %}">Mitglieder</a>
+              <a href="{% url 'orders:admin_list' %}" class="nav-link{% if '/orders/admin/' in request.path %} is-active{% endif %}">Bestellungen</a>
               <a href="{% url 'cultivation:dashboard' %}" class="nav-link{% if '/cultivation/' in request.path %} is-active{% endif %}">Anbau</a>
               <a href="{% url 'inventory:strain_list' %}" class="nav-link{% if '/inventory/' in request.path %} is-active{% endif %}">Inventar</a>
               <a href="{% url 'finance:dashboard' %}" class="nav-link{% if '/finance/' in request.path %} is-active{% endif %}">Finanzen</a>
+              <a href="{% url 'participation:admin_hours' %}" class="nav-link{% if '/participation/' in request.path %} is-active{% endif %}">Mitwirkung</a>
               <a href="{% url 'messaging:dashboard' %}" class="nav-link{% if '/messaging/' in request.path %} is-active{% endif %}">Messaging</a>
               <a href="{% url 'compliance:dashboard' %}" class="nav-link{% if '/compliance/' in request.path %} is-active{% endif %}">Compliance</a>
               <a href="{% url 'governance:dashboard' %}" class="nav-link{% if '/governance/' in request.path %} is-active{% endif %}">Governance</a>
@@ -60,21 +63,27 @@
             <a href="{% url 'accounts:login' %}" class="nav-link{% if '/accounts/login/' in request.path %} is-active{% endif %}">Anmelden</a>
             <a href="{% url 'members:register' %}" class="nav-link{% if '/members/register/' in request.path %} is-active{% endif %}">Registrieren</a>
           {% endif %}
+          <div class="mobile-nav-utilities">
+            {% if user.is_authenticated %}
+              <a href="{% if user.role == 'member' %}{% url 'members:profile' %}{% else %}{% url 'members:directory' %}{% endif %}" class="btn-ghost btn-block">
+                {% if user.role == 'member' %}Mein Bereich{% else %}Mitglieder-Cockpit{% endif %}
+              </a>
+              <form method="post" action="{% url 'accounts:logout' %}">
+                {% csrf_token %}
+                <button type="submit" class="btn-ghost btn-block">Abmelden</button>
+              </form>
+            {% else %}
+              <a href="{% url 'accounts:login' %}" class="btn-ghost btn-block">Anmelden</a>
+              <a href="{% url 'members:register' %}" class="btn-primary btn-block">Konto anlegen</a>
+            {% endif %}
+          </div>
         </nav>
 
         <div class="topbar__actions">
           {% if user.is_authenticated %}
-            {% if user.role == 'member' %}
-              <a href="{% url 'orders:cart' %}" class="btn-ghost topbar__utility">
-                Warenkorb{% if request.session.cart %} ({{ request.session.cart|length }}){% endif %}
-              </a>
-            {% endif %}
-            <div class="user-chip">
+            <a href="{% url 'core:dashboard' %}" class="user-chip topbar__home-link">
               <span class="role-pill role-pill--{{ user.role }}">{{ user.get_role_display }}</span>
               <span class="user-chip__name">{{ user.first_name|default:user.email }}</span>
-            </div>
-            <a href="{% if user.role == 'member' %}{% url 'members:profile' %}{% else %}{% url 'core:feature_audit' %}{% endif %}" class="btn-ghost topbar__utility">
-              {% if user.role == 'member' %}Mein Bereich{% else %}Feature-Audit{% endif %}
             </a>
             <form method="post" action="{% url 'accounts:logout' %}" class="topbar__utility">
               {% csrf_token %}
@@ -90,6 +99,7 @@
             class="mobile-toggle"
             aria-expanded="false"
             aria-controls="main-nav"
+            aria-label="Navigation umschalten"
             data-mobile-nav-toggle
           >
             <span class="mobile-toggle__bar"></span>
@@ -106,7 +116,19 @@
         <section class="message-stack" aria-live="polite">
           {% for message in messages %}
             <article class="flash flash--{{ message.tags|default:'info' }}">
-              <strong>{{ message.tags|default:'info'|title }}</strong>
+              <strong>
+                {% with tag=message.tags|default:'info' %}
+                  {% if tag == 'success' %}
+                    Erfolg
+                  {% elif tag == 'warning' %}
+                    Hinweis
+                  {% elif tag == 'error' %}
+                    Fehler
+                  {% else %}
+                    Info
+                  {% endif %}
+                {% endwith %}
+              </strong>
               <span>{{ message }}</span>
             </article>
           {% endfor %}

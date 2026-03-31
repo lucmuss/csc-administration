@@ -12,33 +12,45 @@
         </p>
         <div class="hero-actions">
           <a href="{% url 'members:directory' %}" class="btn-primary">Mitglieder-Cockpit</a>
-          <a href="{% url 'core:feature_audit' %}" class="btn-ghost">Feature-Audit</a>
+          <a href="{% url 'governance:dashboard' %}" class="btn-ghost">Governance</a>
         </div>
       </div>
       <div class="hero-panel__aside">
         <div class="signal-card signal-card--forest">
-          <span class="signal-card__label">Mitgliederkapazitaet</span>
-          <strong>{{ member_capacity_remaining }} freie Plaetze</strong>
-          <div class="meter">
-            <span style="width: {{ capacity_percent }}%;"></span>
-          </div>
-          <small>{{ dashboard_date|date:"d.m.Y" }}</small>
+          <a href="{% url 'members:directory' %}">
+            <span class="signal-card__label">Mitgliederkapazitaet</span>
+            <strong>{{ member_capacity_remaining }} freie Plaetze</strong>
+            <div class="meter">
+              <span style="width: {{ capacity_percent }}%;"></span>
+            </div>
+            <small>{{ dashboard_date|date:"d.m.Y" }}</small>
+          </a>
         </div>
         <div class="signal-card signal-card--sand">
-          <span class="signal-card__label">Bestand aktiv</span>
-          <strong>{{ total_stock }} g</strong>
-          <small>{% if latest_count %}Letzte Inventur: {{ latest_count.date|date:"d.m.Y" }}{% else %}Noch keine Inventur vorhanden{% endif %}</small>
+          <a href="{% url 'inventory:strain_list' %}">
+            <span class="signal-card__label">Bestand aktiv</span>
+            <strong>{{ total_stock }} g</strong>
+            <small>{% if latest_count %}Letzte Inventur: {{ latest_count.date|date:"d.m.Y" }}{% else %}Noch keine Inventur vorhanden{% endif %}</small>
+          </a>
         </div>
       </div>
     </section>
 
     <section class="kpi-grid">
       {% for card in summary_cards %}
-        <article class="kpi-card kpi-card--{{ card.tone }}">
-          <span class="kpi-card__label">{{ card.label }}</span>
-          <strong class="kpi-card__value">{{ card.value }}</strong>
-          <small class="kpi-card__detail">{{ card.detail }}</small>
-        </article>
+        {% if card.href %}
+          <a href="{{ card.href }}" class="kpi-card kpi-card--{{ card.tone }}">
+            <span class="kpi-card__label">{{ card.label }}</span>
+            <strong class="kpi-card__value">{{ card.value }}</strong>
+            <small class="kpi-card__detail">{{ card.detail }}</small>
+          </a>
+        {% else %}
+          <article class="kpi-card kpi-card--{{ card.tone }}">
+            <span class="kpi-card__label">{{ card.label }}</span>
+            <strong class="kpi-card__value">{{ card.value }}</strong>
+            <small class="kpi-card__detail">{{ card.detail }}</small>
+          </article>
+        {% endif %}
       {% endfor %}
     </section>
 
@@ -66,7 +78,7 @@
                 {% for member in pending_members %}
                   <tr>
                     <td>
-                      <strong>{{ member.user.full_name|default:member.user.email }}</strong>
+                      <a href="{% url 'members:detail' member.id %}" class="text-link"><strong>{{ member.user.full_name|default:member.user.email }}</strong></a>
                       <div class="table-meta">{{ member.user.email }}</div>
                     </td>
                     <td><span class="status-pill status-pill--pending">{{ member.get_status_display }}</span></td>
@@ -76,6 +88,7 @@
                         {% csrf_token %}
                         <input type="hidden" name="action" value="verify">
                         <input type="hidden" name="next" value="{{ request.path }}">
+                        <a href="{% url 'members:detail' member.id %}" class="btn-ghost btn-ghost--small">Profil</a>
                         <button type="submit" class="btn-ghost btn-ghost--small">Freischalten</button>
                       </form>
                     </td>
@@ -106,7 +119,7 @@
             {% for strain in low_stock_strains %}
               <li class="stack-list__item">
                 <div>
-                  <strong>{{ strain.name }}</strong>
+                  <a href="{% url 'inventory:strain_edit' strain.id %}" class="text-link"><strong>{{ strain.name }}</strong></a>
                   <small>{{ strain.get_product_type_display }} · {{ strain.thc }}% THC · {{ strain.quality_grade }}</small>
                 </div>
                 <span class="status-pill status-pill--danger">{{ strain.stock_display }}</span>
@@ -131,7 +144,7 @@
             {% for invoice in open_invoices %}
               <li class="stack-list__item">
                 <div>
-                  <strong>{{ invoice.invoice_number }}</strong>
+                  <a href="{% url 'finance:invoice_detail' invoice.id %}" class="text-link"><strong>{{ invoice.invoice_number }}</strong></a>
                   <small>{{ invoice.profile.user.full_name|default:invoice.profile.user.email }}</small>
                 </div>
                 <span class="status-pill{% if invoice.due_date < dashboard_date %} status-pill--danger{% else %} status-pill--sand{% endif %}">
@@ -179,7 +192,7 @@
                 {% for shift in upcoming_shifts %}
                   <li class="stack-list__item">
                     <div>
-                      <strong>{{ shift.title }}</strong>
+                      <a href="{% url 'participation:shift_detail' shift.id %}" class="text-link"><strong>{{ shift.title }}</strong></a>
                       <small>{{ shift.starts_at|date:"d.m.Y H:i" }}</small>
                     </div>
                     <span class="status-pill status-pill--ink">{{ shift.required_members }} Pers.</span>
@@ -217,15 +230,35 @@
       <article class="panel">
         <div class="panel__header">
           <div>
-            <p class="panel__eyebrow">Naechste Schritte</p>
-            <h2>Sinnvolle Ausbaupunkte</h2>
+            <p class="panel__eyebrow">Schnellstart</p>
+            <h2>Wichtige Admin-Aktionen</h2>
           </div>
-          <a href="{% url 'core:feature_audit' %}" class="text-link">Gesamte Liste</a>
         </div>
-        <ul class="recommendation-list">
-          {% for item in recommended_features %}
-            <li>{{ item }}</li>
-          {% endfor %}
+        <ul class="stack-list stack-list--compact">
+          <li class="stack-list__item">
+            <div>
+              <strong><a href="{% url 'inventory:strain_create' %}" class="text-link">Neues Produkt anlegen</a></strong>
+              <small>Sorten, Stecklinge, Edibles, Preis und Bestand pflegen.</small>
+            </div>
+          </li>
+          <li class="stack-list__item">
+            <div>
+              <strong><a href="{% url 'cultivation:grow_cycle_create' %}" class="text-link">Grow Cycle planen</a></strong>
+              <small>Neue Anbauphase anlegen und danach Pflanzen zuordnen.</small>
+            </div>
+          </li>
+          <li class="stack-list__item">
+            <div>
+              <strong><a href="{% url 'governance:meetings' %}#meeting-form" class="text-link">Mitgliederversammlung anlegen</a></strong>
+              <small>Termin, Reminder und Einladungslogik zentral verwalten.</small>
+            </div>
+          </li>
+          <li class="stack-list__item">
+            <div>
+              <strong><a href="{% url 'messaging:email_group_list' %}" class="text-link">E-Mail-Gruppen pflegen</a></strong>
+              <small>Newsletter, Vereinsinfos und operative Versandlisten verwalten.</small>
+            </div>
+          </li>
         </ul>
       </article>
     </section>
@@ -258,6 +291,7 @@
           <a href="{% url 'orders:shop' %}" class="btn-primary">Zum Shop</a>
           <a href="{% url 'orders:cart' %}" class="btn-ghost">Warenkorb{% if request.session.cart %} ({{ request.session.cart|length }}){% endif %}</a>
           <a href="{% url 'members:profile' %}" class="btn-ghost">Profil ansehen</a>
+          <a href="{% url 'members:directory' %}" class="btn-ghost">Mitglieder</a>
         </div>
       </div>
       {% if profile %}
@@ -338,7 +372,7 @@
               <tbody>
                 {% for order in recent_orders %}
                   <tr>
-                    <td>#{{ order.id }}</td>
+                    <td><a href="{% url 'orders:detail' order.id %}" class="text-link">#{{ order.id }}</a></td>
                     <td><span class="status-pill status-pill--ink">{{ order.get_status_display }}</span></td>
                     <td>{{ order.total_grams }} g</td>
                     <td>{{ order.total }} EUR</td>

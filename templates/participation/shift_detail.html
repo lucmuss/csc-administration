@@ -1,0 +1,43 @@
+{% extends 'base.html' %}
+{% block title %}{{ shift.title }}{% endblock %}
+{% block content %}
+  <section class="page-shell">
+    <div class="page-heading">
+      <div>
+        <p class="eyebrow">Mitwirkung</p>
+        <h1>{{ shift.title }}</h1>
+        <p class="lede">{{ shift.starts_at|date:"d.m.Y H:i" }} bis {{ shift.ends_at|date:"d.m.Y H:i" }}</p>
+      </div>
+      <div class="hero-actions">
+        <a href="{% url 'participation:shift_calendar' %}" class="btn-ghost">Zum Kalender</a>
+      </div>
+    </div>
+
+    <section class="board-grid">
+      <article class="panel">
+        <div class="panel__header">
+          <div>
+            <p class="panel__eyebrow">Rahmendaten</p>
+            <h2>Schichtdetails</h2>
+          </div>
+        </div>
+        <ul class="detail-list">
+          <li><span>Titel</span><strong>{{ shift.title }}</strong></li>
+          <li><span>Beginn</span><strong>{{ shift.starts_at|date:"d.m.Y H:i" }}</strong></li>
+          <li><span>Ende</span><strong>{{ shift.ends_at|date:"d.m.Y H:i" }}</strong></li>
+          <li><span>Benoetigte Personen</span><strong>{{ shift.required_members }}</strong></li>
+        </ul>
+      </article>
+
+      <article class="panel">
+        <div class="panel__header">
+          <div>
+            <p class="panel__eyebrow">Beschreibung</p>
+            <h2>Aufgabeninhalt</h2>
+          </div>
+        </div>
+        <p class="empty-copy">{{ shift.description|default:"Zu dieser Schicht wurde noch keine Beschreibung hinterlegt." }}</p>
+      </article>
+    </section>
+  </section>
+{% endblock %}

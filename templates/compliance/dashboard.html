@@ -8,8 +8,8 @@
         <h1>Berichtswesen, Praevention und offene Verdachtsfaelle.</h1>
       </div>
       <div class="hero-actions">
-        <a href="{% url 'compliance:annual_report' %}?year={{ year }}" class="btn-primary">Bericht fuer {{ year }}</a>
-        <a href="{% url 'compliance:suspicious_activity_list' %}" class="btn-ghost">Verdachtsfaelle</a>
+        <a href="{% url 'compliance:annual_report' %}?year={{ year }}" class="btn-primary btn-compliance">Bericht fuer {{ year }}</a>
+        <a href="{% url 'compliance:suspicious_activity_list' %}" class="btn-ghost btn-compliance-ghost">Verdachtsfaelle</a>
       </div>
     </div>
 
@@ -56,6 +56,25 @@
           <p class="empty-copy">Keine offenen Verdachtsfaelle vorhanden.</p>
         {% endif %}
       </article>
+    </section>
+
+    <section class="panel">
+      <div class="panel__header">
+        <div>
+          <p class="panel__eyebrow">Hilfe</p>
+          <h2>Verdachtsfaelle und Meldungen</h2>
+        </div>
+      </div>
+      <div class="split-cards">
+        <div class="mini-panel">
+          <h3>Wann entsteht ein Verdachtsfall?</h3>
+          <p class="empty-copy">Verdachtsfaelle entstehen automatisch aus Grenzwertpruefungen oder koennen im operativen Ablauf dokumentiert werden.</p>
+        </div>
+        <div class="mini-panel">
+          <h3>Wie geht es weiter?</h3>
+          <p class="empty-copy">Pruefe den Eintrag, dokumentiere die Klaerung im Clubprozess und nutze den Jahresbericht fuer die aggregierte Meldung.</p>
+        </div>
+      </div>
     </section>
   </section>
 {% endblock %}

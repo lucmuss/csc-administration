@@ -1,10 +1,44 @@
 {% extends 'base.html' %}
 {% block title %}SEPA-Mandat{% endblock %}
 {% block content %}
-<h1 class="mb-4 text-2xl font-bold">SEPA-Mandat anlegen</h1>
-<form method="post" class="card space-y-3">
-  {% csrf_token %}
-  {{ form.as_p }}
-  <button type="submit" class="rounded bg-csc-800 px-4 py-2 text-white">Speichern</button>
-</form>
+  <section class="page-shell">
+    <div class="page-heading">
+      <div>
+        <p class="eyebrow">Finanzen</p>
+        <h1>{% if existing_mandate %}SEPA-Mandat aktualisieren{% else %}SEPA-Mandat anlegen{% endif %}</h1>
+      </div>
+      <div class="hero-actions">
+        <a href="{% url 'finance:dashboard' %}" class="btn-ghost">Zurueck zu Finanzen</a>
+      </div>
+    </div>
+
+    <section class="board-grid">
+      <article class="panel">
+        <div class="panel__header">
+          <div>
+            <p class="panel__eyebrow">Mandat</p>
+            <h2>{% if existing_mandate %}Bereits hinterlegte Daten{% else %}Neue SEPA-Daten{% endif %}</h2>
+          </div>
+        </div>
+        {% if existing_mandate %}
+          <div class="info-strip">
+            <span>Referenz: {{ existing_mandate.mandate_reference }}</span>
+            <span>Aktiv seit {{ existing_mandate.signed_at|date:"d.m.Y" }}</span>
+          </div>
+          <p class="empty-copy">Aenderungen an IBAN, BIC und Kontoinhaber werden auf der naechsten Seite noch einmal bestaetigt.</p>
+        {% endif %}
+        <form method="post" class="form-stack">
+          {% csrf_token %}
+          {% for field in form %}
+            <div class="field">
+              <label for="{{ field.id_for_label }}">{{ field.label }}</label>
+              {{ field }}
+              {{ field.errors }}
+            </div>
+          {% endfor %}
+          <button type="submit" class="btn-primary">Weiter zur Bestaetigung</button>
+        </form>
+      </article>
+    </section>
+  </section>
 {% endblock %}

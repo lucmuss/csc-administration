@@ -14,6 +14,21 @@ class Strain(models.Model):
         (PRODUCT_TYPE_EDIBLE, "Edible"),
     ]
 
+    CARD_TONE_APRICOT = "apricot"
+    CARD_TONE_MINT = "mint"
+    CARD_TONE_SKY = "sky"
+    CARD_TONE_LILAC = "lilac"
+    CARD_TONE_SAND = "sand"
+    CARD_TONE_BLUSH = "blush"
+    CARD_TONE_CHOICES = [
+        (CARD_TONE_APRICOT, "Apricot"),
+        (CARD_TONE_MINT, "Mint"),
+        (CARD_TONE_SKY, "Sky"),
+        (CARD_TONE_LILAC, "Lilac"),
+        (CARD_TONE_SAND, "Sand"),
+        (CARD_TONE_BLUSH, "Blush"),
+    ]
+
     QUALITY_A_PLUS = "A+"
     QUALITY_A = "A"
     QUALITY_B = "B"
@@ -31,6 +46,7 @@ class Strain(models.Model):
     price = models.DecimalField(max_digits=8, decimal_places=2)
     stock = models.DecimalField(max_digits=10, decimal_places=2)
     product_type = models.CharField(max_length=16, choices=PRODUCT_TYPE_CHOICES, default=PRODUCT_TYPE_FLOWER)
+    card_tone = models.CharField(max_length=16, choices=CARD_TONE_CHOICES, default=CARD_TONE_APRICOT)
     quality_grade = models.CharField(max_length=2, choices=QUALITY_CHOICES, default=QUALITY_B)
     image = models.FileField(upload_to="strains/", blank=True)
     is_active = models.BooleanField(default=True)
@@ -71,6 +87,48 @@ class Strain(models.Model):
     @property
     def stock_display(self) -> str:
         return f"{self.stock} {self.unit_label}"
+
+    @property
+    def card_palette(self) -> dict[str, str]:
+        palettes = {
+            self.CARD_TONE_APRICOT: {
+                "background": "#fff3eb",
+                "border": "#fdba74",
+                "badge": "#ffedd5",
+                "badge_text": "#9a3412",
+            },
+            self.CARD_TONE_MINT: {
+                "background": "#effcf6",
+                "border": "#86efac",
+                "badge": "#dcfce7",
+                "badge_text": "#166534",
+            },
+            self.CARD_TONE_SKY: {
+                "background": "#eff6ff",
+                "border": "#93c5fd",
+                "badge": "#dbeafe",
+                "badge_text": "#1d4ed8",
+            },
+            self.CARD_TONE_LILAC: {
+                "background": "#f5f3ff",
+                "border": "#c4b5fd",
+                "badge": "#ede9fe",
+                "badge_text": "#6d28d9",
+            },
+            self.CARD_TONE_SAND: {
+                "background": "#fdf8f1",
+                "border": "#fcd34d",
+                "badge": "#fef3c7",
+                "badge_text": "#92400e",
+            },
+            self.CARD_TONE_BLUSH: {
+                "background": "#fff1f2",
+                "border": "#fda4af",
+                "badge": "#ffe4e6",
+                "badge_text": "#be123c",
+            },
+        }
+        return palettes.get(self.card_tone, palettes[self.CARD_TONE_APRICOT])
 
 
 class InventoryLocation(models.Model):

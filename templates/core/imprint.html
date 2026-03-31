@@ -9,37 +9,24 @@
         Diese Installation von CSC Administration wird fuer den internen Betrieb eines Cannabis Social Clubs
         oder eines vergleichbaren Vereinskontexts bereitgestellt.
       </p>
-      <h2>Status</h2>
-      <p>
-        Das Impressum ist technisch vorhanden, aber ohne echte Betreiberdaten nicht rechtsverbindlich.
-        Trage die nachfolgenden Angaben mit den realen Daten dieser Installation ein.
-      </p>
-
-      <h2>Pflichtangaben fuer diese Installation</h2>
+      <h2>Betreiberangaben</h2>
       <ul>
-        <li>Vereinsname und vollstaendige Anschrift</li>
-        <li>Vertretungsberechtigte Person oder Vorstand</li>
-        <li>E-Mail-Adresse und Telefonnummer</li>
-        <li>Vereinsregister und Registernummer, sofern vorhanden</li>
-        <li>Umsatzsteuer-ID oder Wirtschafts-ID, sofern einschlaegig</li>
-        <li>Zustaendige Aufsichtsbehoerde, sofern fuer den Betrieb relevant</li>
-      </ul>
-
-      <h2>Empfohlene Struktur</h2>
-      <ul>
-        <li>Name des Betreibers: [bitte eintragen]</li>
-        <li>Anschrift: [bitte eintragen]</li>
-        <li>Vertreten durch: [bitte eintragen]</li>
-        <li>Kontakt E-Mail: [bitte eintragen]</li>
-        <li>Kontakt Telefon: [bitte eintragen]</li>
-        <li>Registereintrag: [bitte eintragen]</li>
-        <li>Inhaltlich verantwortlich: [bitte eintragen, falls erforderlich]</li>
+        <li>Name des Betreibers: {{ club_name|default:"Noch nicht hinterlegt" }}</li>
+        <li>Anschrift: {{ club_contact_address|default:"Noch nicht hinterlegt" }}</li>
+        <li>Vertreten durch: {{ club_board_representatives|default:"Noch nicht hinterlegt" }}</li>
+        <li>Kontakt E-Mail: {{ club_contact_email|default:"Noch nicht hinterlegt" }}</li>
+        <li>Kontakt Telefon: {{ club_contact_phone|default:"Noch nicht hinterlegt" }}</li>
+        <li>Registereintrag: {{ club_register_entry|default:"Noch nicht hinterlegt" }}</li>
+        <li>USt-ID / Wirtschafts-ID: {{ club_vat_id|default:"Nicht angegeben" }}</li>
+        <li>Aufsichtsbehoerde: {{ club_supervisory_authority|default:"Nicht angegeben" }}</li>
+        <li>Inhaltlich verantwortlich: {{ club_content_responsible|default:"Nicht angegeben" }}</li>
       </ul>
 
       <h2>Wichtiger Hinweis</h2>
       <p>
-        Wenn die Seite oeffentlich erreichbar ist oder Registrierungen, Kommunikation oder Zahlungen vorbereitet,
-        sollte das Impressum nicht als Platzhalter online bleiben.
+        Fehlende Angaben sollten in der `.env` der Installation mit den realen Vereins- und Kontaktdaten
+        nachgezogen werden. Die Seite bleibt damit technisch erreichbar und verweist nicht mehr auf leere
+        Platzhalter oder eine tote URL.
       </p>
     </article>
   </section>

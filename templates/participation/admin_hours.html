@@ -1,33 +1,71 @@
 {% extends 'base.html' %}
 {% block title %}Stundenverwaltung{% endblock %}
 {% block content %}
-<div class="card">
-  <h1 class="mb-4 text-xl font-semibold">Arbeitsstunden (Admin)</h1>
-  {% if hours %}
-    <table class="w-full text-sm">
-      <thead>
-        <tr>
-          <th class="text-left">Mitglied</th>
-          <th class="text-left">Datum</th>
-          <th class="text-left">Stunden</th>
-          <th class="text-left">Schicht</th>
-          <th class="text-left">Freigegeben</th>
-        </tr>
-      </thead>
-      <tbody>
-        {% for entry in hours %}
-          <tr>
-            <td>{{ entry.profile.user.email }}</td>
-            <td>{{ entry.date|date:'d.m.Y' }}</td>
-            <td>{{ entry.hours }}</td>
-            <td>{{ entry.shift.title|default:'-' }}</td>
-            <td>{{ entry.approved|yesno:'Ja,Nein' }}</td>
-          </tr>
-        {% endfor %}
-      </tbody>
-    </table>
-  {% else %}
-    <p>Keine Eintraege vorhanden.</p>
-  {% endif %}
-</div>
+  <section class="page-shell">
+    <div class="page-heading">
+      <div>
+        <p class="eyebrow">Mitwirkung</p>
+        <h1>Arbeitsstunden pruefen und freigeben.</h1>
+      </div>
+      <div class="hero-actions">
+        <a href="{% url 'participation:dashboard' %}" class="btn-ghost">Mitwirkungsbereich</a>
+      </div>
+    </div>
+
+    <section class="panel">
+      <div class="panel__header">
+        <div>
+          <p class="panel__eyebrow">Pruefung</p>
+          <h2>Letzte Stundenmeldungen</h2>
+        </div>
+      </div>
+      {% if hours %}
+        <div class="table-card">
+          <table class="table">
+            <thead>
+              <tr>
+                <th>Mitglied</th>
+                <th>Datum</th>
+                <th>Stunden</th>
+                <th>Schicht</th>
+                <th>Status</th>
+                <th>Notiz</th>
+                <th>Aktion</th>
+              </tr>
+            </thead>
+            <tbody>
+              {% for entry in hours %}
+                <tr>
+                  <td>{{ entry.profile.user.email }}</td>
+                  <td>{{ entry.date|date:'d.m.Y' }}</td>
+                  <td>{{ entry.hours }} h</td>
+                  <td>{{ entry.shift.title|default:'-' }}</td>
+                  <td>
+                    <span class="status-pill {% if entry.approved %}status-pill--active{% else %}status-pill--sand{% endif %}">
+                      {% if entry.approved %}Freigegeben{% else %}Offen{% endif %}
+                    </span>
+                  </td>
+                  <td>{{ entry.notes|default:'-' }}</td>
+                  <td>
+                    <form method="post" class="inline-actions inline-actions--stacked">
+                      {% csrf_token %}
+                      <input type="hidden" name="entry_id" value="{{ entry.id }}">
+                      {% if entry.approved %}
+                        <button type="submit" name="action" value="revoke" class="btn-ghost btn-ghost--small">Freigabe entfernen</button>
+                      {% else %}
+                        <button type="submit" name="action" value="approve" class="btn-primary btn-ghost--small">Freigeben</button>
+                      {% endif %}
+                      <button type="submit" name="action" value="delete" class="btn-ghost btn-ghost--small">Loeschen</button>
+                    </form>
+                  </td>
+                </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+      {% else %}
+        <p class="empty-copy">Keine Eintraege vorhanden.</p>
+      {% endif %}
+    </section>
+  </section>
 {% endblock %}

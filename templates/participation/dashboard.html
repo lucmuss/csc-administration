@@ -1,37 +1,134 @@
 {% extends 'base.html' %}
 {% block title %}Mitwirkung{% endblock %}
 {% block content %}
-<div class="card space-y-3">
-  <h1 class="text-xl font-semibold">Meine Arbeitsstunden</h1>
-  <p>Pflichtstunden geleistet: {{ total_hours }}h / {{ engagement.required_hours_year }}h</p>
-  <p>Im Profil gespeichert: {{ profile.work_hours_done }}h</p>
-</div>
+  <section class="page-shell">
+    <div class="page-heading">
+      <div>
+        <p class="eyebrow">Mitwirkung</p>
+        <h1>Pflichtstunden, Eintraege und kommende Schichten.</h1>
+      </div>
+      <div class="hero-actions">
+        {% if user.role != 'member' %}
+          <a href="{% url 'participation:shift_create' %}" class="btn-primary">Neue Schicht anlegen</a>
+        {% endif %}
+        <a href="{% url 'participation:shift_calendar' %}" class="btn-ghost">Schichtkalender</a>
+      </div>
+    </div>
 
-<div class="card mt-4">
-  <h2 class="mb-3 text-lg font-semibold">Letzte Eintraege</h2>
-  {% if entries %}
-    <table class="w-full text-sm">
-      <thead>
-        <tr>
-          <th class="text-left">Datum</th>
-          <th class="text-left">Stunden</th>
-          <th class="text-left">Schicht</th>
-          <th class="text-left">Freigegeben</th>
-        </tr>
-      </thead>
-      <tbody>
-        {% for entry in entries %}
-          <tr>
-            <td>{{ entry.date|date:'d.m.Y' }}</td>
-            <td>{{ entry.hours }}</td>
-            <td>{{ entry.shift.title|default:'-' }}</td>
-            <td>{{ entry.approved|yesno:'Ja,Nein' }}</td>
-          </tr>
-        {% endfor %}
-      </tbody>
-    </table>
-  {% else %}
-    <p>Noch keine Stunden erfasst.</p>
-  {% endif %}
-</div>
+    <section class="kpi-grid">
+      <article class="kpi-card kpi-card--forest">
+        <span class="kpi-card__label">Freigegebene Stunden</span>
+        <strong class="kpi-card__value">{{ total_hours }} h</strong>
+        <small class="kpi-card__detail">von {{ engagement.required_hours_year }} h Jahresziel</small>
+      </article>
+      <article class="kpi-card kpi-card--sand">
+        <span class="kpi-card__label">In Pruefung</span>
+        <strong class="kpi-card__value">{{ pending_hours }} h</strong>
+        <small class="kpi-card__detail">warten auf Freigabe</small>
+      </article>
+      <article class="kpi-card kpi-card--ink">
+        <span class="kpi-card__label">Im Profil</span>
+        <strong class="kpi-card__value">{{ profile.work_hours_done }} h</strong>
+        <small class="kpi-card__detail">nur freigegebene Stunden</small>
+      </article>
+    </section>
+
+    <section class="board-grid">
+      <article class="panel">
+        <div class="panel__header">
+          <div>
+            <p class="panel__eyebrow">Neuer Eintrag</p>
+            <h2>Mitwirkung nachtragen</h2>
+          </div>
+        </div>
+        <form method="post" class="form-stack">
+          {% csrf_token %}
+          {{ form.date }}
+          <p class="field-hint">Der Eintrag wird automatisch auf den heutigen Tag gesetzt.</p>
+          <div class="field">
+            <label for="{{ form.hours.id_for_label }}">{{ form.hours.label }}</label>
+            {{ form.hours }}
+            {{ form.hours.errors }}
+          </div>
+          <div class="field">
+            <label for="{{ form.shift.id_for_label }}">{{ form.shift.label }}</label>
+            {{ form.shift }}
+            {{ form.shift.errors }}
+          </div>
+          <div class="field">
+            <label for="{{ form.notes.id_for_label }}">{{ form.notes.label }}</label>
+            {{ form.notes }}
+            {{ form.notes.errors }}
+            <small class="field-hint">Beschreibe kurz, was du gemacht hast. Der Eintrag wird danach vom Team geprueft.</small>
+          </div>
+          <button type="submit" class="btn-primary">Stunden einreichen</button>
+        </form>
+      </article>
+
+      <article class="panel">
+        <div class="panel__header">
+          <div>
+            <p class="panel__eyebrow">Schichten</p>
+            <h2>Kommende Termine</h2>
+          </div>
+        </div>
+        {% if upcoming_shifts %}
+          <ul class="stack-list stack-list--compact">
+            {% for shift in upcoming_shifts %}
+              <li class="stack-list__item">
+                <div>
+                  <a href="{% url 'participation:shift_detail' shift.id %}" class="text-link"><strong>{{ shift.title }}</strong></a>
+                  <small>{{ shift.starts_at|date:"d.m.Y H:i" }} bis {{ shift.ends_at|date:"d.m.Y H:i" }}</small>
+                </div>
+                <span class="status-pill status-pill--ink">{{ shift.required_members }} Personen</span>
+              </li>
+            {% endfor %}
+          </ul>
+        {% else %}
+          <p class="empty-copy">Aktuell sind keine Schichten geplant.</p>
+        {% endif %}
+      </article>
+    </section>
+
+    <section class="panel">
+      <div class="panel__header">
+        <div>
+          <p class="panel__eyebrow">Verlauf</p>
+          <h2>Deine letzten Mitwirkungsnachweise</h2>
+        </div>
+      </div>
+      {% if entries %}
+        <div class="table-card">
+          <table class="table">
+            <thead>
+              <tr>
+                <th>Datum</th>
+                <th>Stunden</th>
+                <th>Schicht</th>
+                <th>Status</th>
+                <th>Notiz</th>
+              </tr>
+            </thead>
+            <tbody>
+              {% for entry in entries %}
+                <tr>
+                  <td>{{ entry.date|date:'d.m.Y' }}</td>
+                  <td>{{ entry.hours }} h</td>
+                  <td>{{ entry.shift.title|default:'-' }}</td>
+                  <td>
+                    <span class="status-pill {% if entry.approved %}status-pill--active{% else %}status-pill--sand{% endif %}">
+                      {% if entry.approved %}Freigegeben{% else %}In Pruefung{% endif %}
+                    </span>
+                  </td>
+                  <td>{{ entry.notes|default:'-' }}</td>
+                </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+      {% else %}
+        <p class="empty-copy">Noch keine Stunden erfasst.</p>
+      {% endif %}
+    </section>
+  </section>
 {% endblock %}

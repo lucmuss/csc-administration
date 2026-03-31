@@ -10,9 +10,13 @@
             <h1 class="text-3xl font-bold text-gray-800 mb-2">Pflanzen</h1>
             <p class="text-gray-600">Verwalten Sie Ihre Cannabis-Pflanzen</p>
         </div>
-        <a href="{% url 'cultivation:plant_create' %}" class="bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700">
-            + Neue Pflanze
-        </a>
+        <div class="flex flex-wrap gap-3">
+            <a href="{% url 'cultivation:grow_cycle_list' %}" class="btn-ghost">Grow Cycles</a>
+            <a href="{% url 'cultivation:grow_cycle_create' %}" class="btn-ghost">+ Neuer Grow Cycle</a>
+            <a href="{% url 'cultivation:plant_create' %}" class="bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700">
+                + Neue Pflanze
+            </a>
+        </div>
     </div>
 
     <!-- Filter -->
@@ -102,7 +106,9 @@
                 <tr>
                     <td colspan="7" class="px-6 py-8 text-center text-gray-500">
                         Keine Pflanzen vorhanden.
-                        <a href="{% url 'cultivation:plant_create' %}" class="text-green-600 hover:text-green-900 ml-2">Erste erstellen</a>
+                        <a href="{% url 'cultivation:plant_create' %}" class="text-green-600 hover:text-green-900 ml-2">Erste Pflanze erstellen</a>
+                        <span class="mx-2">oder</span>
+                        <a href="{% url 'cultivation:grow_cycle_create' %}" class="text-green-600 hover:text-green-900">zuerst einen Grow Cycle anlegen</a>
                     </td>
                 </tr>
                 {% endfor %}

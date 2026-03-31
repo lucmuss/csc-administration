@@ -1,3 +1,4 @@
+from django.conf import settings
 from datetime import timedelta
 from decimal import Decimal
 
@@ -28,7 +29,7 @@ class SepaMandate(models.Model):
     @property
     def iban_masked(self) -> str:
         tail = self.iban[-4:] if len(self.iban) >= 4 else self.iban
-        return f"****{tail}"
+        return f"•••• •••• •••• {tail}"
 
 
 class Invoice(models.Model):
@@ -145,3 +146,73 @@ class Reminder(models.Model):
 
     def __str__(self):
         return f"{self.invoice.invoice_number} / L{self.level}"
+
+
+class BalanceTransaction(models.Model):
+    KIND_MEMBERSHIP_FEE = "membership_fee"
+    KIND_TOPUP = "topup"
+    KIND_MANUAL_ADJUSTMENT = "manual_adjustment"
+    KIND_ORDER_CHARGE = "order_charge"
+    KIND_ORDER_REFUND = "order_refund"
+    KIND_CHOICES = [
+        (KIND_MEMBERSHIP_FEE, "Mitgliedsbeitrag"),
+        (KIND_TOPUP, "Aufladung"),
+        (KIND_MANUAL_ADJUSTMENT, "Manuelle Anpassung"),
+        (KIND_ORDER_CHARGE, "Bestellung belastet"),
+        (KIND_ORDER_REFUND, "Bestellung erstattet"),
+    ]
+
+    profile = models.ForeignKey(Profile, on_delete=models.CASCADE, related_name="balance_transactions")
+    amount = models.DecimalField(max_digits=10, decimal_places=2)
+    kind = models.CharField(max_length=32, choices=KIND_CHOICES)
+    note = models.CharField(max_length=255, blank=True)
+    reference = models.CharField(max_length=128, blank=True, db_index=True)
+    created_by = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="created_balance_transactions",
+    )
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ["-created_at", "-id"]
+
+    def __str__(self):
+        return f"{self.profile} {self.amount} {self.kind}"
+
+
+class BalanceTopUp(models.Model):
+    PROVIDER_STRIPE = "stripe"
+    STATUS_PENDING = "pending"
+    STATUS_COMPLETED = "completed"
+    STATUS_FAILED = "failed"
+    STATUS_EXPIRED = "expired"
+
+    profile = models.ForeignKey(Profile, on_delete=models.CASCADE, related_name="balance_topups")
+    provider = models.CharField(max_length=16, default=PROVIDER_STRIPE)
+    amount = models.DecimalField(max_digits=10, decimal_places=2)
+    currency = models.CharField(max_length=8, default="eur")
+    status = models.CharField(
+        max_length=16,
+        choices=[
+            (STATUS_PENDING, "Ausstehend"),
+            (STATUS_COMPLETED, "Abgeschlossen"),
+            (STATUS_FAILED, "Fehlgeschlagen"),
+            (STATUS_EXPIRED, "Abgelaufen"),
+        ],
+        default=STATUS_PENDING,
+    )
+    checkout_session_id = models.CharField(max_length=255, unique=True, blank=True)
+    checkout_url = models.URLField(blank=True)
+    completed_at = models.DateTimeField(null=True, blank=True)
+    failure_reason = models.CharField(max_length=255, blank=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        ordering = ["-created_at", "-id"]
+
+    def __str__(self):
+        return f"{self.profile} {self.amount} {self.provider} {self.status}"

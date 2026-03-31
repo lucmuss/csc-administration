@@ -36,12 +36,15 @@ class InventoryCountService:
     def perform_count(*, count_date: date, counted_quantities: dict[int, str | Decimal]) -> InventoryCount:
         discrepancies = []
         counted_items = 0
+        strain_totals: dict[int, Decimal] = {}
 
         for item_id, quantity in counted_quantities.items():
             item = InventoryItem.objects.select_for_update().get(id=item_id)
             counted = Decimal(str(quantity))
             delta = counted - item.quantity
             counted_items += 1
+            strain_totals.setdefault(item.strain_id, Decimal("0.00"))
+            strain_totals[item.strain_id] += counted
 
             if delta != Decimal("0.00"):
                 discrepancies.append(
@@ -58,6 +61,9 @@ class InventoryCountService:
             item.quantity = counted
             item.last_counted = count_date
             item.save(update_fields=["quantity", "last_counted"])
+
+        for strain_id, total in strain_totals.items():
+            Strain.objects.filter(id=strain_id).update(stock=total)
 
         return InventoryCount.objects.create(
             date=count_date,

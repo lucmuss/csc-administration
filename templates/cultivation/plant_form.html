@@ -8,6 +8,10 @@
     <div class="mb-8">
         <h1 class="text-3xl font-bold text-gray-800 mb-2">{{ title }}</h1>
         <p class="text-gray-600">Erstellen oder bearbeiten Sie eine Pflanze</p>
+        <div class="mt-4 flex flex-wrap gap-3">
+            <a href="{% url 'cultivation:grow_cycle_create' %}" class="btn-primary">Neuen Grow Cycle anlegen</a>
+            <a href="{% url 'cultivation:grow_cycle_list' %}" class="btn-ghost">Alle Grow Cycles</a>
+        </div>
     </div>
 
     <div class="max-w-2xl bg-white shadow-md rounded-lg p-6">
@@ -17,6 +21,7 @@
             <div class="mb-6">
                 <label class="block text-sm font-medium text-gray-700 mb-2">{{ form.grow_cycle.label }}</label>
                 {{ form.grow_cycle }}
+                <p class="mt-2 text-sm text-gray-500">Wenn hier noch kein passender Zyklus auftaucht, lege zuerst einen Grow Cycle an und komme dann zur Pflanze zurueck.</p>
                 {% if form.grow_cycle.errors %}
                 <p class="mt-1 text-sm text-red-600">{{ form.grow_cycle.errors.0 }}</p>
                 {% endif %}

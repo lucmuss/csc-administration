@@ -1,0 +1,9 @@
+<p>Hallo {{ user.first_name|default:user.email }},</p>
+<p>deine Bestellung <strong>#{{ order.id }}</strong> wurde vom Club verarbeitet und vom Guthaben abgebucht.</p>
+<ul>
+  <li>Status: {{ order.get_status_display }}</li>
+  <li>Belastet: {{ order.paid_with_balance }} EUR</li>
+  <li>Aktuelles Restguthaben: {{ balance_breakdown.current_balance }} EUR</li>
+</ul>
+<p><a href="{{ order_url }}">Bestelldetails ansehen</a></p>
+<p>Die aktuelle Rechnung ist dieser E-Mail als PDF angehaengt.</p>

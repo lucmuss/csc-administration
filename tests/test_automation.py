@@ -68,6 +68,42 @@ def test_send_meeting_invitations_and_reminders_commands(member_user):
 
 
 @pytest.mark.django_db
+@override_settings(
+    EMAIL_BACKEND="django.core.mail.backends.locmem.EmailBackend",
+    GENERAL_MEETING_INVITATION_LEAD_DAYS=14,
+    GENERAL_MEETING_REMINDER_LEAD_HOURS=24,
+)
+def test_send_governance_meeting_notifications_command(member_user):
+    from apps.governance.models import BoardMeeting
+
+    meeting = BoardMeeting.objects.create(
+        title="Ordentliche Mitgliederversammlung",
+        meeting_type=BoardMeeting.TYPE_GENERAL,
+        scheduled_for=timezone.now() + timedelta(days=14),
+        location="https://meet.google.com/cts-oqco-zzd",
+        agenda_submission_email="vorstand@example.com",
+    )
+
+    call_command("send_meeting_notifications")
+
+    meeting.refresh_from_db()
+    assert meeting.invitation_sent_at is not None
+    assert len(mail.outbox) == 1
+    assert "Einladung" in mail.outbox[0].subject
+
+    mail.outbox.clear()
+    meeting.reminder_sent_at = None
+    meeting.scheduled_for = timezone.now() + timedelta(hours=24)
+    meeting.save(update_fields=["scheduled_for", "reminder_sent_at", "updated_at"])
+
+    call_command("send_meeting_notifications")
+    meeting.refresh_from_db()
+    assert meeting.reminder_sent_at is not None
+    assert len(mail.outbox) == 1
+    assert "Erinnerung" in mail.outbox[0].subject
+
+
+@pytest.mark.django_db
 @override_settings(EMAIL_BACKEND="django.core.mail.backends.locmem.EmailBackend")
 def test_inactivity_and_deadline_notifications(member_user):
     from apps.accounts.models import User

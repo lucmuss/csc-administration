@@ -1,0 +1,12 @@
+Hallo {{ user.first_name|default:user.email }},
+
+deine Bestellung #{{ order.id }} wurde vom Club verarbeitet und vom Guthaben abgebucht.
+
+Status: {{ order.get_status_display }}
+Belastet: {{ order.paid_with_balance }} EUR
+Aktuelles Restguthaben: {{ balance_breakdown.current_balance }} EUR
+
+Bestelldetails:
+{{ order_url }}
+
+Die aktuelle Rechnung ist dieser E-Mail als PDF angehaengt.

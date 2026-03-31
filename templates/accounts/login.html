@@ -38,6 +38,9 @@
           {{ form.password }}
           {{ form.password.errors }}
         </div>
+        <div class="auth-card__footer">
+          <a href="{% url 'accounts:password_reset' %}" class="text-link">Passwort vergessen?</a>
+        </div>
         <button type="submit" class="btn-primary btn-block">Anmelden</button>
       </form>
       <div class="auth-card__footer">

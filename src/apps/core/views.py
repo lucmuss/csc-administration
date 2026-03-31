@@ -12,12 +12,11 @@ from apps.accounts.models import User
 from apps.compliance.models import ComplianceReport, SuspiciousActivity
 from apps.cultivation.models import GrowCycle, HarvestBatch, Plant
 from apps.finance.models import Invoice, Payment
+from apps.governance.services import send_due_meeting_notifications
 from apps.inventory.models import InventoryCount, InventoryItem, Strain
 from apps.members.models import Profile
 from apps.orders.models import Order
 from apps.participation.models import MemberEngagement, Shift, WorkHours
-
-from .feature_audit import FEATURE_AUDIT_GROUPS, RECOMMENDED_FEATURES, feature_audit_summary
 
 LOW_STOCK_THRESHOLD = Decimal(django_settings.LOW_STOCK_THRESHOLD_EUR)
 MEMBER_CAPACITY = django_settings.MEMBER_CAPACITY
@@ -38,6 +37,12 @@ def _module_links():
             "description": "Offene Bewerbungen, Mitgliedsstatus und CSV-Export.",
             "href": "/members/admin/",
             "tone": "forest",
+        },
+        {
+            "title": "Bestellungen",
+            "description": "Reservierungen pruefen, freigeben oder stornieren.",
+            "href": "/orders/admin/",
+            "tone": "ink",
         },
         {
             "title": "Finanzstatus",
@@ -82,6 +87,7 @@ def _cultivation_tables_ready():
 
 @login_required
 def dashboard(request):
+    send_due_meeting_notifications()
     today = timezone.localdate()
     now = timezone.now()
     profile = Profile.objects.filter(user=request.user).first()
@@ -154,24 +160,28 @@ def dashboard(request):
                         "value": active_members,
                         "detail": f"{total_members}/{MEMBER_CAPACITY} belegt",
                         "tone": "forest",
+                        "href": "/members/admin/",
                     },
                     {
                         "label": "Reservierte Ausgaben",
                         "value": reserved_orders,
                         "detail": "offene Warenkoerbe mit Reservierung",
                         "tone": "sand",
+                        "href": "/orders/admin/?status=reserved",
                     },
                     {
                         "label": "Offene Forderungen",
                         "value": open_invoices_qs.count(),
                         "detail": f"{overdue_invoices} ueberfaellig",
                         "tone": "ember",
+                        "href": "/finance/invoices/",
                     },
                     {
                         "label": "Offene Compliance-Faelle",
                         "value": suspicious_qs.count(),
                         "detail": "ungeklaerte Hinweise",
                         "tone": "ink",
+                        "href": "/compliance/suspicious-activities/",
                     },
                 ],
                 "pending_members": pending_members,
@@ -186,7 +196,6 @@ def dashboard(request):
                 "engagement_open": engagement_open,
                 "cultivation_overview": cultivation_overview,
                 "module_links": _module_links(),
-                "recommended_features": RECOMMENDED_FEATURES[:4],
             }
         )
     else:
@@ -200,21 +209,21 @@ def privacy(request):
 
 
 def imprint(request):
-    return render(request, "core/imprint.html")
-
-
-@user_passes_test(_is_staff_or_board)
-def feature_audit_view(request):
     return render(
         request,
-        "core/feature_audit.html",
+        "core/imprint.html",
         {
-            "groups": FEATURE_AUDIT_GROUPS,
-            "summary": feature_audit_summary(),
-            "recommended_features": RECOMMENDED_FEATURES,
+            "club_name": django_settings.CLUB_NAME,
+            "club_contact_address": django_settings.CLUB_CONTACT_ADDRESS,
+            "club_contact_email": django_settings.CLUB_CONTACT_EMAIL,
+            "club_contact_phone": django_settings.CLUB_CONTACT_PHONE,
+            "club_board_representatives": django_settings.CLUB_BOARD_REPRESENTATIVES,
+            "club_register_entry": django_settings.CLUB_REGISTER_ENTRY,
+            "club_vat_id": django_settings.CLUB_VAT_ID,
+            "club_supervisory_authority": django_settings.CLUB_SUPERVISORY_AUTHORITY,
+            "club_content_responsible": django_settings.CLUB_CONTENT_RESPONSIBLE,
         },
     )
-
 
 def health(request):
     return JsonResponse({"status": "ok", "service": "csc-administration"})

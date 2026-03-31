@@ -44,7 +44,13 @@ class BoardMeeting(models.Model):
     status = models.CharField(max_length=20, choices=STATUS_CHOICES, default=STATUS_PLANNED)
     scheduled_for = models.DateTimeField()
     location = models.CharField(max_length=255, blank=True)
+    participation_url = models.URLField(blank=True)
+    minutes_url = models.URLField(blank=True)
+    agenda_submission_email = models.EmailField(blank=True)
+    invitation_lead_days = models.PositiveSmallIntegerField(default=14)
+    reminder_lead_hours = models.PositiveSmallIntegerField(default=24)
     invitation_sent_at = models.DateTimeField(null=True, blank=True)
+    reminder_sent_at = models.DateTimeField(null=True, blank=True)
     minutes_summary = models.TextField(blank=True)
     attendance_notes = models.TextField(blank=True)
     chairperson = models.ForeignKey(

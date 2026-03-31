@@ -1,0 +1,45 @@
+{% extends 'base.html' %}
+{% block title %}SEPA-Mandat bestaetigen{% endblock %}
+{% block content %}
+  <section class="page-shell">
+    <div class="page-heading">
+      <div>
+        <p class="eyebrow">Finanzen</p>
+        <h1>SEPA-Mandat bestaetigen</h1>
+      </div>
+      <div class="hero-actions">
+        <a href="{% url 'finance:mandate_create' %}" class="btn-ghost">Zurueck zur Bearbeitung</a>
+      </div>
+    </div>
+
+    <section class="board-grid">
+      <article class="panel">
+        <div class="panel__header">
+          <div>
+            <p class="panel__eyebrow">Pruefung</p>
+            <h2>{% if existing_mandate %}Aenderung sensibler Bankdaten{% else %}Neues SEPA-Mandat{% endif %}</h2>
+          </div>
+        </div>
+        <div class="info-strip">
+          <span>Bitte pruefe IBAN, BIC und Kontoinhaber vor dem Speichern.</span>
+          {% if changes_sensitive %}
+            <span>Die Aenderung wird erst nach deiner ausdruecklichen Bestaetigung uebernommen.</span>
+          {% endif %}
+        </div>
+        <ul class="detail-list">
+          <li><span>IBAN</span><strong>{{ form.cleaned_data.iban }}</strong></li>
+          <li><span>BIC</span><strong>{{ form.cleaned_data.bic }}</strong></li>
+          <li><span>Kontoinhaber</span><strong>{{ form.cleaned_data.account_holder }}</strong></li>
+        </ul>
+        <form method="post" class="inline-actions inline-actions--stacked">
+          {% csrf_token %}
+          <input type="hidden" name="iban" value="{{ form.cleaned_data.iban }}">
+          <input type="hidden" name="bic" value="{{ form.cleaned_data.bic }}">
+          <input type="hidden" name="account_holder" value="{{ form.cleaned_data.account_holder }}">
+          <button type="submit" name="confirm" value="yes" class="btn-primary">Mandat jetzt speichern</button>
+          <button type="submit" name="confirm" value="no" class="btn-ghost">Abbrechen</button>
+        </form>
+      </article>
+    </section>
+  </section>
+{% endblock %}

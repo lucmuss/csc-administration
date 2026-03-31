@@ -85,6 +85,69 @@
     border-color: #cbd5e1;
     border-width: 2px;
   }
+  .shop-card-compact {
+    background: var(--shop-card-bg, #ffffff);
+    border-color: var(--shop-card-border, #cbd5e1);
+    display: flex;
+    flex-direction: column;
+    gap: 0.85rem;
+    padding: 1rem;
+  }
+  .shop-card-compact__header {
+    align-items: flex-start;
+    display: flex;
+    gap: 0.75rem;
+    justify-content: space-between;
+  }
+  .shop-card-compact__badge {
+    background: var(--shop-card-badge-bg, #f8fafc);
+    border: 1px solid var(--shop-card-border, #cbd5e1);
+    border-radius: 9999px;
+    color: var(--shop-card-badge-text, #0f172a);
+    font-size: 0.75rem;
+    font-weight: 700;
+    line-height: 1;
+    padding: 0.45rem 0.7rem;
+    white-space: nowrap;
+  }
+  .shop-card-compact__media {
+    overflow: hidden;
+    border-radius: 1rem;
+    border: 1px solid rgba(148, 163, 184, 0.35);
+    background: rgba(255, 255, 255, 0.72);
+  }
+  .shop-card-compact__image {
+    height: 9.5rem;
+    width: 100%;
+    object-fit: cover;
+  }
+  .shop-card-compact__stats {
+    display: grid;
+    gap: 0.6rem;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+  .shop-card-compact__stat {
+    background: rgba(255, 255, 255, 0.72);
+    border: 1px solid rgba(148, 163, 184, 0.28);
+    border-radius: 0.9rem;
+    display: flex;
+    flex-direction: column;
+    gap: 0.15rem;
+    min-height: 4rem;
+    padding: 0.7rem 0.8rem;
+  }
+  .shop-card-compact__label {
+    color: #475569;
+    font-size: 0.72rem;
+    font-weight: 700;
+    letter-spacing: 0.02em;
+    text-transform: uppercase;
+  }
+  .shop-card-compact__meta {
+    color: #475569;
+    font-size: 0.88rem;
+    margin: 0;
+  }
   .shop-form {
     align-items: center;
     display: flex;

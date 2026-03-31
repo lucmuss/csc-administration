@@ -1,12 +1,20 @@
-from django.contrib.auth.views import LoginView, LogoutView
+from django.contrib.auth.views import (
+    LoginView,
+    LogoutView,
+    PasswordResetCompleteView,
+    PasswordResetConfirmView,
+    PasswordResetDoneView,
+    PasswordResetView,
+)
 from django.contrib.auth import login
 from django.http import HttpResponseForbidden
 from django.shortcuts import redirect
 from django.conf import settings
+from django.urls import reverse
 from django.urls import reverse_lazy
 
 from .emails import send_login_alert_email
-from .forms import EmailAuthenticationForm
+from .forms import EmailAuthenticationForm, StyledPasswordResetForm, StyledSetPasswordForm
 from .models import User
 
 
@@ -21,9 +29,37 @@ class EmailLoginView(LoginView):
             send_login_alert_email(self.request.user, self.request)
         return response
 
+    def get_success_url(self):
+        profile = getattr(self.request.user, "profile", None)
+        if profile is not None and not profile.onboarding_complete:
+            return reverse("members:onboarding")
+        return super().get_success_url()
+
 
 class UserLogoutView(LogoutView):
     next_page = reverse_lazy("accounts:login")
+
+
+class MemberPasswordResetView(PasswordResetView):
+    template_name = "accounts/password_reset_form.html"
+    email_template_name = "accounts/password_reset_email.txt"
+    subject_template_name = "accounts/password_reset_subject.txt"
+    success_url = reverse_lazy("accounts:password_reset_done")
+    form_class = StyledPasswordResetForm
+
+
+class MemberPasswordResetDoneView(PasswordResetDoneView):
+    template_name = "accounts/password_reset_done.html"
+
+
+class MemberPasswordResetConfirmView(PasswordResetConfirmView):
+    template_name = "accounts/password_reset_confirm.html"
+    success_url = reverse_lazy("accounts:password_reset_complete")
+    form_class = StyledSetPasswordForm
+
+
+class MemberPasswordResetCompleteView(PasswordResetCompleteView):
+    template_name = "accounts/password_reset_complete.html"
 
 
 def dev_login(request):

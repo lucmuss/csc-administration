@@ -1,0 +1,35 @@
+{% extends 'base.html' %}
+{% block title %}{{ title }}{% endblock %}
+{% block content %}
+  <section class="page-shell">
+    <div class="page-heading">
+      <div>
+        <p class="eyebrow">Mitwirkung</p>
+        <h1>{{ title }}</h1>
+      </div>
+      <div class="hero-actions">
+        <a href="{% url 'participation:shift_calendar' %}" class="btn-ghost">Zum Schichtkalender</a>
+      </div>
+    </div>
+
+    <section class="panel">
+      <div class="panel__header">
+        <div>
+          <p class="panel__eyebrow">Planung</p>
+          <h2>Schicht definieren</h2>
+        </div>
+      </div>
+      <form method="post" class="form-stack">
+        {% csrf_token %}
+        {% for field in form %}
+          <div class="field">
+            <label for="{{ field.id_for_label }}">{{ field.label }}</label>
+            {{ field }}
+            {{ field.errors }}
+          </div>
+        {% endfor %}
+        <button type="submit" class="btn-primary">Schicht speichern</button>
+      </form>
+    </section>
+  </section>
+{% endblock %}

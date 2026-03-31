@@ -5,6 +5,7 @@ from django.conf import settings
 from django.core.exceptions import ValidationError
 from django.db import models, transaction
 from django.db.models import Max
+from django.utils import timezone
 
 
 class Profile(models.Model):
@@ -24,6 +25,25 @@ class Profile(models.Model):
     member_number = models.BigIntegerField(unique=True, null=True, blank=True)
     status = models.CharField(max_length=16, choices=STATUS_CHOICES, default=STATUS_PENDING)
     is_verified = models.BooleanField(default=False)
+    desired_join_date = models.DateField(null=True, blank=True)
+    street_address = models.CharField(max_length=255, blank=True)
+    postal_code = models.CharField(max_length=10, blank=True)
+    city = models.CharField(max_length=120, blank=True)
+    phone = models.CharField(max_length=32, blank=True)
+    bank_name = models.CharField(max_length=150, blank=True)
+    account_holder_name = models.CharField(max_length=255, blank=True)
+    privacy_accepted = models.BooleanField(default=False)
+    direct_debit_accepted = models.BooleanField(default=False)
+    no_other_csc_membership = models.BooleanField(default=False)
+    german_residence_confirmed = models.BooleanField(default=False)
+    minimum_age_confirmed = models.BooleanField(default=False)
+    id_document_confirmed = models.BooleanField(default=False)
+    important_newsletter_opt_in = models.BooleanField(default=False)
+    optional_newsletter_opt_in = models.BooleanField(default=False)
+    instagram_opt_in = models.BooleanField(default=False)
+    telegram_opt_in = models.BooleanField(default=False)
+    application_notes = models.TextField(blank=True)
+    registration_completed_at = models.DateTimeField(null=True, blank=True)
 
     balance = models.DecimalField(max_digits=10, decimal_places=2, default=Decimal("0.00"))
     sepa_mandate = models.OneToOneField(
@@ -71,8 +91,9 @@ class Profile(models.Model):
         return day.strftime("%Y-%m")
 
     def clean(self):
-        if self.birth_date and self.age < 21:
-            raise ValidationError("Mitglied muss mindestens 21 Jahre alt sein.")
+        minimum_age = getattr(settings, "MEMBER_MINIMUM_AGE", 21)
+        if self.birth_date and self.age < minimum_age:
+            raise ValidationError(f"Mitglied muss mindestens {minimum_age} Jahre alt sein.")
 
     @property
     def age(self) -> int:
@@ -121,3 +142,32 @@ class Profile(models.Model):
             max_number = Profile.objects.select_for_update().aggregate(Max("member_number"))["member_number__max"]
             self.member_number = (max_number + 1) if max_number else 100000
             self.save(update_fields=["member_number", "updated_at"])
+
+    @property
+    def onboarding_complete(self) -> bool:
+        has_active_mandate = bool(
+            self.sepa_mandate_id
+            or self.sepa_mandates.filter(is_active=True).exists()
+        )
+        return bool(
+            self.desired_join_date
+            and self.street_address
+            and self.postal_code
+            and self.city
+            and self.phone
+            and self.bank_name
+            and self.account_holder_name
+            and self.privacy_accepted
+            and self.direct_debit_accepted
+            and self.no_other_csc_membership
+            and self.german_residence_confirmed
+            and self.minimum_age_confirmed
+            and self.id_document_confirmed
+            and self.important_newsletter_opt_in
+            and has_active_mandate
+            and self.registration_completed_at
+        )
+
+    def mark_registration_completed(self) -> None:
+        self.registration_completed_at = timezone.now()
+        self.save(update_fields=["registration_completed_at", "updated_at"])

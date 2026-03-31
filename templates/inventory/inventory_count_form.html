@@ -1,28 +1,59 @@
 {% extends 'base.html' %}
 {% block title %}Inventur{% endblock %}
 {% block content %}
-<div class="card">
-  <h1 class="mb-4 text-xl font-semibold">Inventur erfassen</h1>
-  <form method="post" class="space-y-3">
-    {% csrf_token %}
-    <table class="w-full text-left text-sm">
-      <thead>
-        <tr><th>Sorte</th><th>Lagerort</th><th>Ist-Bestand (g)</th><th>Zählwert (g)</th></tr>
-      </thead>
-      <tbody>
-        {% for item in items %}
-        <tr>
-          <td>{{ item.strain.name }}</td>
-          <td>{{ item.location.name }}</td>
-          <td>{{ item.quantity }}</td>
-          <td><input class="w-full border p-2" type="number" step="0.01" min="0" name="item_{{ item.id }}" value="{{ item.quantity }}"></td>
-        </tr>
-        {% empty %}
-        <tr><td colspan="4">Keine Inventarpositionen vorhanden.</td></tr>
-        {% endfor %}
-      </tbody>
-    </table>
-    <button class="bg-csc-900 text-white px-3 py-2" type="submit">Inventur speichern</button>
-  </form>
-</div>
+  <section class="page-shell">
+    <div class="page-heading">
+      <div>
+        <p class="eyebrow">Inventar</p>
+        <h1>Inventur fuer Gramm und Stueck sauber erfassen.</h1>
+        <p class="empty-copy">Die Inventur arbeitet bewusst mit ganzen Zaehlschritten. Blueten laufen in Gramm, Stecklinge und Edibles in Stueck.</p>
+      </div>
+      <div class="hero-actions">
+        <a href="{% url 'inventory:strain_list' %}" class="btn-ghost">Zurueck zu Sorten</a>
+      </div>
+    </div>
+
+    <section class="panel">
+      <div class="panel__header">
+        <div>
+          <p class="panel__eyebrow">Bestandsabgleich</p>
+          <h2>Inventur erfassen</h2>
+        </div>
+      </div>
+      <form method="post" class="form-stack">
+        {% csrf_token %}
+        <div class="table-card">
+          <table class="table">
+            <thead>
+              <tr>
+                <th>Produkt</th>
+                <th>Lagerort</th>
+                <th>Ist-Bestand</th>
+                <th>Zaehlwert</th>
+              </tr>
+            </thead>
+            <tbody>
+              {% for item in items %}
+                <tr>
+                  <td>
+                    <strong>{{ item.strain.name }}</strong>
+                    <div class="table-meta">{{ item.strain.get_product_type_display }}</div>
+                  </td>
+                  <td>{{ item.location.name }}</td>
+                  <td>{{ item.quantity|floatformat:0 }} {{ item.strain.unit_label }}</td>
+                  <td>
+                    <input class="form-input" type="number" step="1" min="0" inputmode="numeric" name="item_{{ item.id }}" value="{{ item.quantity|floatformat:0 }}">
+                    <small class="field-hint">{{ item.strain.unit_label }}</small>
+                  </td>
+                </tr>
+              {% empty %}
+                <tr><td colspan="4">Keine Inventarpositionen vorhanden.</td></tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+        <button class="btn-primary" type="submit">Inventur speichern</button>
+      </form>
+    </section>
+  </section>
 {% endblock %}

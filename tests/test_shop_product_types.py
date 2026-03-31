@@ -16,4 +16,6 @@ def test_shop_filter_shows_cuttings_with_piece_unit(client, member_user):
     assert "Steckling: Orange Bud" in html
     assert "1 Stk." in html
     assert "pro Stueck" in html
+    assert "shop-card-compact__badge" in html
+    assert "--shop-card-bg:" in html
     assert 'aria-label="Blue Dream zum Warenkorb hinzufuegen"' not in html

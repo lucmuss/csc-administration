@@ -4,13 +4,17 @@ from datetime import timedelta
 from urllib import error, request as urllib_request
 from uuid import uuid4
 
+from django.conf import settings
+from django.core.mail import EmailMultiAlternatives
 from django.http import JsonResponse
+from django.template.loader import render_to_string
+from django.urls import reverse
 from django.utils import timezone
 
 from apps.finance.models import Invoice
 from apps.members.models import Profile
 
-from .models import AuditLog, BoardTask, IntegrationDelivery, IntegrationEndpoint, MemberCard, OperationalRecord
+from .models import AuditLog, BoardMeeting, BoardTask, IntegrationDelivery, IntegrationEndpoint, MemberCard, OperationalRecord
 
 
 def record_audit_event(*, actor=None, domain: str, action: str, summary: str, target=None, metadata=None, request=None):
@@ -70,6 +74,97 @@ def issue_member_card(*, profile: Profile, issued_by=None, expires_at=None, note
         card.status = MemberCard.STATUS_ACTIVE
         card.save()
     return card
+
+
+def _site_url() -> str:
+    return (settings.SITE_URL or "http://localhost:8000").rstrip("/")
+
+
+def _eligible_meeting_profiles():
+    return Profile.objects.select_related("user").filter(
+        status__in=[Profile.STATUS_ACTIVE, Profile.STATUS_VERIFIED],
+        is_verified=True,
+    )
+
+
+def _meeting_context(meeting: BoardMeeting) -> dict:
+    agenda_deadline = meeting.scheduled_for - timedelta(days=7)
+    return {
+        "meeting": meeting,
+        "meeting_url": meeting.participation_url or meeting.location or "",
+        "minutes_url": meeting.minutes_url,
+        "meeting_date": timezone.localtime(meeting.scheduled_for),
+        "agenda_deadline": timezone.localtime(agenda_deadline),
+        "agenda_submission_email": meeting.agenda_submission_email or settings.GENERAL_MEETING_AGENDA_SUBMISSION_EMAIL,
+        "club_contact_email": settings.CLUB_CONTACT_EMAIL,
+        "club_contact_phone": settings.CLUB_CONTACT_PHONE,
+        "club_contact_address": settings.CLUB_CONTACT_ADDRESS,
+        "dashboard_url": f"{_site_url()}{reverse('governance:meetings')}",
+    }
+
+
+def _send_meeting_message(*, meeting: BoardMeeting, subject: str, text_template: str, html_template: str) -> int:
+    sent = 0
+    base_context = _meeting_context(meeting)
+    for profile in _eligible_meeting_profiles():
+        context = {**base_context, "profile": profile, "user": profile.user}
+        text_body = render_to_string(text_template, context)
+        html_body = render_to_string(html_template, context)
+        msg = EmailMultiAlternatives(
+            subject=subject,
+            body=text_body,
+            from_email=settings.DEFAULT_FROM_EMAIL,
+            to=[profile.user.email],
+        )
+        msg.attach_alternative(html_body, "text/html")
+        sent += int(msg.send(fail_silently=True) > 0)
+    return sent
+
+
+def send_general_meeting_invitation(*, meeting: BoardMeeting) -> int:
+    if meeting.meeting_type != BoardMeeting.TYPE_GENERAL:
+        return 0
+    sent = _send_meeting_message(
+        meeting=meeting,
+        subject=f"Einladung zur Mitgliederversammlung: {meeting.title}",
+        text_template="emails/governance/meeting_invitation_body.txt",
+        html_template="emails/governance/meeting_invitation_body.html",
+    )
+    meeting.invitation_sent_at = timezone.now()
+    meeting.save(update_fields=["invitation_sent_at", "updated_at"])
+    return sent
+
+
+def send_general_meeting_reminder(*, meeting: BoardMeeting) -> int:
+    if meeting.meeting_type != BoardMeeting.TYPE_GENERAL:
+        return 0
+    sent = _send_meeting_message(
+        meeting=meeting,
+        subject=f"Erinnerung: Mitgliederversammlung {meeting.title}",
+        text_template="emails/governance/meeting_reminder_body.txt",
+        html_template="emails/governance/meeting_reminder_body.html",
+    )
+    meeting.reminder_sent_at = timezone.now()
+    meeting.save(update_fields=["reminder_sent_at", "updated_at"])
+    return sent
+
+
+def send_due_meeting_notifications(*, now=None) -> dict[str, int]:
+    now = now or timezone.now()
+    invitations = 0
+    reminders = 0
+    meetings = BoardMeeting.objects.filter(
+        meeting_type=BoardMeeting.TYPE_GENERAL,
+        status=BoardMeeting.STATUS_PLANNED,
+    )
+    for meeting in meetings:
+        invitation_due = meeting.scheduled_for - timedelta(days=meeting.invitation_lead_days)
+        reminder_due = meeting.scheduled_for - timedelta(hours=meeting.reminder_lead_hours)
+        if not meeting.invitation_sent_at and invitation_due <= now:
+            invitations += send_general_meeting_invitation(meeting=meeting)
+        if not meeting.reminder_sent_at and reminder_due <= now:
+            reminders += send_general_meeting_reminder(meeting=meeting)
+    return {"invitations": invitations, "reminders": reminders}
 
 
 def member_card_qr_svg(card: MemberCard, validation_url: str) -> str:

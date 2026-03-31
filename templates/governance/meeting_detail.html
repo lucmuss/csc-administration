@@ -12,12 +12,59 @@
         <form method="post" class="inline-actions">
           {% csrf_token %}
           <input type="hidden" name="action" value="send_invitation">
-          <button type="submit" class="btn-ghost">Einladung dokumentieren</button>
+          <button type="submit" class="btn-ghost">Einladung senden</button>
+        </form>
+        <form method="post" class="inline-actions">
+          {% csrf_token %}
+          <input type="hidden" name="action" value="send_reminder">
+          <button type="submit" class="btn-ghost">Reminder senden</button>
         </form>
       </div>
     </div>
 
     <section class="board-grid">
+      <article class="panel panel--span-2">
+        <div class="panel__header">
+          <div>
+            <p class="panel__eyebrow">Rahmendaten</p>
+            <h2>Termin, Link und Versandfenster</h2>
+          </div>
+        </div>
+        <form method="post" class="form-stack">
+          {% csrf_token %}
+          <input type="hidden" name="action" value="update">
+          {% for field in meeting_form %}
+            {% if field.name != 'scheduled_date' and field.name != 'scheduled_time' %}
+              <div class="field">
+                <label for="{{ field.id_for_label }}">{{ field.label }}</label>
+                {{ field }}
+                {% if field.help_text %}<small class="field-hint">{{ field.help_text }}</small>{% endif %}
+                {{ field.errors }}
+              </div>
+            {% endif %}
+          {% endfor %}
+          <div class="split-cards">
+            <div class="field">
+              <label for="{{ meeting_form.scheduled_date.id_for_label }}">{{ meeting_form.scheduled_date.label }}</label>
+              {{ meeting_form.scheduled_date }}
+              {% if meeting_form.scheduled_date.help_text %}<small class="field-hint">{{ meeting_form.scheduled_date.help_text }}</small>{% endif %}
+              {{ meeting_form.scheduled_date.errors }}
+            </div>
+            <div class="field">
+              <label for="{{ meeting_form.scheduled_time.id_for_label }}">{{ meeting_form.scheduled_time.label }}</label>
+              {{ meeting_form.scheduled_time }}
+              {% if meeting_form.scheduled_time.help_text %}<small class="field-hint">{{ meeting_form.scheduled_time.help_text }}</small>{% endif %}
+              {{ meeting_form.scheduled_time.errors }}
+            </div>
+          </div>
+          <button type="submit" class="btn-primary">Versammlung aktualisieren</button>
+        </form>
+        <div class="info-strip">
+          <span>Einladung gesendet: {{ meeting.invitation_sent_at|date:"d.m.Y H:i"|default:"-" }}</span>
+          <span>Reminder gesendet: {{ meeting.reminder_sent_at|date:"d.m.Y H:i"|default:"-" }}</span>
+        </div>
+      </article>
+
       <article class="panel panel--span-2">
         <div class="panel__header">
           <div>

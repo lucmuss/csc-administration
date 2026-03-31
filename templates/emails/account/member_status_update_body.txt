@@ -1,0 +1,9 @@
+Hallo {{ user.first_name|default:user.email }},
+
+{{ message }}
+
+Login:
+{{ login_url }}
+
+Dashboard:
+{{ dashboard_url }}

@@ -1,0 +1,17 @@
+Sehr geehrtes Mitglied,
+
+wir laden Sie hiermit herzlich zu unserer naechsten ordentlichen Mitgliederversammlung ein.
+
+Termin: {{ meeting_date|date:"d.m.Y" }} um {{ meeting_date|date:"H:i" }} Uhr
+{% if meeting_url %}Teilnahmelink: {{ meeting_url }}{% endif %}
+{% if meeting.location %}Ort: {{ meeting.location }}{% endif %}
+
+Bitte bereiten Sie sich auf die Tagesordnungspunkte vor und testen Sie vorab Mikrofon und Webcam.
+Die Tagesordnungspunkte muessen spaetestens bis {{ agenda_deadline|date:"d.m.Y H:i" }} bei {{ agenda_submission_email }} eingereicht werden.
+
+{% if minutes_url %}Protokolle bisheriger Versammlungen: {{ minutes_url }}{% endif %}
+
+Bei Rueckfragen erreichen Sie uns unter {{ club_contact_email }}{% if club_contact_phone %} oder {{ club_contact_phone }}{% endif %}.
+{% if club_contact_address %}{{ club_contact_address }}{% endif %}
+
+Wir freuen uns auf Ihre Teilnahme.

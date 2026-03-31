@@ -6,6 +6,7 @@
       <div>
         <p class="eyebrow">Aufgabenboard</p>
         <h1>Vorstands- und Teamaufgaben mit Verantwortlichen, Fristen und Statusfluss.</h1>
+        <p class="lede">Aufgaben koennen weiterhin klassisch aktualisiert werden. Zusaetzlich lassen sie sich jetzt direkt zwischen den Spalten ziehen.</p>
       </div>
       <div class="hero-actions">
         <a href="{% url 'governance:dashboard' %}" class="btn-ghost">Governance</a>
@@ -41,15 +42,15 @@
             <h2>Operative Aufgaben</h2>
           </div>
         </div>
-        <div class="kanban-grid">
+        <div class="kanban-grid" id="task-board">
           {% for column in task_columns %}
-            <section class="kanban-column">
+            <section class="kanban-column" data-task-dropzone="true" data-status="{{ column.status }}">
               <header class="kanban-column__header">
                 <strong>{{ column.label }}</strong>
                 <span>{{ column.tasks|length }}</span>
               </header>
               {% for task in column.tasks %}
-                <article class="task-card task-card--{{ task.priority }}">
+                <article class="task-card task-card--{{ task.priority }}" draggable="true" data-task-card="true" data-task-id="{{ task.id }}" data-current-status="{{ task.status }}">
                   <strong>{{ task.title }}</strong>
                   <p>{{ task.description|default:'Ohne Beschreibung.'|truncatechars:110 }}</p>
                   <div class="task-card__meta">
@@ -60,12 +61,18 @@
                     {% csrf_token %}
                     <input type="hidden" name="action" value="status">
                     <input type="hidden" name="task_id" value="{{ task.id }}">
-                    <select name="status">
+                    <select name="status" class="form-input form-select">
                       {% for next_status, next_label in status_choices %}
                         <option value="{{ next_status }}" {% if task.status == next_status %}selected{% endif %}>{{ next_label }}</option>
                       {% endfor %}
                     </select>
                     <button type="submit" class="btn-ghost btn-ghost--small">Aktualisieren</button>
+                  </form>
+                  <form method="post" class="inline-actions">
+                    {% csrf_token %}
+                    <input type="hidden" name="action" value="delete">
+                    <input type="hidden" name="task_id" value="{{ task.id }}">
+                    <button type="submit" class="btn-ghost btn-ghost--small">Aufgabe loeschen</button>
                   </form>
                 </article>
               {% empty %}
@@ -77,4 +84,53 @@
       </article>
     </section>
   </section>
+{% endblock %}
+{% block extra_js %}
+  <script>
+    (() => {
+      const board = document.getElementById('task-board');
+      if (!board) return;
+
+      let draggedTaskId = null;
+
+      board.querySelectorAll('[data-task-card="true"]').forEach((card) => {
+        card.addEventListener('dragstart', () => {
+          draggedTaskId = card.dataset.taskId;
+          card.classList.add('task-card--dragging');
+        });
+        card.addEventListener('dragend', () => {
+          draggedTaskId = null;
+          card.classList.remove('task-card--dragging');
+          board.querySelectorAll('[data-task-dropzone="true"]').forEach((zone) => zone.classList.remove('kanban-column--drop-target'));
+        });
+      });
+
+      board.querySelectorAll('[data-task-dropzone="true"]').forEach((zone) => {
+        zone.addEventListener('dragover', (event) => {
+          event.preventDefault();
+          zone.classList.add('kanban-column--drop-target');
+        });
+        zone.addEventListener('dragleave', () => {
+          zone.classList.remove('kanban-column--drop-target');
+        });
+        zone.addEventListener('drop', (event) => {
+          event.preventDefault();
+          zone.classList.remove('kanban-column--drop-target');
+          if (!draggedTaskId) return;
+
+          const form = document.createElement('form');
+          form.method = 'post';
+          form.action = '';
+          form.innerHTML = `
+            <input type="hidden" name="csrfmiddlewaretoken" value="{{ csrf_token }}">
+            <input type="hidden" name="action" value="status">
+            <input type="hidden" name="task_id" value="${draggedTaskId}">
+            <input type="hidden" name="status" value="${zone.dataset.status}">
+          `;
+          document.body.appendChild(form);
+          form.submit();
+        });
+      });
+    })();
+  </script>
 {% endblock %}

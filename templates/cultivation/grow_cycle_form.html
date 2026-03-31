@@ -1,85 +1,117 @@
 {% extends "base.html" %}
-{% load static %}
 
 {% block title %}{{ title }} - CSC Administration{% endblock %}
 
 {% block content %}
-<div class="container mx-auto px-4 py-8">
-    <div class="mb-8">
-        <h1 class="text-3xl font-bold text-gray-800 mb-2">{{ title }}</h1>
-        <p class="text-gray-600">Erstellen oder bearbeiten Sie einen Grow Cycle</p>
+  <section class="page-shell">
+    <div class="page-heading">
+      <div>
+        <p class="eyebrow">Cultivation</p>
+        <h1>{{ title }}</h1>
+        <p class="lede">Pflichtfelder sind markiert. Datumsfelder werden direkt im Browser validiert.</p>
+      </div>
+      <div class="hero-actions">
+        <a href="{% url 'cultivation:grow_cycle_list' %}" class="btn-ghost">Zurueck zu Grow Cycles</a>
+      </div>
     </div>
 
-    <div class="max-w-2xl bg-white shadow-md rounded-lg p-6">
-        <form method="post">
-            {% csrf_token %}
-            
-            <div class="mb-6">
-                <label class="block text-sm font-medium text-gray-700 mb-2">{{ form.name.label }}</label>
-                {{ form.name }}
-                {% if form.name.errors %}
-                <p class="mt-1 text-sm text-red-600">{{ form.name.errors.0 }}</p>
-                {% endif %}
-            </div>
+    <section class="board-grid">
+      <article class="panel panel--span-2">
+        <div class="panel__header">
+          <div>
+            <p class="panel__eyebrow">Anbauplanung</p>
+            <h2>Grow Cycle erfassen</h2>
+          </div>
+        </div>
+        <form method="post" class="form-stack" id="grow-cycle-form">
+          {% csrf_token %}
+          {% if form.non_field_errors %}
+            <div class="flash flash--error">{{ form.non_field_errors }}</div>
+          {% endif %}
 
-            <div class="mb-6">
-                <label class="block text-sm font-medium text-gray-700 mb-2">{{ form.description.label }}</label>
-                {{ form.description }}
-                {% if form.description.errors %}
-                <p class="mt-1 text-sm text-red-600">{{ form.description.errors.0 }}</p>
-                {% endif %}
-            </div>
+          <div class="field">
+            <label for="{{ form.name.id_for_label }}">{{ form.name.label }}{% if form.name.field.required %} *{% endif %}</label>
+            {{ form.name }}
+            {% if form.name.help_text %}<small class="field-hint">{{ form.name.help_text }}</small>{% endif %}
+            {{ form.name.errors }}
+          </div>
 
-            <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
-                <div>
-                    <label class="block text-sm font-medium text-gray-700 mb-2">{{ form.start_date.label }}</label>
-                    {{ form.start_date }}
-                    {% if form.start_date.errors %}
-                    <p class="mt-1 text-sm text-red-600">{{ form.start_date.errors.0 }}</p>
-                    {% endif %}
-                </div>
-                <div>
-                    <label class="block text-sm font-medium text-gray-700 mb-2">{{ form.expected_harvest_date.label }}</label>
-                    {{ form.expected_harvest_date }}
-                    {% if form.expected_harvest_date.errors %}
-                    <p class="mt-1 text-sm text-red-600">{{ form.expected_harvest_date.errors.0 }}</p>
-                    {% endif %}
-                </div>
-            </div>
+          <div class="field">
+            <label for="{{ form.description.id_for_label }}">{{ form.description.label }}{% if form.description.field.required %} *{% endif %}</label>
+            {{ form.description }}
+            {{ form.description.errors }}
+          </div>
 
-            <div class="mb-6">
-                <label class="block text-sm font-medium text-gray-700 mb-2">{{ form.responsible_member.label }}</label>
-                {{ form.responsible_member }}
-                {% if form.responsible_member.errors %}
-                <p class="mt-1 text-sm text-red-600">{{ form.responsible_member.errors.0 }}</p>
-                {% endif %}
+          <div class="field-grid">
+            <div class="field">
+              <label for="{{ form.start_date.id_for_label }}">{{ form.start_date.label }}{% if form.start_date.field.required %} *{% endif %}</label>
+              {{ form.start_date }}
+              {% if form.start_date.help_text %}<small class="field-hint">{{ form.start_date.help_text }}</small>{% endif %}
+              {{ form.start_date.errors }}
             </div>
+            <div class="field">
+              <label for="{{ form.expected_harvest_date.id_for_label }}">{{ form.expected_harvest_date.label }}{% if form.expected_harvest_date.field.required %} *{% endif %}</label>
+              {{ form.expected_harvest_date }}
+              {% if form.expected_harvest_date.help_text %}<small class="field-hint">{{ form.expected_harvest_date.help_text }}</small>{% endif %}
+              {{ form.expected_harvest_date.errors }}
+            </div>
+          </div>
 
-            <div class="mb-6">
-                <label class="block text-sm font-medium text-gray-700 mb-2">{{ form.location.label }}</label>
-                {{ form.location }}
-                {% if form.location.errors %}
-                <p class="mt-1 text-sm text-red-600">{{ form.location.errors.0 }}</p>
-                {% endif %}
+          <div class="field-grid">
+            <div class="field">
+              <label for="{{ form.responsible_member.id_for_label }}">{{ form.responsible_member.label }}{% if form.responsible_member.field.required %} *{% endif %}</label>
+              {{ form.responsible_member }}
+              {% if form.responsible_member.help_text %}<small class="field-hint">{{ form.responsible_member.help_text }}</small>{% endif %}
+              {{ form.responsible_member.errors }}
             </div>
+            <div class="field">
+              <label for="{{ form.location.id_for_label }}">{{ form.location.label }}{% if form.location.field.required %} *{% endif %}</label>
+              {{ form.location }}
+              {{ form.location.errors }}
+            </div>
+          </div>
 
-            <div class="mb-6">
-                <label class="block text-sm font-medium text-gray-700 mb-2">{{ form.notes.label }}</label>
-                {{ form.notes }}
-                {% if form.notes.errors %}
-                <p class="mt-1 text-sm text-red-600">{{ form.notes.errors.0 }}</p>
-                {% endif %}
-            </div>
+          <div class="field">
+            <label for="{{ form.notes.id_for_label }}">{{ form.notes.label }}{% if form.notes.field.required %} *{% endif %}</label>
+            {{ form.notes }}
+            {{ form.notes.errors }}
+          </div>
 
-            <div class="flex justify-end space-x-3">
-                <a href="{% url 'cultivation:grow_cycle_list' %}" class="px-4 py-2 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50">
-                    Abbrechen
-                </a>
-                <button type="submit" class="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700">
-                    Speichern
-                </button>
-            </div>
+          <div class="hero-actions">
+            <a href="{% url 'cultivation:grow_cycle_list' %}" class="btn-ghost">Abbrechen</a>
+            <button type="submit" class="btn-primary">Speichern</button>
+          </div>
         </form>
-    </div>
-</div>
+      </article>
+
+      <article class="panel">
+        <div class="panel__header">
+          <div>
+            <p class="panel__eyebrow">Hinweise</p>
+            <h2>Pflichtangaben</h2>
+          </div>
+        </div>
+        <ul class="recommendation-list">
+          <li>Name und Startdatum muessen ausgefuellt sein.</li>
+          <li>Das erwartete Erntedatum muss nach dem Startdatum liegen.</li>
+          <li>Ein verantwortliches Mitglied ist optional, aber fuer die Nachverfolgung hilfreich.</li>
+        </ul>
+      </article>
+    </section>
+  </section>
+{% endblock %}
+
+{% block extra_js %}
+  <script>
+    (() => {
+      const form = document.getElementById('grow-cycle-form');
+      if (!form) return;
+      form.addEventListener('submit', (event) => {
+        if (!form.checkValidity()) {
+          event.preventDefault();
+          form.reportValidity();
+        }
+      });
+    })();
+  </script>
 {% endblock %}

@@ -28,6 +28,7 @@
       "price": "8.00",
       "stock": "48.00",
       "product_type": "flower",
+      "card_tone": "apricot",
       "quality_grade": "A",
       "is_active": true
     },
@@ -39,6 +40,7 @@
       "price": "9.00",
       "stock": "36.00",
       "product_type": "flower",
+      "card_tone": "blush",
       "quality_grade": "A+",
       "is_active": true
     },
@@ -50,6 +52,7 @@
       "price": "8.00",
       "stock": "42.00",
       "product_type": "flower",
+      "card_tone": "sky",
       "quality_grade": "A",
       "is_active": true
     },
@@ -61,6 +64,7 @@
       "price": "9.00",
       "stock": "28.00",
       "product_type": "flower",
+      "card_tone": "sand",
       "quality_grade": "A",
       "is_active": true
     },
@@ -72,6 +76,7 @@
       "price": "9.00",
       "stock": "24.00",
       "product_type": "flower",
+      "card_tone": "apricot",
       "quality_grade": "A+",
       "is_active": true
     },
@@ -83,6 +88,7 @@
       "price": "8.00",
       "stock": "32.00",
       "product_type": "flower",
+      "card_tone": "mint",
       "quality_grade": "A",
       "is_active": true
     },
@@ -94,6 +100,7 @@
       "price": "9.00",
       "stock": "30.00",
       "product_type": "flower",
+      "card_tone": "lilac",
       "quality_grade": "A",
       "is_active": true
     },
@@ -105,6 +112,7 @@
       "price": "7.00",
       "stock": "20.00",
       "product_type": "flower",
+      "card_tone": "sand",
       "quality_grade": "B",
       "is_active": true
     },
@@ -116,6 +124,7 @@
       "price": "5.00",
       "stock": "12.00",
       "product_type": "cutting",
+      "card_tone": "mint",
       "quality_grade": "B",
       "is_active": true
     },
@@ -127,6 +136,7 @@
       "price": "5.00",
       "stock": "10.00",
       "product_type": "cutting",
+      "card_tone": "mint",
       "quality_grade": "B",
       "is_active": true
     },
@@ -138,6 +148,7 @@
       "price": "5.00",
       "stock": "10.00",
       "product_type": "cutting",
+      "card_tone": "sky",
       "quality_grade": "B",
       "is_active": true
     },
@@ -149,6 +160,7 @@
       "price": "5.00",
       "stock": "8.00",
       "product_type": "cutting",
+      "card_tone": "sand",
       "quality_grade": "B",
       "is_active": true
     },
@@ -160,6 +172,7 @@
       "price": "5.00",
       "stock": "8.00",
       "product_type": "cutting",
+      "card_tone": "apricot",
       "quality_grade": "B",
       "is_active": true
     },
@@ -171,6 +184,7 @@
       "price": "5.00",
       "stock": "10.00",
       "product_type": "cutting",
+      "card_tone": "mint",
       "quality_grade": "B",
       "is_active": true
     },
@@ -182,6 +196,7 @@
       "price": "5.00",
       "stock": "8.00",
       "product_type": "cutting",
+      "card_tone": "lilac",
       "quality_grade": "B",
       "is_active": true
     },
@@ -193,6 +208,7 @@
       "price": "5.00",
       "stock": "6.00",
       "product_type": "cutting",
+      "card_tone": "sky",
       "quality_grade": "B",
       "is_active": true
     }

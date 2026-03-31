@@ -1,25 +1,89 @@
 {% extends 'base.html' %}
 {% block title %}Jahresmeldung {{ selected_year }}{% endblock %}
 {% block content %}
-<h1 class="mb-4 text-2xl font-bold">CanG Jahresmeldung {{ selected_year }}</h1>
-<section class="card space-y-2">
-  <p>Generiert am: {{ report.generated_at|date:'d.m.Y H:i' }}</p>
-  <p>Anzahl Abgaben: {{ report.total_orders }}</p>
-  <p>Anzahl Mitglieder: {{ report.total_members }}</p>
-  <p>Abgegebene Menge: {{ report.total_grams }}g</p>
-  <p>Verdachtsfaelle: {{ report.suspicious_cases }}</p>
-</section>
+  <section class="page-shell">
+    <div class="page-heading">
+      <div>
+        <p class="eyebrow">Compliance</p>
+        <h1>CanG-Jahresmeldung {{ selected_year }}</h1>
+        <p class="lede">Bericht zu Abgaben, Mitgliedern und Monatswerten fuer das ausgewaehlte Berichtsjahr.</p>
+      </div>
+      <div class="hero-actions">
+        <a href="{% url 'compliance:annual_report' %}?year={{ selected_year }}&format=csv" class="btn-primary btn-compliance">CSV herunterladen</a>
+        <button type="button" class="btn-ghost" onclick="window.print()">Druckansicht / PDF</button>
+        <a href="{% url 'compliance:dashboard' %}" class="btn-ghost">Zurueck zu Compliance</a>
+      </div>
+    </div>
 
-<section class="card mt-4">
-  <h2 class="mb-2 text-lg font-semibold">Monatswerte</h2>
-  {% if report.report_data.monthly_stats %}
-    <ul class="space-y-1">
-      {% for row in report.report_data.monthly_stats %}
-        <li>{{ row.month }} - {{ row.total_orders }} Abgaben - {{ row.total_grams }}g</li>
-      {% endfor %}
-    </ul>
-  {% else %}
-    <p>Keine Daten fuer dieses Jahr vorhanden.</p>
-  {% endif %}
-</section>
+    <section class="kpi-grid">
+      <article class="kpi-card kpi-card--forest">
+        <span class="kpi-card__label">Abgaben</span>
+        <strong class="kpi-card__value">{{ report.total_orders }}</strong>
+        <small class="kpi-card__detail">Generiert am {{ report.generated_at|date:"d.m.Y H:i" }}</small>
+      </article>
+      <article class="kpi-card kpi-card--sand">
+        <span class="kpi-card__label">Mitglieder</span>
+        <strong class="kpi-card__value">{{ report.total_members }}</strong>
+        <small class="kpi-card__detail">Einbezogen in die Jahresmeldung</small>
+      </article>
+      <article class="kpi-card kpi-card--ink">
+        <span class="kpi-card__label">Gesamtmenge</span>
+        <strong class="kpi-card__value">{{ report.total_grams }} g</strong>
+        <small class="kpi-card__detail">{{ report.suspicious_cases }} Verdachtsfaelle</small>
+      </article>
+    </section>
+
+    <section class="board-grid">
+      <article class="panel">
+        <div class="panel__header">
+          <div>
+            <p class="panel__eyebrow">Berichtsstand</p>
+            <h2>Zusammenfassung</h2>
+          </div>
+        </div>
+        <ul class="detail-list">
+          <li><span>Berichtsjahr</span><strong>{{ selected_year }}</strong></li>
+          <li><span>Abgaben</span><strong>{{ report.total_orders }}</strong></li>
+          <li><span>Mitglieder</span><strong>{{ report.total_members }}</strong></li>
+          <li><span>Gesamtmenge</span><strong>{{ report.total_grams }} g</strong></li>
+          <li><span>Verdachtsfaelle</span><strong>{{ report.suspicious_cases }}</strong></li>
+        </ul>
+      </article>
+
+      <article class="panel panel--span-2">
+        <div class="panel__header">
+          <div>
+            <p class="panel__eyebrow">Monatswerte</p>
+            <h2>Verlauf ueber das Jahr</h2>
+          </div>
+        </div>
+        <div class="table-card">
+          <table class="table">
+            <thead>
+              <tr>
+                <th>Monat</th>
+                <th>Abgaben</th>
+                <th>Gesamtmenge</th>
+              </tr>
+            </thead>
+            <tbody>
+              {% if monthly_rows %}
+                {% for row in monthly_rows %}
+                  <tr>
+                    <td>{{ row.month_display }}</td>
+                    <td>{{ row.total_orders }}</td>
+                    <td>{{ row.total_grams }} g</td>
+                  </tr>
+                {% endfor %}
+              {% else %}
+                <tr>
+                  <td colspan="3">Keine Daten fuer dieses Jahr vorhanden.</td>
+                </tr>
+              {% endif %}
+            </tbody>
+          </table>
+        </div>
+      </article>
+    </section>
+  </section>
 {% endblock %}

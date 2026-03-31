@@ -33,6 +33,7 @@ def test_base_template_contains_pwa_and_mobile_navigation(client):
     assert 'rel="manifest"' in html
     assert 'id="mobile-menu-button"' in html
     assert 'aria-controls="main-nav"' in html
+    assert 'mobile-nav-utilities' in html
     assert "navigator.serviceWorker.register('/offline.js?v=2')" in html
 
 

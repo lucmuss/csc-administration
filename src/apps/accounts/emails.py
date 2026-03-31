@@ -30,6 +30,13 @@ def _absolute_url(request: HttpRequest, route_name: str, fallback_path: str) -> 
         return f"{_app_public_url()}{fallback_path}"
 
 
+def _absolute_url_with_kwargs(request: HttpRequest, route_name: str, fallback_path: str, **kwargs) -> str:
+    try:
+        return request.build_absolute_uri(reverse(route_name, kwargs=kwargs))
+    except (NoReverseMatch, DisallowedHost):
+        return f"{_app_public_url()}{fallback_path}"
+
+
 def _render_subject(template_name: str, context: dict) -> str:
     raw = render_to_string(template_name, context)
     return " ".join(line.strip() for line in raw.splitlines() if line.strip())
@@ -82,4 +89,111 @@ def send_registration_received_email(user, request: HttpRequest, *, is_bootstrap
         to=[user.email],
     )
     msg.attach_alternative(html_body, "text/html")
+    return msg.send(fail_silently=True) > 0
+
+
+def send_membership_status_email(
+    user,
+    request: HttpRequest,
+    *,
+    status_title: str,
+    message: str,
+) -> bool:
+    context = {
+        "user": user,
+        "status_title": status_title,
+        "message": message,
+        "login_url": _absolute_url(request, "accounts:login", "/accounts/login/"),
+        "dashboard_url": _absolute_url(request, "core:dashboard", "/"),
+    }
+
+    subject = _render_subject("emails/account/member_status_update_subject.txt", context)
+    text_body = render_to_string("emails/account/member_status_update_body.txt", context)
+    html_body = render_to_string("emails/account/member_status_update_body.html", context)
+
+    msg = EmailMultiAlternatives(
+        subject=subject,
+        body=text_body,
+        from_email=settings.DEFAULT_FROM_EMAIL,
+        to=[user.email],
+    )
+    msg.attach_alternative(html_body, "text/html")
+    return msg.send(fail_silently=True) > 0
+
+
+def send_membership_documents_email(profile, request: HttpRequest) -> bool:
+    from apps.members.documents import membership_document_attachments
+
+    context = {
+        "user": profile.user,
+        "dashboard_url": _absolute_url(request, "core:dashboard", "/"),
+        "login_url": _absolute_url(request, "accounts:login", "/accounts/login/"),
+    }
+    subject = _render_subject("emails/account/membership_documents_subject.txt", context)
+    text_body = render_to_string("emails/account/membership_documents_body.txt", context)
+    html_body = render_to_string("emails/account/membership_documents_body.html", context)
+
+    msg = EmailMultiAlternatives(
+        subject=subject,
+        body=text_body,
+        from_email=settings.DEFAULT_FROM_EMAIL,
+        to=[profile.user.email],
+    )
+    msg.attach_alternative(html_body, "text/html")
+    for filename, content, mimetype in membership_document_attachments(profile):
+        msg.attach(filename, content, mimetype)
+    return msg.send(fail_silently=True) > 0
+
+
+def send_order_reserved_email(*, order, request: HttpRequest) -> bool:
+    from apps.finance.services import balance_breakdown, render_invoice_pdf
+
+    profile = order.member.profile
+    invoice = getattr(order, "invoice", None)
+    context = {
+        "user": order.member,
+        "order": order,
+        "order_url": _absolute_url_with_kwargs(request, "orders:detail", f"/orders/my/{order.id}/", order_id=order.id),
+        "balance_breakdown": balance_breakdown(profile),
+    }
+    subject = _render_subject("emails/orders/reserved_subject.txt", context)
+    text_body = render_to_string("emails/orders/reserved_body.txt", context)
+    html_body = render_to_string("emails/orders/reserved_body.html", context)
+
+    msg = EmailMultiAlternatives(
+        subject=subject,
+        body=text_body,
+        from_email=settings.DEFAULT_FROM_EMAIL,
+        to=[order.member.email],
+    )
+    msg.attach_alternative(html_body, "text/html")
+    if invoice:
+        msg.attach(f"{invoice.invoice_number}.pdf", render_invoice_pdf(invoice), "application/pdf")
+    return msg.send(fail_silently=True) > 0
+
+
+def send_order_completed_email(*, order, request: HttpRequest) -> bool:
+    from apps.finance.services import balance_breakdown, render_invoice_pdf
+
+    profile = order.member.profile
+    invoice = getattr(order, "invoice", None)
+    context = {
+        "user": order.member,
+        "order": order,
+        "order_url": _absolute_url_with_kwargs(request, "orders:detail", f"/orders/my/{order.id}/", order_id=order.id),
+        "balance_breakdown": balance_breakdown(profile),
+    }
+    subject = _render_subject("emails/orders/completed_subject.txt", context)
+    text_body = render_to_string("emails/orders/completed_body.txt", context)
+    html_body = render_to_string("emails/orders/completed_body.html", context)
+
+    msg = EmailMultiAlternatives(
+        subject=subject,
+        body=text_body,
+        from_email=settings.DEFAULT_FROM_EMAIL,
+        to=[order.member.email],
+    )
+    msg.attach_alternative(html_body, "text/html")
+    if invoice:
+        msg.attach(f"{invoice.invoice_number}.pdf", render_invoice_pdf(invoice), "application/pdf")
     return msg.send(fail_silently=True) > 0

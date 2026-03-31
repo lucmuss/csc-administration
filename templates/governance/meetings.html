@@ -13,23 +13,45 @@
     </div>
 
     <section class="board-grid">
-      <article class="panel">
+      <article class="panel" id="meeting-form">
         <div class="panel__header">
           <div>
             <p class="panel__eyebrow">Neue Sitzung</p>
             <h2>Termin anlegen</h2>
           </div>
         </div>
+        <p class="empty-copy">
+          Fuer Mitgliederversammlungen werden Einladungs- und Reminder-Zeitpunkte pro Termin gespeichert.
+          Standardwerte kommen aus der `.env`, koennen hier aber pro Sitzung angepasst werden.
+        </p>
         <form method="post" class="form-stack">
           {% csrf_token %}
           {% for field in form %}
-            <div class="field">
-              <label for="{{ field.id_for_label }}">{{ field.label }}</label>
-              {{ field }}
-              {% if field.help_text %}<small class="field-hint">{{ field.help_text }}</small>{% endif %}
-              {{ field.errors }}
-            </div>
+            {% if field.name != 'scheduled_date' and field.name != 'scheduled_time' %}
+              <div class="field">
+                <label for="{{ field.id_for_label }}">{{ field.label }}{% if field.field.required %} *{% endif %}</label>
+                {{ field }}
+                {% if field.help_text %}<small class="field-hint">{{ field.help_text }}</small>{% endif %}
+                {{ field.errors }}
+              </div>
+            {% endif %}
           {% endfor %}
+          <div class="split-cards">
+            <div class="field">
+              <label for="{{ form.scheduled_date.id_for_label }}">{{ form.scheduled_date.label }} *</label>
+              {{ form.scheduled_date }}
+              <button type="button" class="btn-ghost btn-ghost--small" data-open-date-picker="{{ form.scheduled_date.id_for_label }}">Kalender oeffnen</button>
+              {% if form.scheduled_date.help_text %}<small class="field-hint">{{ form.scheduled_date.help_text }}</small>{% endif %}
+              {{ form.scheduled_date.errors }}
+            </div>
+            <div class="field">
+              <label for="{{ form.scheduled_time.id_for_label }}">{{ form.scheduled_time.label }} *</label>
+              {{ form.scheduled_time }}
+              <button type="button" class="btn-ghost btn-ghost--small" data-open-time-picker="{{ form.scheduled_time.id_for_label }}">Uhrzeit oeffnen</button>
+              {% if form.scheduled_time.help_text %}<small class="field-hint">{{ form.scheduled_time.help_text }}</small>{% endif %}
+              {{ form.scheduled_time.errors }}
+            </div>
+          </div>
           <button type="submit" class="btn-primary">Sitzung speichern</button>
         </form>
       </article>
@@ -59,7 +81,10 @@
                     <td><a href="{% url 'governance:meeting_detail' meeting.pk %}" class="text-link">{{ meeting.title }}</a></td>
                     <td>{{ meeting.get_meeting_type_display }}</td>
                     <td>{{ meeting.scheduled_for|date:"d.m.Y H:i" }}</td>
-                    <td>{{ meeting.invitation_sent_at|date:"d.m.Y H:i"|default:'-' }}</td>
+                    <td>
+                      <div>{{ meeting.invitation_sent_at|date:"d.m.Y H:i"|default:'-' }}</div>
+                      <div class="table-meta">Reminder {{ meeting.reminder_sent_at|date:"d.m.Y H:i"|default:'-' }}</div>
+                    </td>
                     <td><span class="status-pill status-pill--ink">{{ meeting.get_status_display }}</span></td>
                   </tr>
                 {% endfor %}
@@ -67,9 +92,31 @@
             </table>
           </div>
         {% else %}
-          <p class="empty-copy">Noch keine Sitzungen vorhanden.</p>
+          <p class="empty-copy">Noch keine Sitzungen vorhanden. Lege oben den ersten Termin fuer Vorstand oder Mitgliederversammlung an.</p>
         {% endif %}
       </article>
     </section>
   </section>
+{% endblock %}
+{% block extra_js %}
+  <script>
+    (function () {
+      function bindPicker(selector) {
+        document.querySelectorAll(selector).forEach(function (button) {
+          button.addEventListener('click', function () {
+            var target = document.getElementById(button.dataset.openDatePicker || button.dataset.openTimePicker);
+            if (!target) return;
+            if (typeof target.showPicker === 'function') {
+              target.showPicker();
+            } else {
+              target.focus();
+            }
+          });
+        });
+      }
+
+      bindPicker('[data-open-date-picker]');
+      bindPicker('[data-open-time-picker]');
+    })();
+  </script>
 {% endblock %}

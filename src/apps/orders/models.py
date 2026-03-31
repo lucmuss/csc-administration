@@ -41,6 +41,14 @@ class Order(models.Model):
     def total_grams_display(self) -> str:
         return f"{self.total_grams} g"
 
+    @property
+    def self_cancel_deadline(self):
+        return self.created_at + timedelta(hours=getattr(settings, "ORDER_SELF_CANCEL_HOURS", 24))
+
+    @property
+    def can_self_cancel(self) -> bool:
+        return self.status == self.STATUS_RESERVED and timezone.now() <= self.self_cancel_deadline
+
 
 class OrderItem(models.Model):
     order = models.ForeignKey(Order, on_delete=models.CASCADE, related_name="items")

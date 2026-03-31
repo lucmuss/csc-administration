@@ -12,7 +12,8 @@ from django.utils.dateparse import parse_date, parse_datetime
 
 from apps.accounts.models import User
 from apps.compliance.models import PreventionInfo
-from apps.finance.models import Invoice, Payment, Reminder, SepaMandate
+from apps.finance.models import BalanceTopUp, BalanceTransaction, Invoice, Payment, Reminder, SepaMandate
+from apps.finance.services import add_balance_transaction, ensure_seed_credit, sync_profile_balance
 from apps.governance.models import MemberCard
 from apps.inventory.models import Batch, InventoryCount, InventoryItem, InventoryLocation, Strain
 from apps.members.models import Profile
@@ -88,6 +89,8 @@ class Command(BaseCommand):
         self._safe_delete(Payment)
         self._safe_delete(Reminder)
         self._safe_delete(Invoice)
+        self._safe_delete(BalanceTopUp)
+        self._safe_delete(BalanceTransaction)
         self._safe_delete(Order)
         self._safe_delete(InventoryCount)
         self._safe_delete(InventoryItem)
@@ -139,6 +142,7 @@ class Command(BaseCommand):
             user.save()
 
             profile_data = entry.get("profile", {})
+            target_balance = _parse_decimal(profile_data.get("balance"))
             profile, _ = Profile.objects.update_or_create(
                 user=user,
                 defaults={
@@ -146,7 +150,7 @@ class Command(BaseCommand):
                     "member_number": profile_data.get("member_number"),
                     "status": profile_data.get("status", Profile.STATUS_PENDING),
                     "is_verified": profile_data.get("is_verified", False),
-                    "balance": _parse_decimal(profile_data.get("balance")),
+                    "balance": Decimal("0.00"),
                     "is_locked_for_orders": profile_data.get("is_locked_for_orders", False),
                     "daily_used": _parse_decimal(profile_data.get("daily_used")),
                     "monthly_used": _parse_decimal(profile_data.get("monthly_used")),
@@ -156,6 +160,20 @@ class Command(BaseCommand):
                     "work_hours_done": _parse_decimal(profile_data.get("work_hours_done")),
                 },
             )
+
+            ensure_seed_credit(profile, Decimal("100.00"))
+            balance_delta = target_balance
+            if balance_delta != Decimal("0.00"):
+                reference = f"seed-balance-adjustment-{user.email}"
+                if not BalanceTransaction.objects.filter(profile=profile, reference=reference).exists():
+                    add_balance_transaction(
+                        profile=profile,
+                        amount=balance_delta,
+                        kind=BalanceTransaction.KIND_MANUAL_ADJUSTMENT,
+                        note="Bestehendes Seed-Guthaben",
+                        reference=reference,
+                    )
+            sync_profile_balance(profile)
 
             engagement_data = entry.get("engagement")
             if engagement_data:
@@ -223,6 +241,7 @@ class Command(BaseCommand):
                     "price": _parse_decimal(entry.get("price")),
                     "stock": _parse_decimal(entry.get("stock")),
                     "product_type": entry.get("product_type", Strain.PRODUCT_TYPE_FLOWER),
+                    "card_tone": entry.get("card_tone", Strain.CARD_TONE_APRICOT),
                     "quality_grade": entry.get("quality_grade", Strain.QUALITY_B),
                     "is_active": entry.get("is_active", True),
                 },
@@ -253,13 +272,21 @@ class Command(BaseCommand):
 
     def _seed_activity(self, data, refs):
         for entry in data.get("inventory_counts", []):
-            InventoryCount.objects.update_or_create(
-                date=_parse_date(entry["date"]),
-                defaults={
-                    "items_counted": entry.get("items_counted", 0),
-                    "discrepancies": entry.get("discrepancies", []),
-                },
-            )
+            count_date = _parse_date(entry["date"])
+            existing_counts = InventoryCount.objects.filter(date=count_date).order_by("id")
+            inventory_count = existing_counts.first()
+            if inventory_count:
+                if existing_counts.count() > 1:
+                    existing_counts.exclude(id=inventory_count.id).delete()
+                inventory_count.items_counted = entry.get("items_counted", 0)
+                inventory_count.discrepancies = entry.get("discrepancies", [])
+                inventory_count.save(update_fields=["items_counted", "discrepancies"])
+            else:
+                InventoryCount.objects.create(
+                    date=count_date,
+                    items_counted=entry.get("items_counted", 0),
+                    discrepancies=entry.get("discrepancies", []),
+                )
 
         for entry in data.get("shifts", []):
             shift, _ = Shift.objects.update_or_create(

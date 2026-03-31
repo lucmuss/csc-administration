@@ -1,0 +1,9 @@
+<p>Hallo {{ user.first_name|default:user.email }},</p>
+<p>deine Bestellung <strong>#{{ order.id }}</strong> wurde erfolgreich reserviert.</p>
+<ul>
+  <li>Reserviert bis: {{ order.reserved_until|date:"d.m.Y H:i" }}</li>
+  <li>Bestellwert: {{ order.total }} EUR</li>
+  <li>Verfuegbares Restguthaben: {{ balance_breakdown.available_balance }} EUR</li>
+</ul>
+<p><a href="{{ order_url }}">Bestelldetails ansehen</a></p>
+<p>Die zugehoerige Rechnung ist dieser E-Mail als PDF angehaengt.</p>

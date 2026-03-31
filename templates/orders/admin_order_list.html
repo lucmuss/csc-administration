@@ -1,0 +1,147 @@
+{% extends 'base.html' %}
+{% block title %}Bestellungen verwalten{% endblock %}
+{% block content %}
+  <section class="page-shell">
+    <div class="page-heading">
+      <div>
+        <p class="eyebrow">Bestellungen</p>
+        <h1>Reservierungen, Freigaben und Stornos im Blick.</h1>
+      </div>
+      <div class="hero-actions">
+        <a href="{% url 'core:dashboard' %}" class="btn-ghost">Zurueck zum Cockpit</a>
+      </div>
+    </div>
+
+    <section class="panel">
+      <div class="panel__header">
+        <div>
+          <p class="panel__eyebrow">Filter</p>
+          <h2>Bestellungen finden</h2>
+        </div>
+      </div>
+      <form method="get" class="filter-grid">
+        <div class="field">
+          <label for="q">Suche</label>
+          <input id="q" type="text" name="q" value="{{ filters.q }}" placeholder="Bestellnr., Name oder E-Mail">
+        </div>
+        <div class="field">
+          <label for="status">Status</label>
+          <select id="status" name="status">
+            <option value="">Alle Status</option>
+            {% for value, label in status_choices %}
+              <option value="{{ value }}"{% if filters.status == value %} selected{% endif %}>{{ label }}</option>
+            {% endfor %}
+          </select>
+        </div>
+        <div class="field">
+          <label for="sort">Sortierung</label>
+          <select id="sort" name="sort">
+            <option value="created_desc"{% if filters.sort == 'created_desc' %} selected{% endif %}>Neueste zuerst</option>
+            <option value="created_asc"{% if filters.sort == 'created_asc' %} selected{% endif %}>Aelteste zuerst</option>
+            <option value="total_desc"{% if filters.sort == 'total_desc' %} selected{% endif %}>Betrag absteigend</option>
+            <option value="total_asc"{% if filters.sort == 'total_asc' %} selected{% endif %}>Betrag aufsteigend</option>
+            <option value="status_asc"{% if filters.sort == 'status_asc' %} selected{% endif %}>Status A-Z</option>
+            <option value="status_desc"{% if filters.sort == 'status_desc' %} selected{% endif %}>Status Z-A</option>
+          </select>
+        </div>
+        <div class="field field--actions">
+          <button type="submit" class="btn-primary btn-block">Filter anwenden</button>
+        </div>
+        <div class="field field--actions">
+          <a href="{% url 'orders:admin_list' %}" class="btn-ghost btn-block">Filter zuruecksetzen</a>
+        </div>
+      </form>
+      {% if filters.q or filters.status or filters.sort != 'created_desc' %}
+        <div class="info-strip">
+          <span>Aktive Filter:
+            {% if filters.q %}Suche "{{ filters.q }}"{% endif %}
+            {% if filters.q and filters.status %} · {% endif %}
+            {% if filters.status %}Status {{ filters.status }}{% endif %}
+            {% if filters.q or filters.status %} · {% endif %}
+            Sortierung {{ filters.sort }}
+          </span>
+          <span>{{ page_obj.paginator.count }} Treffer gesamt</span>
+        </div>
+      {% endif %}
+    </section>
+
+    <section class="panel">
+      <div class="panel__header">
+        <div>
+          <p class="panel__eyebrow">Uebersicht</p>
+          <h2>{{ page_obj.paginator.count }} Bestellungen insgesamt</h2>
+        </div>
+      </div>
+      <div class="table-card">
+        <table class="table table--compact">
+          <thead>
+            <tr>
+              <th>Bestellung</th>
+              <th>Mitglied</th>
+              <th>Status</th>
+              <th>Gesamt</th>
+              <th>Positionen</th>
+              <th>Aktion</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for order in page_obj %}
+              <tr>
+                <td>
+                  <a href="{% url 'orders:detail' order.id %}" class="text-link"><strong>#{{ order.id }}</strong></a>
+                  <div class="table-meta">{{ order.created_at|date:"d.m.Y H:i" }}</div>
+                </td>
+                <td>
+                  <a href="{% url 'members:detail' order.member.profile.id %}" class="text-link">
+                    {{ order.member.full_name|default:order.member.email }}
+                  </a>
+                  <div class="table-meta">{{ order.member.email }}</div>
+                </td>
+                <td><span class="status-pill status-pill--ink">{{ order.get_status_display }}</span></td>
+                <td>
+                  <strong>{{ order.total }} EUR</strong>
+                  <div class="table-meta">{{ order.total_grams }} g · belastet {{ order.paid_with_balance }} EUR</div>
+                </td>
+                <td>
+                  {% for item in order.items.all %}
+                    <div class="table-meta">{{ item.strain.name }} · {{ item.quantity_display }}</div>
+                  {% empty %}
+                    <div class="table-meta">Keine Positionen</div>
+                  {% endfor %}
+                </td>
+                <td>
+                  {% if order.status == 'reserved' %}
+                    <form method="post" action="{% url 'orders:admin_action' order.id %}" class="inline-actions inline-actions--stacked">
+                      {% csrf_token %}
+                      <input type="hidden" name="next" value="{{ request.get_full_path }}">
+                      <a href="{% url 'orders:detail' order.id %}" class="btn-ghost btn-ghost--small">Details</a>
+                      <button type="submit" name="action" value="complete" class="btn-ghost btn-ghost--small">Ausgeben & abbuchen</button>
+                      <button type="submit" name="action" value="cancel" class="btn-ghost btn-ghost--small">Stornieren</button>
+                    </form>
+                  {% else %}
+                    <a href="{% url 'orders:detail' order.id %}" class="btn-ghost btn-ghost--small">Details</a>
+                  {% endif %}
+                </td>
+              </tr>
+            {% empty %}
+              <tr>
+                <td colspan="6">Noch keine Bestellungen vorhanden.</td>
+              </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+      {% if page_obj.paginator.num_pages > 1 %}
+        <div class="pagination-bar">
+          {% if page_obj.has_previous %}
+            <a href="?page={{ page_obj.previous_page_number }}&q={{ filters.q|urlencode }}&status={{ filters.status|urlencode }}&sort={{ filters.sort|urlencode }}" class="btn-ghost btn-ghost--small">Zurueck</a>
+          {% endif %}
+          <span>Seite {{ page_obj.number }} von {{ page_obj.paginator.num_pages }}</span>
+          {% if page_obj.has_next %}
+            <a href="?page={{ page_obj.next_page_number }}&q={{ filters.q|urlencode }}&status={{ filters.status|urlencode }}&sort={{ filters.sort|urlencode }}" class="btn-ghost btn-ghost--small">Weiter</a>
+          {% endif %}
+        </div>
+      {% endif %}
+    </section>
+  </section>
+{% endblock %}

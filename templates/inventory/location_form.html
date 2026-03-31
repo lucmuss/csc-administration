@@ -1,0 +1,50 @@
+{% extends 'base.html' %}
+{% block title %}Lagerort{% endblock %}
+{% block content %}
+  <section class="page-shell">
+    <div class="page-heading">
+      <div>
+        <p class="eyebrow">Inventar</p>
+        <h1>{{ title }}</h1>
+      </div>
+      <div class="hero-actions">
+        <a href="{% url 'inventory:location_list' %}" class="btn-ghost">Zurueck zu Lagerorten</a>
+      </div>
+    </div>
+
+    <section class="board-grid">
+      <article class="panel panel--span-2">
+        <div class="panel__header">
+          <div>
+            <p class="panel__eyebrow">Lagerstruktur</p>
+            <h2>Stammdaten pflegen</h2>
+          </div>
+        </div>
+        <form method="post" class="form-stack">
+          {% csrf_token %}
+          {% for field in form %}
+            <div class="field">
+              <label for="{{ field.id_for_label }}">{{ field.label }}{% if field.field.required %} *{% endif %}</label>
+              {{ field }}
+              {% if field.help_text %}<small class="field-hint">{{ field.help_text }}</small>{% endif %}
+              {{ field.errors }}
+            </div>
+          {% endfor %}
+          <button type="submit" class="btn-primary">Lagerort speichern</button>
+        </form>
+      </article>
+
+      <article class="panel">
+        <div class="panel__header">
+          <div>
+            <p class="panel__eyebrow">Hinweis</p>
+            <h2>Kapazitaet</h2>
+          </div>
+        </div>
+        <p class="empty-copy">
+          Nutze Gramm als Kapazitaetswert fuer Lagerplaetze, damit Inventur und Auslastung spaeter sauber vergleichbar bleiben.
+        </p>
+      </article>
+    </section>
+  </section>
+{% endblock %}

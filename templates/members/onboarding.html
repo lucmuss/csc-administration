@@ -1,0 +1,165 @@
+{% extends 'base.html' %}
+{% block title %}Registrierung vervollstaendigen{% endblock %}
+{% block content %}
+  <section class="page-shell">
+    <div class="page-heading">
+      <div>
+        <p class="eyebrow">Profil vervollstaendigen</p>
+        <h1>Bitte hinterlege jetzt deine vollstaendigen Kontakt- und Finanzdaten.</h1>
+      </div>
+    </div>
+
+    <section class="board-grid">
+      <article class="panel">
+        <div class="panel__header">
+          <div>
+            <p class="panel__eyebrow">Hinweise</p>
+            <h2>Warum dieser Schritt noetig ist</h2>
+          </div>
+        </div>
+        <p class="empty-copy">
+          Nach der Kontoerstellung brauchen wir noch deine vollstaendigen Stammdaten und die aktive
+          SEPA-Bankverbindung. Erst danach ist dein Zugang im Clubsystem vollstaendig einsatzbereit.
+        </p>
+        <ul class="detail-list">
+          <li><span>E-Mail</span><strong>{{ profile.user.email }}</strong></li>
+          <li><span>Name</span><strong>{{ profile.user.full_name }}</strong></li>
+          <li><span>Geburtsdatum</span><strong>{{ profile.birth_date|date:"d.m.Y" }}</strong></li>
+          <li><span>Frist</span><strong>{% if engagement and engagement.registration_deadline %}{{ engagement.registration_deadline|date:"d.m.Y" }}{% else %}-{% endif %}</strong></li>
+        </ul>
+      </article>
+
+      <article class="panel panel--span-2">
+        <div class="panel__header">
+          <div>
+            <p class="panel__eyebrow">Pflichtformular</p>
+            <h2>Vollstaendige Aufnahmeangaben</h2>
+          </div>
+        </div>
+        <form method="post" class="form-stack">
+          {% csrf_token %}
+          <div class="panel">
+            <div class="panel__header">
+              <div>
+                <p class="panel__eyebrow">Stammdaten</p>
+                <h2>Aufnahme und Kontakt</h2>
+              </div>
+            </div>
+            <div class="form-stack">
+              <div class="field-grid">
+                <div class="field">
+                  <label for="{{ form.desired_join_date.id_for_label }}">Aufnahmedatum</label>
+                  {{ form.desired_join_date }}
+                  {{ form.desired_join_date.errors }}
+                  <small class="field-hint">{{ form.desired_join_date.help_text }}</small>
+                </div>
+                <div class="field">
+                  <label for="{{ form.phone.id_for_label }}">Telefonnummer</label>
+                  {{ form.phone }}
+                  {{ form.phone.errors }}
+                </div>
+              </div>
+              <div class="field">
+                <label for="{{ form.street_address.id_for_label }}">Strasse, Hausnummer</label>
+                {{ form.street_address }}
+                {{ form.street_address.errors }}
+              </div>
+              <div class="field-grid">
+                <div class="field">
+                  <label for="{{ form.postal_code.id_for_label }}">Postleitzahl</label>
+                  {{ form.postal_code }}
+                  {{ form.postal_code.errors }}
+                </div>
+                <div class="field">
+                  <label for="{{ form.city.id_for_label }}">Stadt</label>
+                  {{ form.city }}
+                  {{ form.city.errors }}
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div class="panel">
+            <div class="panel__header">
+              <div>
+                <p class="panel__eyebrow">Finanzdaten</p>
+                <h2>SEPA und Bankverbindung</h2>
+              </div>
+            </div>
+            <div class="form-stack">
+              <div class="field-grid">
+                <div class="field">
+                  <label for="{{ form.iban.id_for_label }}">IBAN</label>
+                  {{ form.iban }}
+                  {{ form.iban.errors }}
+                </div>
+                <div class="field">
+                  <label for="{{ form.bic.id_for_label }}">BIC</label>
+                  {{ form.bic }}
+                  {{ form.bic.errors }}
+                </div>
+              </div>
+              <div class="field-grid">
+                <div class="field">
+                  <label for="{{ form.bank_name.id_for_label }}">Kreditinstitut</label>
+                  {{ form.bank_name }}
+                  {{ form.bank_name.errors }}
+                </div>
+                <div class="field">
+                  <label for="{{ form.account_holder_name.id_for_label }}">Kontoinhaber</label>
+                  {{ form.account_holder_name }}
+                  {{ form.account_holder_name.errors }}
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div class="panel">
+            <div class="panel__header">
+              <div>
+                <p class="panel__eyebrow">Bestaetigungen</p>
+                <h2>Pflichtangaben und Selbstauskunft</h2>
+              </div>
+            </div>
+            <div class="form-stack">
+              <label>{{ form.privacy_accepted }} Ich habe die <a href="{% url 'core:privacy' %}" class="text-link" target="_blank" rel="noopener">Datenschutzerklaerung</a> gelesen und verstanden.</label>
+              {{ form.privacy_accepted.errors }}
+              <label>{{ form.direct_debit_accepted }} Ich ermaechtige den Verein zum Lastschrifteinzug des Mitgliedsbeitrags.</label>
+              {{ form.direct_debit_accepted.errors }}
+              <label>{{ form.no_other_csc_membership }} Ich bin kein Mitglied in einer anderen Anbaugemeinschaft.</label>
+              {{ form.no_other_csc_membership.errors }}
+              <label>{{ form.german_residence_confirmed }} Ich habe seit mindestens 6 Monaten einen festen Wohnsitz in Deutschland.</label>
+              {{ form.german_residence_confirmed.errors }}
+              <label>{{ form.minimum_age_confirmed }} {{ form.minimum_age_confirmed.label }}</label>
+              {{ form.minimum_age_confirmed.errors }}
+              <label>{{ form.id_document_confirmed }} Meine Ausweisdaten sind aktuell und korrekt.</label>
+              {{ form.id_document_confirmed.errors }}
+              <label>{{ form.important_newsletter_opt_in }} Ich moechte wichtige organisatorische Informationen per E-Mail erhalten.</label>
+              {{ form.important_newsletter_opt_in.errors }}
+            </div>
+          </div>
+
+          <div class="panel">
+            <div class="panel__header">
+              <div>
+                <p class="panel__eyebrow">Newsletter</p>
+                <h2>Optionale Preislisten und Updates</h2>
+              </div>
+            </div>
+            {{ form.optional_newsletter_opt_in }}
+            {{ form.optional_newsletter_opt_in.errors }}
+            <p class="field-hint">Diese Auswahl steuert die optionale E-Mail-Gruppe fuer Preislisten, Angebote und Verfuegbarkeiten.</p>
+          </div>
+
+          <div class="field">
+            <label for="{{ form.application_notes.id_for_label }}">Weitere Hinweise</label>
+            {{ form.application_notes }}
+            {{ form.application_notes.errors }}
+          </div>
+
+          <button type="submit" class="btn-primary btn-block">Profil jetzt vervollstaendigen</button>
+        </form>
+      </article>
+    </section>
+  </section>
+{% endblock %}

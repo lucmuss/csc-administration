@@ -8,7 +8,12 @@
         <h1>{% if board_mode %}Forderungen, SEPA und Zahlungslage des Clubs.{% else %}Rechnungen, SEPA-Mandat und Zahlungshistorie.{% endif %}</h1>
       </div>
       <div class="hero-actions">
-        <a href="{% url 'finance:mandate_create' %}" class="btn-primary">SEPA-Mandat anlegen</a>
+        {% if board_mode %}
+          <a href="{% url 'finance:mandate_create' %}" class="btn-primary">SEPA-Mandat anlegen</a>
+        {% else %}
+          <a href="#guthaben" class="btn-primary">Guthaben</a>
+          <a href="{% url 'finance:mandate_create' %}" class="btn-ghost">{% if active_mandate %}SEPA-Mandat verwalten{% else %}SEPA-Mandat anlegen{% endif %}</a>
+        {% endif %}
         <a href="{% url 'finance:invoice_list' %}" class="btn-ghost">Rechnungen</a>
       </div>
     </div>
@@ -18,7 +23,7 @@
         <article class="kpi-card kpi-card--forest">
           <span class="kpi-card__label">Offene Rechnungen</span>
           <strong class="kpi-card__value">{{ summary.open_invoice_count }}</strong>
-          <small class="kpi-card__detail">vereinsweit offen</small>
+          <small class="kpi-card__detail"><a href="{% url 'finance:invoice_list' %}" class="text-link">vereinsweit offen</a></small>
         </article>
         <article class="kpi-card kpi-card--sand">
           <span class="kpi-card__label">Ausstehende SEPA</span>
@@ -29,6 +34,84 @@
           <span class="kpi-card__label">Offener Betrag</span>
           <strong class="kpi-card__value">{{ summary.outstanding_total }} EUR</strong>
           <small class="kpi-card__detail">{{ summary.returned_payment_count }} Ruecklaeufer</small>
+        </article>
+      </section>
+    {% endif %}
+
+    {% if not board_mode and profile %}
+      <section id="guthaben" class="board-grid">
+        <article class="panel panel--span-2">
+          <div class="panel__header">
+            <div>
+              <p class="panel__eyebrow">Guthaben</p>
+              <h2>Aktueller Stand und Herkunft</h2>
+            </div>
+          </div>
+          <div class="kpi-grid">
+            <article class="kpi-card kpi-card--forest">
+              <span class="kpi-card__label">Gesamtguthaben</span>
+              <strong class="kpi-card__value">{{ balance_breakdown.current_balance }} EUR</strong>
+              <small class="kpi-card__detail">{{ balance_breakdown.available_balance }} EUR aktuell verfuegbar</small>
+            </article>
+            <article class="kpi-card kpi-card--sand">
+              <span class="kpi-card__label">Mitgliedsbeitraege</span>
+              <strong class="kpi-card__value">{{ balance_breakdown.membership_contributions }} EUR</strong>
+              <small class="kpi-card__detail">eingegangene Vereinsbeitraege</small>
+            </article>
+            <article class="kpi-card kpi-card--ink">
+              <span class="kpi-card__label">Aufladungen</span>
+              <strong class="kpi-card__value">{{ balance_breakdown.topups }} EUR</strong>
+              <small class="kpi-card__detail">virtuell per Guthaben-Top-up</small>
+            </article>
+          </div>
+          <div class="info-strip">
+            <span>Reservierte Bestellungen: {{ balance_breakdown.reserved_orders }} EUR</span>
+            <span>Bestellabbuchung erfolgt erst bei Ausgabe/Freigabe.</span>
+          </div>
+          <div class="split-cards">
+            <div class="mini-panel">
+              <h3>Stripe-Aufladung</h3>
+              <form method="post" action="{% url 'finance:topup_create' %}" class="form-stack">
+                {% csrf_token %}
+                <div class="field">
+                  <label for="{{ topup_form.preset_amount.id_for_label }}">Schnellauswahl</label>
+                  {{ topup_form.preset_amount }}
+                </div>
+                <div class="field">
+                  <label for="{{ topup_form.amount.id_for_label }}">Eigener Betrag in EUR</label>
+                  {{ topup_form.amount }}
+                  <small class="field-hint">Nur noetig, wenn du in der Schnellauswahl `Eigener Betrag` waehlst. Es sind nur positive Euro-Betraege erlaubt.</small>
+                </div>
+                <button type="submit" class="btn-primary">Mit Stripe aufladen</button>
+              </form>
+            </div>
+            <div class="mini-panel">
+              <h3>Mandat und Verlauf</h3>
+              {% if active_mandate %}
+                <div class="info-strip">
+                  <span>SEPA aktiv: {{ active_mandate.iban_masked }}</span>
+                  <span>{{ active_mandate.account_holder }}</span>
+                </div>
+              {% else %}
+                <p class="empty-copy">Noch kein aktives SEPA-Mandat hinterlegt.</p>
+              {% endif %}
+              {% if recent_balance_transactions %}
+                <ul class="stack-list stack-list--compact">
+                  {% for entry in recent_balance_transactions %}
+                    <li class="stack-list__item">
+                      <div>
+                        <strong>{{ entry.get_kind_display }}</strong>
+                        <small>{{ entry.note|default:"-" }} · {{ entry.created_at|date:"d.m.Y H:i" }}</small>
+                      </div>
+                      <span class="status-pill {% if entry.amount >= 0 %}status-pill--active{% else %}status-pill--sand{% endif %}">{{ entry.amount }} EUR</span>
+                    </li>
+                  {% endfor %}
+                </ul>
+              {% else %}
+                <p class="empty-copy">Noch keine Guthabenbewegungen vorhanden.</p>
+              {% endif %}
+            </div>
+          </div>
         </article>
       </section>
     {% endif %}
@@ -46,7 +129,7 @@
             {% for invoice in open_invoices %}
               <li class="stack-list__item">
                 <div>
-                  <strong>{{ invoice.invoice_number }}</strong>
+                  <a href="{% url 'finance:invoice_detail' invoice.id %}" class="text-link"><strong>{{ invoice.invoice_number }}</strong></a>
                   <small>
                     {% if board_mode %}
                       {{ invoice.profile.user.full_name|default:invoice.profile.user.email }}
@@ -92,4 +175,44 @@
       </article>
     </section>
   </section>
+{% endblock %}
+{% block extra_js %}
+  {% if topup_form %}
+    <script>
+      (function () {
+        const preset = document.getElementById('{{ topup_form.preset_amount.id_for_label }}');
+        const amount = document.getElementById('{{ topup_form.amount.id_for_label }}');
+        if (!preset || !amount) return;
+
+        function syncTopupFields() {
+          const customSelected = preset.value === 'custom';
+          amount.disabled = !customSelected;
+          amount.required = customSelected;
+          if (!customSelected) {
+            amount.value = '';
+            amount.setCustomValidity('');
+          }
+        }
+
+        function validateAmount() {
+          if (amount.disabled) {
+            amount.setCustomValidity('');
+            return;
+          }
+          const value = Number.parseFloat(amount.value.replace(',', '.'));
+          if (!amount.value) {
+            amount.setCustomValidity('Bitte gib einen positiven Betrag ein.');
+          } else if (!Number.isFinite(value) || value <= 0) {
+            amount.setCustomValidity('Bitte gib einen positiven Betrag ein.');
+          } else {
+            amount.setCustomValidity('');
+          }
+        }
+
+        preset.addEventListener('change', syncTopupFields);
+        amount.addEventListener('input', validateAmount);
+        syncTopupFields();
+      })();
+    </script>
+  {% endif %}
 {% endblock %}

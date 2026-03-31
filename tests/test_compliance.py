@@ -1,7 +1,59 @@
 from decimal import Decimal
+from datetime import date
 
 import pytest
+from django.urls import reverse
 from django.utils import timezone
+
+from apps.accounts.models import User
+from apps.finance.models import SepaMandate
+from apps.members.models import Profile
+
+
+@pytest.fixture
+def board_user(db):
+    user = User.objects.create_user(
+        email="board-compliance@example.com",
+        password="StrongPass123!",
+        first_name="Bea",
+        last_name="Board",
+        role=User.ROLE_BOARD,
+        is_staff=True,
+    )
+    profile = Profile.objects.create(
+        user=user,
+        birth_date=date(1985, 5, 5),
+        status=Profile.STATUS_ACTIVE,
+        is_verified=True,
+        member_number=100500,
+        desired_join_date=date(2026, 4, 1),
+        street_address="Vorstandsweg 5",
+        postal_code="04107",
+        city="Leipzig",
+        phone="+491701234567",
+        bank_name="GLS Bank",
+        account_holder_name="Bea Board",
+        privacy_accepted=True,
+        direct_debit_accepted=True,
+        no_other_csc_membership=True,
+        german_residence_confirmed=True,
+        minimum_age_confirmed=True,
+        id_document_confirmed=True,
+        important_newsletter_opt_in=True,
+        registration_completed_at=timezone.now(),
+        monthly_counter_key=date.today().strftime("%Y-%m"),
+    )
+    mandate = SepaMandate.objects.create(
+        profile=profile,
+        iban="DE44500105175407324931",
+        bic="INGDDEFFXXX",
+        account_holder="Bea Board",
+        mandate_reference="CSC-FIXTURE-BOARD",
+        is_active=True,
+    )
+    profile.sepa_mandate = mandate
+    profile.save(update_fields=["sepa_mandate", "updated_at"])
+    return user
 
 
 @pytest.mark.django_db
@@ -65,3 +117,17 @@ def test_annual_report_generation_aggregates_orders_and_suspicious_cases(member_
     assert report.total_grams == Decimal("10.00")
     assert report.suspicious_cases == 1
     assert isinstance(report.report_data.get("monthly_stats"), list)
+
+
+@pytest.mark.django_db
+def test_annual_report_csv_export_downloads(client, board_user):
+    client.force_login(board_user)
+
+    response = client.get(reverse("compliance:annual_report"), {"year": timezone.localdate().year, "format": "csv"})
+
+    assert response.status_code == 200
+    assert response["Content-Type"].startswith("text/csv")
+    assert "attachment;" in response["Content-Disposition"]
+    content = response.content.decode("utf-8")
+    assert "Kennzahl,Wert" in content
+    assert "Monat,Abgaben,Gesamtmenge (g)" in content

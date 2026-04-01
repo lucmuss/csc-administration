@@ -7,15 +7,17 @@ from django.urls import reverse
 
 from apps.accounts.models import User
 
-from .forms import BalanceTopUpForm, SepaMandateForm
-from .models import BalanceTopUp, BalanceTransaction, Invoice, Payment
+from .forms import BalanceTopUpForm, SepaMandateForm, UploadedInvoiceForm, UploadedInvoiceUpdateForm
+from .models import BalanceTopUp, BalanceTransaction, Invoice, Payment, UploadedInvoice
 from .services import (
     active_sepa_mandate,
+    analyze_uploaded_invoice,
     apply_monthly_membership_credits,
     balance_breakdown,
     create_sepa_mandate,
     create_stripe_checkout_for_topup,
     finalize_stripe_topup,
+    invoice_archive_summary,
     render_invoice_pdf,
 )
 
@@ -216,3 +218,89 @@ def topup_success(request):
     else:
         messages.warning(request, "Die Stripe-Zahlung ist noch nicht bestaetigt. Bitte pruefe es gleich erneut.")
     return redirect("finance:dashboard")
+
+
+@login_required
+def archive(request):
+    if request.user.role not in {User.ROLE_STAFF, User.ROLE_BOARD}:
+        raise Http404
+
+    if request.method == "POST":
+        form = UploadedInvoiceForm(request.POST, request.FILES, current_user=request.user)
+        if form.is_valid():
+            uploaded_invoice = form.save(commit=False)
+            uploaded_invoice.created_by = request.user
+            uploaded_invoice.save()
+            analyze_uploaded_invoice(uploaded_invoice)
+            if uploaded_invoice.extraction_status == UploadedInvoice.EXTRACTION_SUCCESS:
+                messages.success(request, "Rechnung gespeichert und per KI analysiert.")
+            else:
+                messages.warning(
+                    request,
+                    "Rechnung gespeichert. Die KI-Auswertung konnte nicht vollstaendig abgeschlossen werden.",
+                )
+            return redirect("finance:archive_detail", pk=uploaded_invoice.pk)
+    else:
+        form = UploadedInvoiceForm(current_user=request.user)
+
+    invoices = UploadedInvoice.objects.select_related("assigned_to", "created_by").all()
+    direction = request.GET.get("direction", "").strip()
+    payment_status = request.GET.get("payment_status", "").strip()
+    year = request.GET.get("year", "").strip()
+    month = request.GET.get("month", "").strip()
+    if direction:
+        invoices = invoices.filter(direction=direction)
+    if payment_status:
+        invoices = invoices.filter(payment_status=payment_status)
+    if year.isdigit():
+        invoices = invoices.filter(issue_date__year=int(year))
+    if month.isdigit():
+        invoices = invoices.filter(issue_date__month=int(month))
+
+    years = UploadedInvoice.objects.exclude(issue_date__isnull=True).dates("issue_date", "year", order="DESC")
+    return render(
+        request,
+        "finance/archive.html",
+        {
+            "form": form,
+            "invoices": invoices,
+            "years": years,
+            "filters": {
+                "direction": direction,
+                "payment_status": payment_status,
+                "year": year,
+                "month": month,
+            },
+            "summary": invoice_archive_summary(invoices),
+        },
+    )
+
+
+@login_required
+def archive_detail(request, pk: int):
+    if request.user.role not in {User.ROLE_STAFF, User.ROLE_BOARD}:
+        raise Http404
+    uploaded_invoice = get_object_or_404(UploadedInvoice.objects.select_related("assigned_to", "created_by"), pk=pk)
+    if request.method == "POST":
+        if request.POST.get("action") == "reanalyze":
+            analyze_uploaded_invoice(uploaded_invoice)
+            if uploaded_invoice.extraction_status == UploadedInvoice.EXTRACTION_SUCCESS:
+                messages.success(request, "Rechnung erneut analysiert.")
+            else:
+                messages.warning(request, "Die erneute Analyse konnte nicht vollstaendig abgeschlossen werden.")
+            return redirect("finance:archive_detail", pk=uploaded_invoice.pk)
+        form = UploadedInvoiceUpdateForm(request.POST, instance=uploaded_invoice)
+        if form.is_valid():
+            form.save()
+            messages.success(request, "Rechnung aktualisiert.")
+            return redirect("finance:archive_detail", pk=uploaded_invoice.pk)
+    else:
+        form = UploadedInvoiceUpdateForm(instance=uploaded_invoice)
+    return render(
+        request,
+        "finance/archive_detail.html",
+        {
+            "uploaded_invoice": uploaded_invoice,
+            "form": form,
+        },
+    )

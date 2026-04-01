@@ -9,7 +9,8 @@
       </div>
       <div class="hero-actions">
         {% if board_mode %}
-          <a href="{% url 'finance:mandate_create' %}" class="btn-primary">SEPA-Mandat anlegen</a>
+          <a href="{% url 'finance:archive' %}" class="btn-primary">Rechnungsarchiv</a>
+          <a href="{% url 'finance:mandate_create' %}" class="btn-ghost">SEPA-Mandat anlegen</a>
         {% else %}
           <a href="#guthaben" class="btn-primary">Guthaben</a>
           <a href="{% url 'finance:mandate_create' %}" class="btn-ghost">{% if active_mandate %}SEPA-Mandat verwalten{% else %}SEPA-Mandat anlegen{% endif %}</a>

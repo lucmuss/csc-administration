@@ -42,6 +42,19 @@ def _render_subject(template_name: str, context: dict) -> str:
     return " ".join(line.strip() for line in raw.splitlines() if line.strip())
 
 
+def _club_email_context() -> dict:
+    return {
+        "club_name": settings.CLUB_NAME,
+        "club_contact_email": settings.CLUB_CONTACT_EMAIL,
+        "club_contact_phone": settings.CLUB_CONTACT_PHONE,
+        "club_contact_address": settings.CLUB_CONTACT_ADDRESS,
+        "club_membership_email": settings.CLUB_MEMBERSHIP_EMAIL,
+        "club_prevention_email": settings.CLUB_PREVENTION_EMAIL,
+        "club_finance_email": settings.CLUB_FINANCE_EMAIL,
+        "club_language_notice": settings.CLUB_LANGUAGE_NOTICE,
+    }
+
+
 def send_login_alert_email(user, request: HttpRequest) -> bool:
     ip_address, user_agent = _request_meta(request)
     context = {
@@ -54,6 +67,7 @@ def send_login_alert_email(user, request: HttpRequest) -> bool:
             request, "admin:password_change", "/admin/password_change/"
         ),
     }
+    context.update(_club_email_context())
 
     subject = _render_subject("emails/account/login_alert_subject.txt", context)
     text_body = render_to_string("emails/account/login_alert_body.txt", context)
@@ -77,6 +91,7 @@ def send_registration_received_email(user, request: HttpRequest, *, is_bootstrap
         "login_url": _absolute_url(request, "accounts:login", "/accounts/login/"),
         "dashboard_url": _absolute_url(request, "core:dashboard", "/"),
     }
+    context.update(_club_email_context())
 
     subject = _render_subject("emails/account/registration_received_subject.txt", context)
     text_body = render_to_string("emails/account/registration_received_body.txt", context)
@@ -98,6 +113,7 @@ def send_membership_status_email(
     *,
     status_title: str,
     message: str,
+    profile=None,
 ) -> bool:
     context = {
         "user": user,
@@ -105,7 +121,9 @@ def send_membership_status_email(
         "message": message,
         "login_url": _absolute_url(request, "accounts:login", "/accounts/login/"),
         "dashboard_url": _absolute_url(request, "core:dashboard", "/"),
+        "profile": profile,
     }
+    context.update(_club_email_context())
 
     subject = _render_subject("emails/account/member_status_update_subject.txt", context)
     text_body = render_to_string("emails/account/member_status_update_body.txt", context)
@@ -128,7 +146,9 @@ def send_membership_documents_email(profile, request: HttpRequest) -> bool:
         "user": profile.user,
         "dashboard_url": _absolute_url(request, "core:dashboard", "/"),
         "login_url": _absolute_url(request, "accounts:login", "/accounts/login/"),
+        "profile": profile,
     }
+    context.update(_club_email_context())
     subject = _render_subject("emails/account/membership_documents_subject.txt", context)
     text_body = render_to_string("emails/account/membership_documents_body.txt", context)
     html_body = render_to_string("emails/account/membership_documents_body.html", context)
@@ -156,6 +176,7 @@ def send_order_reserved_email(*, order, request: HttpRequest) -> bool:
         "order_url": _absolute_url_with_kwargs(request, "orders:detail", f"/orders/my/{order.id}/", order_id=order.id),
         "balance_breakdown": balance_breakdown(profile),
     }
+    context.update(_club_email_context())
     subject = _render_subject("emails/orders/reserved_subject.txt", context)
     text_body = render_to_string("emails/orders/reserved_body.txt", context)
     html_body = render_to_string("emails/orders/reserved_body.html", context)
@@ -183,6 +204,7 @@ def send_order_completed_email(*, order, request: HttpRequest) -> bool:
         "order_url": _absolute_url_with_kwargs(request, "orders:detail", f"/orders/my/{order.id}/", order_id=order.id),
         "balance_breakdown": balance_breakdown(profile),
     }
+    context.update(_club_email_context())
     subject = _render_subject("emails/orders/completed_subject.txt", context)
     text_body = render_to_string("emails/orders/completed_body.txt", context)
     html_body = render_to_string("emails/orders/completed_body.html", context)

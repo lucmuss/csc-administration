@@ -1,7 +1,12 @@
 from decimal import Decimal
 import re
+from pathlib import Path
 
 from django import forms
+
+from apps.accounts.models import User
+
+from .models import UploadedInvoice
 
 
 class SepaMandateForm(forms.Form):
@@ -86,3 +91,77 @@ class BalanceTopUpForm(forms.Form):
             raise forms.ValidationError("Bitte gib einen positiven Betrag ein.")
         cleaned_data["selected_amount"] = cleaned_data["final_amount"] = amount
         return cleaned_data
+
+
+class UploadedInvoiceForm(forms.ModelForm):
+    class Meta:
+        model = UploadedInvoice
+        fields = ["title", "direction", "document", "payment_status", "assigned_to", "notes"]
+        widgets = {
+            "notes": forms.Textarea(attrs={"rows": 4}),
+        }
+
+    def __init__(self, *args, **kwargs):
+        current_user = kwargs.pop("current_user", None)
+        super().__init__(*args, **kwargs)
+        self.fields["assigned_to"].queryset = User.objects.filter(role__in=[User.ROLE_STAFF, User.ROLE_BOARD]).order_by(
+            "first_name",
+            "last_name",
+            "email",
+        )
+        if current_user and not self.instance.pk:
+            self.fields["assigned_to"].initial = current_user
+        self.fields["document"].required = not bool(self.instance and self.instance.pk)
+        for field in self.fields.values():
+            if isinstance(field.widget, forms.CheckboxInput):
+                field.widget.attrs["class"] = "form-checkbox"
+            else:
+                field.widget.attrs["class"] = "form-input form-select" if isinstance(field.widget, forms.Select) else "form-input"
+
+    def clean_document(self):
+        document = self.cleaned_data["document"]
+        suffix = Path(document.name).suffix.lower()
+        allowed = {".pdf", ".png", ".jpg", ".jpeg", ".webp", ".txt"}
+        if suffix not in allowed:
+            raise forms.ValidationError("Erlaubt sind PDF, JPG, JPEG, PNG, WEBP und TXT.")
+        return document
+
+
+class UploadedInvoiceUpdateForm(forms.ModelForm):
+    class Meta:
+        model = UploadedInvoice
+        fields = [
+            "title",
+            "direction",
+            "invoice_number",
+            "vendor_name",
+            "customer_name",
+            "issue_date",
+            "due_date",
+            "amount_net",
+            "amount_tax",
+            "amount_gross",
+            "currency",
+            "payment_status",
+            "paid_at",
+            "assigned_to",
+            "notes",
+        ]
+        widgets = {
+            "issue_date": forms.DateInput(attrs={"type": "date"}),
+            "due_date": forms.DateInput(attrs={"type": "date"}),
+            "paid_at": forms.DateInput(attrs={"type": "date"}),
+            "notes": forms.Textarea(attrs={"rows": 5}),
+        }
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.fields["assigned_to"].queryset = User.objects.filter(role__in=[User.ROLE_STAFF, User.ROLE_BOARD]).order_by(
+            "first_name",
+            "last_name",
+            "email",
+        )
+        for name, field in self.fields.items():
+            field.widget.attrs["class"] = "form-input form-select" if isinstance(field.widget, forms.Select) else "form-input"
+            if name in {"amount_net", "amount_tax", "amount_gross"}:
+                field.widget.attrs.setdefault("step", "0.01")

@@ -5,6 +5,7 @@ from .views import (
     discrepancy_report,
     inventory_count_form,
     location_create,
+    location_delete,
     location_edit,
     location_list,
     strain_create,
@@ -24,6 +25,7 @@ urlpatterns = [
     path("locations/", location_list, name="location_list"),
     path("locations/new/", location_create, name="location_create"),
     path("locations/<int:pk>/edit/", location_edit, name="location_edit"),
+    path("locations/<int:pk>/delete/", location_delete, name="location_delete"),
     path("count/", inventory_count_form, name="inventory_count_form"),
     path("discrepancies/", discrepancy_report, name="discrepancy_report"),
 ]

@@ -39,25 +39,37 @@
         <nav id="main-nav" class="nav-cluster" data-mobile-nav aria-label="Hauptnavigation">
           {% if user.is_authenticated %}
             {% if user.role == 'member' %}
-              <a href="{% url 'orders:shop' %}" class="nav-link{% if '/orders/shop/' in request.path %} is-active{% endif %}">Shop</a>
-              <a href="{% url 'orders:list' %}" class="nav-link{% if '/orders/my/' in request.path %} is-active{% endif %}">Bestellungen</a>
-              <a href="{% url 'orders:cart' %}" class="nav-link{% if '/orders/cart/' in request.path or '/orders/checkout/' in request.path %} is-active{% endif %}">
-                Warenkorb{% if request.session.cart %} ({{ request.session.cart|length }}){% endif %}
-              </a>
-              <a href="{% url 'finance:dashboard' %}#guthaben" class="nav-link{% if '/finance/' in request.path %} is-active{% endif %}">Guthaben</a>
+              <a href="{% url 'core:dashboard' %}" class="nav-link{% if request.path == '/' %} is-active{% endif %}">Dashboard</a>
+              {% if not pending_member_limited_access %}
+                <a href="{% url 'orders:shop' %}" class="nav-link{% if '/orders/shop/' in request.path %} is-active{% endif %}">Shop</a>
+                <a href="{% url 'orders:list' %}" class="nav-link{% if '/orders/my/' in request.path %} is-active{% endif %}">Bestellungen</a>
+                <a href="{% url 'orders:cart' %}" class="nav-link{% if '/orders/cart/' in request.path or '/orders/checkout/' in request.path %} is-active{% endif %}">
+                  Warenkorb{% if request.session.cart %} ({{ request.session.cart|length }}){% endif %}
+                </a>
+                <a href="{% url 'finance:dashboard' %}#guthaben" class="nav-link{% if '/finance/' in request.path %} is-active{% endif %}">Guthaben</a>
+              {% endif %}
               <a href="{% url 'finance:dashboard' %}" class="nav-link{% if '/finance/' in request.path %} is-active{% endif %}">Finanzen</a>
               <a href="{% url 'members:profile' %}" class="nav-link{% if '/members/profile/' in request.path %} is-active{% endif %}">Profil</a>
-              <a href="{% url 'participation:dashboard' %}" class="nav-link{% if '/participation/' in request.path %} is-active{% endif %}">Mitwirkung</a>
+              {% if not pending_member_limited_access %}
+                <a href="{% url 'participation:dashboard' %}" class="nav-link{% if '/participation/' in request.path %} is-active{% endif %}">Mitwirkung</a>
+              {% endif %}
             {% else %}
               <a href="{% url 'members:directory' %}" class="nav-link{% if '/members/admin/' in request.path %} is-active{% endif %}">Mitglieder</a>
               <a href="{% url 'orders:admin_list' %}" class="nav-link{% if '/orders/admin/' in request.path %} is-active{% endif %}">Bestellungen</a>
               <a href="{% url 'cultivation:dashboard' %}" class="nav-link{% if '/cultivation/' in request.path %} is-active{% endif %}">Anbau</a>
-              <a href="{% url 'inventory:strain_list' %}" class="nav-link{% if '/inventory/' in request.path %} is-active{% endif %}">Inventar</a>
               <a href="{% url 'finance:dashboard' %}" class="nav-link{% if '/finance/' in request.path %} is-active{% endif %}">Finanzen</a>
               <a href="{% url 'participation:admin_hours' %}" class="nav-link{% if '/participation/' in request.path %} is-active{% endif %}">Mitwirkung</a>
-              <a href="{% url 'messaging:dashboard' %}" class="nav-link{% if '/messaging/' in request.path %} is-active{% endif %}">Messaging</a>
-              <a href="{% url 'compliance:dashboard' %}" class="nav-link{% if '/compliance/' in request.path %} is-active{% endif %}">Compliance</a>
-              <a href="{% url 'governance:dashboard' %}" class="nav-link{% if '/governance/' in request.path %} is-active{% endif %}">Governance</a>
+              <details class="nav-dropdown{% if '/inventory/' in request.path or '/messaging/' in request.path or '/compliance/' in request.path or '/governance/' in request.path or '/documents/' in request.path or '/finance/archive/' in request.path %} is-active{% endif %}">
+                <summary class="nav-link">Verwaltung</summary>
+                <div class="nav-dropdown__menu">
+                  <a href="{% url 'inventory:strain_list' %}" class="nav-dropdown__item">Inventar</a>
+                  <a href="{% url 'messaging:dashboard' %}" class="nav-dropdown__item">Messaging</a>
+                  <a href="{% url 'compliance:dashboard' %}" class="nav-dropdown__item">Compliance</a>
+                  <a href="{% url 'governance:dashboard' %}" class="nav-dropdown__item">Governance</a>
+                  <a href="{% url 'finance:archive' %}" class="nav-dropdown__item">Rechnungsarchiv</a>
+                  <a href="{% url 'core:documents_admin' %}" class="nav-dropdown__item">Dokumente</a>
+                </div>
+              </details>
             {% endif %}
           {% else %}
             <a href="{% url 'accounts:login' %}" class="nav-link{% if '/accounts/login/' in request.path %} is-active{% endif %}">Anmelden</a>
@@ -145,6 +157,7 @@
           <p class="site-footer__copy">Self-hosted Vereinssoftware fuer Vorstand, Mitglieder, Finanzen und Compliance.</p>
         </div>
         <div class="site-footer__links">
+          <a href="{% url 'core:documents' %}">Dokumente</a>
           <a href="{% url 'core:privacy' %}">Datenschutz</a>
           <a href="{% url 'core:imprint' %}">Impressum</a>
           <a href="{% url 'core:health' %}">Health</a>

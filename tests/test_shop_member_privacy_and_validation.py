@@ -65,31 +65,23 @@ def second_member_user(db):
 
 
 @pytest.mark.django_db
-def test_member_directory_hides_sensitive_fields_for_members(client, member_user, second_member_user):
+def test_member_directory_redirects_members_to_dashboard(client, member_user, second_member_user):
     client.force_login(member_user)
 
     response = client.get(reverse("members:directory"))
 
-    html = response.content.decode("utf-8")
-    assert response.status_code == 200
-    assert "125.00 EUR" not in html
-    assert "18.00 g / 50 g" not in html
-    assert "Verifiziert: Ja" in html
+    assert response.status_code == 302
+    assert response.url == reverse("core:dashboard")
 
 
 @pytest.mark.django_db
-def test_member_profile_hides_private_fields_for_other_members(client, member_user, second_member_user):
+def test_member_cannot_open_other_member_admin_profile(client, member_user, second_member_user):
     client.force_login(member_user)
 
     response = client.get(reverse("members:detail", args=[second_member_user.profile.id]))
 
-    html = response.content.decode("utf-8")
-    assert response.status_code == 200
-    assert "Bankverbindung und Lastschrift" not in html
-    assert "Adresse und Vereinsangaben" not in html
-    assert "125.00 EUR" not in html
-    assert "18.00 g / 50 g" not in html
-    assert "Letzte Aktivitaet" in html
+    assert response.status_code == 302
+    assert response.url == reverse("core:dashboard")
 
 
 @pytest.mark.django_db

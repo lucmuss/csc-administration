@@ -202,7 +202,15 @@ def mass_email_create(request):
             messages.success(request, "E-Mail-Entwurf wurde gespeichert.")
             return redirect("messaging:mass_email_preview", pk=email.pk)
     else:
-        form = MassEmailForm()
+        initial = {}
+        member_id = request.GET.get("member")
+        subject = (request.GET.get("subject") or "").strip()
+        if member_id:
+            initial["recipient_type"] = "individual"
+            initial["individual_recipients"] = [member_id]
+        if subject:
+            initial["subject"] = subject
+        form = MassEmailForm(initial=initial)
     
     return render(request, "messaging/mass_email_form.html", {
         "form": form,

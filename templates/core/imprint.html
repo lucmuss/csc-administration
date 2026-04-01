@@ -15,12 +15,23 @@
         <li>Anschrift: {{ club_contact_address|default:"Noch nicht hinterlegt" }}</li>
         <li>Vertreten durch: {{ club_board_representatives|default:"Noch nicht hinterlegt" }}</li>
         <li>Kontakt E-Mail: {{ club_contact_email|default:"Noch nicht hinterlegt" }}</li>
+        <li>Mitgliedschaft: {{ club_membership_email|default:"Noch nicht hinterlegt" }}</li>
+        <li>Praevention: {{ club_prevention_email|default:"Noch nicht hinterlegt" }}</li>
+        <li>Finanzen: {{ club_finance_email|default:"Noch nicht hinterlegt" }}</li>
         <li>Kontakt Telefon: {{ club_contact_phone|default:"Noch nicht hinterlegt" }}</li>
         <li>Registereintrag: {{ club_register_entry|default:"Noch nicht hinterlegt" }}</li>
+        <li>Registergericht: {{ club_register_court|default:"Noch nicht hinterlegt" }}</li>
+        <li>Steuernummer: {{ club_tax_number|default:"Noch nicht hinterlegt" }}</li>
         <li>USt-ID / Wirtschafts-ID: {{ club_vat_id|default:"Nicht angegeben" }}</li>
         <li>Aufsichtsbehoerde: {{ club_supervisory_authority|default:"Nicht angegeben" }}</li>
-        <li>Inhaltlich verantwortlich: {{ club_content_responsible|default:"Nicht angegeben" }}</li>
+        <li>Inhaltlich verantwortlich: {{ club_content_responsible|default:club_responsible_person|default:"Nicht angegeben" }}</li>
+        <li>Verantwortlich gemaess § 55 Abs. 2 RStV: {{ club_responsible_person|default:"Nicht angegeben" }}</li>
       </ul>
+
+      {% if club_language_notice %}
+        <h2>Sprachhinweis</h2>
+        <p>{{ club_language_notice }}</p>
+      {% endif %}
 
       <h2>Wichtiger Hinweis</h2>
       <p>

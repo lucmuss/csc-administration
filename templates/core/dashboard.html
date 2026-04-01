@@ -12,6 +12,7 @@
         </p>
         <div class="hero-actions">
           <a href="{% url 'members:directory' %}" class="btn-primary">Mitglieder-Cockpit</a>
+          <a href="{% url 'members:profile' %}" class="btn-ghost">Eigenes Profil</a>
           <a href="{% url 'governance:dashboard' %}" class="btn-ghost">Governance</a>
         </div>
       </div>
@@ -280,6 +281,19 @@
       </div>
     </section>
   {% else %}
+    {% if pending_member_limited_access %}
+      <section class="panel">
+        <div class="panel__header">
+          <div>
+            <p class="panel__eyebrow">Freigabe laeuft</p>
+            <h2>Dein Zugang ist aktuell eingeschraenkt</h2>
+          </div>
+        </div>
+        <p class="empty-copy">
+          Der Vorstand prueft gerade deine Angaben. Bis zur Freigabe stehen dir Dashboard, Profil und Finanzen zur Verfuegung.
+        </p>
+      </section>
+    {% endif %}
     <section class="hero-panel hero-panel--member">
       <div class="hero-panel__copy">
         <p class="eyebrow">Mein Bereich</p>
@@ -288,10 +302,11 @@
           Dein Dashboard zeigt Guthaben, Verbrauch und offene Bestellungen ohne versteckte Menues oder Admin-Rauschen.
         </p>
         <div class="hero-actions">
-          <a href="{% url 'orders:shop' %}" class="btn-primary">Zum Shop</a>
-          <a href="{% url 'orders:cart' %}" class="btn-ghost">Warenkorb{% if request.session.cart %} ({{ request.session.cart|length }}){% endif %}</a>
+          {% if not pending_member_limited_access %}
+            <a href="{% url 'orders:shop' %}" class="btn-primary">Zum Shop</a>
+            <a href="{% url 'orders:cart' %}" class="btn-ghost">Warenkorb{% if request.session.cart %} ({{ request.session.cart|length }}){% endif %}</a>
+          {% endif %}
           <a href="{% url 'members:profile' %}" class="btn-ghost">Profil ansehen</a>
-          <a href="{% url 'members:directory' %}" class="btn-ghost">Mitglieder</a>
         </div>
       </div>
       {% if profile %}
@@ -349,6 +364,7 @@
         {% endif %}
       </article>
 
+      {% if not pending_member_limited_access %}
       <article class="panel panel--span-2">
         <div class="panel__header">
           <div>
@@ -386,6 +402,7 @@
           <p class="empty-copy">Noch keine Bestellungen vorhanden. Der Shop ist direkt ueber das Hauptmenue erreichbar.</p>
         {% endif %}
       </article>
+      {% endif %}
     </section>
   {% endif %}
 {% endblock %}

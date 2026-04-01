@@ -12,12 +12,14 @@
           <a href="{% url 'members:directory' %}" class="btn-ghost">Zur Mitgliederliste</a>
           <a href="{% url 'orders:admin_list' %}?q={{ profile.user.email }}" class="btn-ghost">Bestellungen</a>
         {% else %}
-          <a href="{% url 'orders:shop' %}" class="btn-ghost">Zum Shop</a>
-          <a href="{% url 'orders:cart' %}" class="btn-ghost">Warenkorb{% if request.session.cart %} ({{ request.session.cart|length }}){% endif %}</a>
+          {% if not pending_member_limited_access %}
+            <a href="{% url 'orders:shop' %}" class="btn-ghost">Zum Shop</a>
+            <a href="{% url 'orders:cart' %}" class="btn-ghost">Warenkorb{% if request.session.cart %} ({{ request.session.cart|length }}){% endif %}</a>
+          {% endif %}
           {% if show_profile_edit_callout %}
             <a href="#profilpflege" class="btn-primary">Profil bearbeiten</a>
           {% endif %}
-          {% if show_public_directory_link %}
+          {% if show_public_directory_link and not pending_member_limited_access %}
             <a href="{% url 'members:directory' %}" class="btn-ghost">Mitglieder</a>
           {% endif %}
           <form method="post" action="{% url 'accounts:logout' %}" class="inline-actions">
@@ -70,6 +72,7 @@
         <ul class="detail-list">
           <li><span>Name</span><strong>{{ profile.user.full_name }}</strong></li>
           <li><span>E-Mail</span><strong>{{ profile.user.email }}</strong></li>
+          <li><span>Rolle</span><strong><span class="role-pill role-pill--{{ profile.user.role }}">{{ profile.user.get_role_display }}</span></strong></li>
           <li><span>Aufnahmedatum</span><strong>{{ profile.desired_join_date|date:'d.m.Y'|default:'-' }}</strong></li>
           <li><span>Verifiziert</span><strong>{{ profile.is_verified|yesno:'Ja,Nein' }}</strong></li>
           <li><span>Registriert seit</span><strong>{{ profile.user.date_joined|date:'d.m.Y H:i' }}</strong></li>
@@ -125,6 +128,16 @@
         <form method="post" action="{% url 'members:action' profile.id %}" class="inline-actions inline-actions--stacked">
           {% csrf_token %}
           <input type="hidden" name="next" value="{{ request.get_full_path }}">
+          <a href="{% url 'messaging:mass_email_create' %}?member={{ profile.id }}&subject=Rueckfrage%20zu%20deinem%20Mitgliedsprofil" class="btn-ghost">Mitglied kontaktieren</a>
+          {% if profile.user.role != 'staff' %}
+            <button type="submit" name="action" value="promote_staff" class="btn-ghost">Als Mitarbeiter speichern</button>
+          {% endif %}
+          {% if profile.user.role != 'board' %}
+            <button type="submit" name="action" value="promote_board" class="btn-ghost">Als Vorstand speichern</button>
+          {% endif %}
+          {% if profile.user.role != 'member' %}
+            <button type="submit" name="action" value="demote_member" class="btn-ghost">Auf Mitglied zuruecksetzen</button>
+          {% endif %}
           {% if profile.status == 'pending' %}
             <button type="submit" name="action" value="verify" class="btn-primary">Mitglied freischalten</button>
             <button type="submit" name="action" value="reject" class="btn-ghost">Ablehnen</button>

@@ -1,0 +1,47 @@
+{% extends 'base.html' %}
+{% block title %}Dokumente{% endblock %}
+{% block content %}
+  <section class="page-shell">
+    <div class="page-heading">
+      <div>
+        <p class="eyebrow">Vereinsdokumente</p>
+        <h1>Wichtige Dokumente und Unterlagen des Clubs.</h1>
+        <p class="lede">
+          Hier findest du oeffentliche PDFs wie Satzung, Ordnungen, Formulare und weitere Vereinsinformationen.
+        </p>
+      </div>
+    </div>
+    <section class="panel">
+      {% if documents %}
+        <div class="info-strip">
+          <span>{{ documents|length }} Dokumente verfuegbar</span>
+          <span>Alle Dateien oeffnen in einem neuen Tab</span>
+        </div>
+        <div class="table-card">
+          <table class="table table--compact">
+            <thead>
+              <tr>
+                <th>Titel</th>
+                <th>Kategorie</th>
+                <th>Beschreibung</th>
+                <th>Datei</th>
+              </tr>
+            </thead>
+            <tbody>
+              {% for document in documents %}
+                <tr>
+                  <td><strong>{{ document.title }}</strong></td>
+                  <td>{{ document.get_category_display }}</td>
+                  <td>{{ document.description|default:'-' }}</td>
+                  <td><a href="{{ document.file.url }}" class="btn-ghost btn-ghost--small" target="_blank" rel="noopener">PDF herunterladen</a></td>
+                </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+      {% else %}
+        <p class="empty-copy">Aktuell sind noch keine oeffentlichen Dokumente hinterlegt. Sobald der Verein Dateien veroeffentlicht, erscheinen sie hier.</p>
+      {% endif %}
+    </section>
+  </section>
+{% endblock %}

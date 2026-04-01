@@ -1,6 +1,9 @@
 import csv
 import io
 import json
+import base64
+import mimetypes
+import re
 import urllib.parse
 import urllib.request
 from dataclasses import dataclass
@@ -13,10 +16,12 @@ from django.conf import settings
 from django.core.mail import send_mail
 from django.db import models, transaction
 from django.utils import timezone
+from PIL import Image, ImageOps
+from pypdf import PdfReader
 
 from apps.members.models import Profile
 
-from .models import BalanceTopUp, BalanceTransaction, Invoice, Payment, Reminder, SepaMandate
+from .models import BalanceTopUp, BalanceTransaction, Invoice, Payment, Reminder, SepaMandate, UploadedInvoice
 
 
 @dataclass
@@ -223,6 +228,7 @@ def _stripe_enabled() -> bool:
 
 def render_invoice_pdf(invoice: Invoice) -> bytes:
     from reportlab.lib.pagesizes import A4
+    from reportlab.lib import colors
     from reportlab.lib.units import mm
     from reportlab.pdfgen import canvas
 
@@ -231,42 +237,96 @@ def render_invoice_pdf(invoice: Invoice) -> bytes:
     width, height = A4
 
     pdf.setTitle(invoice.invoice_number)
-    pdf.setFont("Helvetica-Bold", 18)
-    pdf.drawString(20 * mm, height - 25 * mm, f"Rechnung {invoice.invoice_number}")
-    pdf.setFont("Helvetica", 10)
+    top_y = height - 20 * mm
+    pdf.setFont("Helvetica-Bold", 16)
+    pdf.drawString(20 * mm, top_y, settings.CLUB_NAME)
+    pdf.setFont("Helvetica", 9)
+    address_lines = [line.strip() for line in (settings.CLUB_CONTACT_ADDRESS or "").splitlines() if line.strip()]
+    for index, line in enumerate(address_lines[:4], start=1):
+        pdf.drawString(20 * mm, top_y - (index * 5 * mm), line)
+    pdf.drawRightString(width - 20 * mm, top_y, f"Rechnung {invoice.invoice_number}")
+    pdf.setFont("Helvetica", 9)
+    pdf.drawRightString(width - 20 * mm, top_y - 6 * mm, f"Erstellt am {timezone.localtime(invoice.created_at).strftime('%d.%m.%Y %H:%M')}")
+    pdf.drawRightString(width - 20 * mm, top_y - 11 * mm, f"Faellig am {invoice.due_date.strftime('%d.%m.%Y')}")
 
     member_name = invoice.profile.user.full_name or invoice.profile.user.email
-    lines = [
+    member_address = [
+        invoice.profile.street_address or "",
+        " ".join(part for part in [invoice.profile.postal_code, invoice.profile.city] if part),
+    ]
+    invoice_meta = [
         ("Mitglied", member_name),
+        ("Mitgliedsnummer", str(invoice.profile.member_number or "-")),
         ("E-Mail", invoice.profile.user.email),
-        ("Betrag", f"{invoice.amount} EUR"),
-        ("Faelligkeit", invoice.due_date.strftime("%d.%m.%Y")),
         ("Status", invoice.get_status_display()),
         ("Mahnstufe", str(invoice.reminder_level)),
         ("Bestellung", f"#{invoice.order_id}" if invoice.order_id else "-"),
-        ("Erstellt", timezone.localtime(invoice.created_at).strftime("%d.%m.%Y %H:%M")),
     ]
 
-    y = height - 42 * mm
-    for label, value in lines:
+    y = height - 62 * mm
+    pdf.setFont("Helvetica-Bold", 10)
+    pdf.drawString(20 * mm, y, "Rechnungsempfaenger")
+    pdf.setFont("Helvetica", 10)
+    pdf.drawString(20 * mm, y - 6 * mm, member_name)
+    if member_address[0]:
+        pdf.drawString(20 * mm, y - 11 * mm, member_address[0])
+    if member_address[1]:
+        pdf.drawString(20 * mm, y - 16 * mm, member_address[1])
+
+    meta_y = y
+    for label, value in invoice_meta:
         pdf.setFont("Helvetica-Bold", 10)
-        pdf.drawString(20 * mm, y, f"{label}:")
+        pdf.drawString(105 * mm, meta_y, f"{label}:")
         pdf.setFont("Helvetica", 10)
-        pdf.drawString(60 * mm, y, str(value))
-        y -= 7 * mm
+        pdf.drawString(145 * mm, meta_y, str(value))
+        meta_y -= 6 * mm
 
     pdf.setFont("Helvetica-Bold", 10)
-    pdf.drawString(20 * mm, y - 4 * mm, "Leistungsumfang")
-    text = pdf.beginText(20 * mm, y - 12 * mm)
-    text.setFont("Helvetica", 10)
+    table_y = y - 34 * mm
+    pdf.drawString(20 * mm, table_y, "Leistungsumfang")
+    pdf.setStrokeColor(colors.HexColor("#c7d7cd"))
+    pdf.line(20 * mm, table_y - 3 * mm, width - 20 * mm, table_y - 3 * mm)
+    header_y = table_y - 10 * mm
+    pdf.setFont("Helvetica-Bold", 9)
+    pdf.drawString(20 * mm, header_y, "Position")
+    pdf.drawString(95 * mm, header_y, "Menge")
+    pdf.drawString(125 * mm, header_y, "Einzelpreis")
+    pdf.drawRightString(width - 20 * mm, header_y, "Summe")
+    row_y = header_y - 6 * mm
+    pdf.setFont("Helvetica", 9)
     if invoice.order_id:
         for item in invoice.order.items.select_related("strain").all():
-            text.textLine(
-                f"- {item.strain.name}: {item.quantity_display} zu {item.unit_price} EUR = {item.total_price} EUR"
-            )
+            pdf.drawString(20 * mm, row_y, item.strain.name[:42])
+            pdf.drawString(95 * mm, row_y, item.quantity_display)
+            pdf.drawString(125 * mm, row_y, f"{item.unit_price} EUR")
+            pdf.drawRightString(width - 20 * mm, row_y, f"{item.total_price} EUR")
+            row_y -= 6 * mm
     else:
-        text.textLine("Keine Bestellposition verknuepft.")
-    pdf.drawText(text)
+        pdf.drawString(20 * mm, row_y, "Keine Bestellposition verknuepft.")
+        row_y -= 6 * mm
+
+    pdf.line(20 * mm, row_y - 2 * mm, width - 20 * mm, row_y - 2 * mm)
+    pdf.setFont("Helvetica-Bold", 10)
+    pdf.drawRightString(width - 20 * mm, row_y - 8 * mm, f"Gesamtbetrag: {invoice.amount} EUR")
+    pdf.setFont("Helvetica", 8)
+    footer_lines = [
+        settings.CLUB_CONTACT_EMAIL,
+        settings.CLUB_CONTACT_PHONE,
+        settings.CLUB_REGISTER_COURT,
+        settings.CLUB_TAX_NUMBER,
+        settings.CLUB_CONTENT_RESPONSIBLE or settings.CLUB_RESPONSIBLE_PERSON,
+    ]
+    footer_y = 28 * mm
+    pdf.line(20 * mm, footer_y + 8 * mm, width - 20 * mm, footer_y + 8 * mm)
+    footer_text = pdf.beginText(20 * mm, footer_y)
+    footer_text.setFont("Helvetica", 8)
+    footer_text.textLine(settings.CLUB_NAME)
+    for line in address_lines:
+        footer_text.textLine(line)
+    for line in footer_lines:
+        if line:
+            footer_text.textLine(str(line))
+    pdf.drawText(footer_text)
 
     pdf.showPage()
     pdf.save()
@@ -683,3 +743,306 @@ def generate_datev_export(*, period: str = "month", anchor: date | None = None) 
             ])
 
     return target
+
+
+def _safe_decimal(value, default: str = "0.00") -> Decimal:
+    text = str(value or "").strip().replace(",", ".")
+    try:
+        return Decimal(text).quantize(Decimal("0.01"))
+    except Exception:
+        return Decimal(default)
+
+
+def _parse_iso_date(value):
+    text = str(value or "").strip()
+    if not text:
+        return None
+    for fmt in ("%Y-%m-%d", "%d.%m.%Y", "%d/%m/%Y"):
+        try:
+            return timezone.datetime.strptime(text, fmt).date()
+        except ValueError:
+            continue
+    return None
+
+
+def _extract_uploaded_invoice_text(uploaded_invoice: UploadedInvoice) -> str:
+    uploaded_invoice.document.open("rb")
+    try:
+        suffix = Path(uploaded_invoice.document.name).suffix.lower()
+        if suffix == ".pdf":
+            reader = PdfReader(uploaded_invoice.document)
+            parts = [(page.extract_text() or "").strip() for page in reader.pages]
+            return "\n\n".join(part for part in parts if part).strip()
+        if suffix == ".txt":
+            return uploaded_invoice.document.read().decode("utf-8", errors="replace").strip()
+        return ""
+    finally:
+        uploaded_invoice.document.close()
+
+
+def _local_invoice_fallback(uploaded_invoice: UploadedInvoice, extracted_text: str) -> UploadedInvoice:
+    text = extracted_text or uploaded_invoice.title or Path(uploaded_invoice.document.name).stem
+    invoice_number_match = re.search(r"\b(?:rechnungsnummer|rechnung|invoice)[^A-Z0-9]{0,8}([A-Z0-9-]{3,})", text, re.IGNORECASE)
+    amount_match = re.search(r"(\d{1,6}[.,]\d{2})\s*(?:EUR|€)", text, re.IGNORECASE)
+    date_match = re.search(r"\b(\d{2}[./]\d{2}[./]\d{4}|\d{4}-\d{2}-\d{2})\b", text)
+
+    uploaded_invoice.invoice_number = uploaded_invoice.invoice_number or (
+        invoice_number_match.group(1).strip() if invoice_number_match else ""
+    )
+    uploaded_invoice.issue_date = uploaded_invoice.issue_date or (
+        _parse_iso_date(date_match.group(1)) if date_match else None
+    )
+    gross = _safe_decimal(amount_match.group(1)) if amount_match else uploaded_invoice.amount_gross
+    uploaded_invoice.amount_gross = gross
+    uploaded_invoice.amount_net = uploaded_invoice.amount_net or gross
+    uploaded_invoice.amount_tax = uploaded_invoice.amount_tax or Decimal("0.00")
+    uploaded_invoice.ai_summary = uploaded_invoice.ai_summary or "Lokale Analyse aus Dateitext/Filename erzeugt."
+    uploaded_invoice.ai_payload = {
+        "source": "local-fallback",
+        "document_name": Path(uploaded_invoice.document.name).name,
+        "invoice_number": uploaded_invoice.invoice_number,
+        "issue_date": uploaded_invoice.issue_date.isoformat() if uploaded_invoice.issue_date else "",
+        "amount_gross": str(uploaded_invoice.amount_gross),
+        "summary": uploaded_invoice.ai_summary,
+    }
+    uploaded_invoice.extraction_status = UploadedInvoice.EXTRACTION_SUCCESS
+    uploaded_invoice.extraction_error = ""
+    uploaded_invoice.extracted_at = timezone.now()
+    uploaded_invoice.save(
+        update_fields=[
+            "invoice_number",
+            "issue_date",
+            "amount_net",
+            "amount_tax",
+            "amount_gross",
+            "ai_summary",
+            "ai_payload",
+            "extraction_status",
+            "extraction_error",
+            "extracted_at",
+            "updated_at",
+        ]
+    )
+    return uploaded_invoice
+
+
+def _invoice_file_message(uploaded_invoice: UploadedInvoice):
+    uploaded_invoice.document.open("rb")
+    try:
+        raw = uploaded_invoice.document.read()
+    finally:
+        uploaded_invoice.document.close()
+    mime_type = mimetypes.guess_type(uploaded_invoice.document.name)[0] or "application/octet-stream"
+    if mime_type.startswith("image/"):
+        try:
+            image = Image.open(io.BytesIO(raw))
+            image = ImageOps.exif_transpose(image)
+            if image.mode not in {"RGB", "L"}:
+                image = image.convert("RGB")
+            elif image.mode == "L":
+                image = image.convert("RGB")
+            max_width = 1800
+            if image.width > max_width:
+                ratio = max_width / float(image.width)
+                image = image.resize((max_width, int(image.height * ratio)))
+            normalized = io.BytesIO()
+            image.save(normalized, format="PNG", optimize=True)
+            raw = normalized.getvalue()
+            mime_type = "image/png"
+        except Exception:
+            mime_type = mime_type or "image/jpeg"
+        return {
+            "type": "image_url",
+            "image_url": {
+                "url": f"data:{mime_type};base64,{base64.b64encode(raw).decode('ascii')}",
+            },
+        }
+    return None
+
+
+def _extract_json_payload(raw_content: str) -> dict:
+    text = (raw_content or "").strip()
+    if text.startswith("```"):
+        text = re.sub(r"^```(?:json)?\s*", "", text)
+        text = re.sub(r"\s*```$", "", text)
+    return json.loads(text)
+
+
+def _openrouter_headers() -> dict[str, str]:
+    headers = {
+        "Authorization": f"Bearer {settings.OPENROUTER_API_KEY}",
+        "Content-Type": "application/json",
+    }
+    if getattr(settings, "OPENROUTER_SITE_URL", ""):
+        headers["HTTP-Referer"] = settings.OPENROUTER_SITE_URL
+    if getattr(settings, "OPENROUTER_APP_NAME", ""):
+        headers["X-Title"] = settings.OPENROUTER_APP_NAME
+    return headers
+
+
+def analyze_uploaded_invoice(uploaded_invoice: UploadedInvoice) -> UploadedInvoice:
+    extracted_text = _extract_uploaded_invoice_text(uploaded_invoice)
+    file_message = _invoice_file_message(uploaded_invoice)
+    uploaded_invoice.extraction_status = UploadedInvoice.EXTRACTION_PENDING
+    uploaded_invoice.extraction_error = ""
+    uploaded_invoice.ai_payload = {
+        "source": "pending",
+        "document_name": Path(uploaded_invoice.document.name).name,
+    }
+    uploaded_invoice.save(update_fields=["extraction_status", "extraction_error", "ai_payload", "updated_at"])
+
+    if not settings.OPENROUTER_API_KEY:
+        if extracted_text:
+            return _local_invoice_fallback(uploaded_invoice, extracted_text)
+        uploaded_invoice.extraction_status = UploadedInvoice.EXTRACTION_FAILED
+        uploaded_invoice.extraction_error = "OPENROUTER_API_KEY ist nicht gesetzt."
+        uploaded_invoice.ai_payload = {
+            "source": "missing-openrouter-key",
+            "document_name": Path(uploaded_invoice.document.name).name,
+            "text_extracted": False,
+        }
+        uploaded_invoice.extracted_at = timezone.now()
+        uploaded_invoice.save(update_fields=["extraction_status", "extraction_error", "ai_payload", "extracted_at", "updated_at"])
+        return uploaded_invoice
+
+    prompt = (
+        "Extrahiere aus dieser Rechnung die wichtigsten Daten und antworte ausschliesslich als JSON mit den Schluesseln "
+        "invoice_number, vendor_name, customer_name, issue_date, due_date, amount_net, amount_tax, amount_gross, currency, summary. "
+        "Nutze ISO-Datumsformat YYYY-MM-DD. Wenn etwas fehlt, gib leere Strings oder 0 zurueck."
+    )
+    if extracted_text:
+        prompt += f"\n\nBereits lokal extrahierter Text:\n{extracted_text[:12000]}"
+
+    content = [{"type": "text", "text": prompt}]
+    if file_message:
+        content.append(file_message)
+
+    payload = {
+        "model": settings.OPENROUTER_MODEL,
+        "messages": [
+            {
+                "role": "user",
+                "content": content,
+            }
+        ],
+        "temperature": 0,
+    }
+    request = urllib.request.Request(
+        f"{settings.OPENROUTER_BASE_URL.rstrip('/')}/chat/completions",
+        data=json.dumps(payload).encode("utf-8"),
+        headers=_openrouter_headers(),
+        method="POST",
+    )
+
+    try:
+        with urllib.request.urlopen(request, timeout=60) as response:
+            body = json.loads(response.read().decode("utf-8"))
+        raw_content = body["choices"][0]["message"]["content"]
+        extracted = _extract_json_payload(raw_content)
+    except Exception as exc:
+        if extracted_text:
+            return _local_invoice_fallback(uploaded_invoice, extracted_text)
+        uploaded_invoice.extraction_status = UploadedInvoice.EXTRACTION_FAILED
+        uploaded_invoice.extraction_error = str(exc)[:255]
+        uploaded_invoice.ai_payload = {
+            "source": "openrouter-error",
+            "document_name": Path(uploaded_invoice.document.name).name,
+            "error": str(exc)[:255],
+            "text_extracted": False,
+        }
+        uploaded_invoice.extracted_at = timezone.now()
+        uploaded_invoice.save(update_fields=["extraction_status", "extraction_error", "ai_payload", "extracted_at", "updated_at"])
+        return uploaded_invoice
+
+    uploaded_invoice.invoice_number = str(extracted.get("invoice_number", "")).strip()
+    uploaded_invoice.vendor_name = str(extracted.get("vendor_name", "")).strip()
+    uploaded_invoice.customer_name = str(extracted.get("customer_name", "")).strip()
+    uploaded_invoice.issue_date = _parse_iso_date(extracted.get("issue_date"))
+    uploaded_invoice.due_date = _parse_iso_date(extracted.get("due_date"))
+    uploaded_invoice.amount_net = _safe_decimal(extracted.get("amount_net"))
+    uploaded_invoice.amount_tax = _safe_decimal(extracted.get("amount_tax"))
+    uploaded_invoice.amount_gross = _safe_decimal(extracted.get("amount_gross"))
+    uploaded_invoice.currency = str(extracted.get("currency") or "EUR").strip().upper()[:8] or "EUR"
+    uploaded_invoice.ai_summary = str(extracted.get("summary", "")).strip()
+    uploaded_invoice.ai_payload = extracted
+    uploaded_invoice.extraction_status = UploadedInvoice.EXTRACTION_SUCCESS
+    uploaded_invoice.extraction_error = ""
+    uploaded_invoice.extracted_at = timezone.now()
+    uploaded_invoice.save(
+        update_fields=[
+            "invoice_number",
+            "vendor_name",
+            "customer_name",
+            "issue_date",
+            "due_date",
+            "amount_net",
+            "amount_tax",
+            "amount_gross",
+            "currency",
+            "ai_summary",
+            "ai_payload",
+            "extraction_status",
+            "extraction_error",
+            "extracted_at",
+            "updated_at",
+        ]
+    )
+    return uploaded_invoice
+
+
+def invoice_archive_summary(queryset) -> dict[str, Decimal | int]:
+    income_total = queryset.filter(direction=UploadedInvoice.DIRECTION_OUTGOING).aggregate(total=models.Sum("amount_gross"))["total"] or Decimal("0.00")
+    expense_total = queryset.filter(direction=UploadedInvoice.DIRECTION_INCOMING).aggregate(total=models.Sum("amount_gross"))["total"] or Decimal("0.00")
+    open_total = queryset.filter(payment_status=UploadedInvoice.PAYMENT_OPEN).aggregate(total=models.Sum("amount_gross"))["total"] or Decimal("0.00")
+    return {
+        "income_total": _quantize_amount(income_total),
+        "expense_total": _quantize_amount(expense_total),
+        "open_total": _quantize_amount(open_total),
+        "incoming_count": queryset.filter(direction=UploadedInvoice.DIRECTION_INCOMING).count(),
+        "outgoing_count": queryset.filter(direction=UploadedInvoice.DIRECTION_OUTGOING).count(),
+        "pending_count": queryset.filter(extraction_status__in=[UploadedInvoice.EXTRACTION_PENDING, UploadedInvoice.EXTRACTION_FAILED]).count(),
+    }
+
+
+def import_uploaded_invoices_from_directory(
+    *,
+    directory: Path,
+    created_by=None,
+    assigned_to=None,
+    default_direction: str = UploadedInvoice.DIRECTION_INCOMING,
+    analyze: bool = True,
+) -> list[UploadedInvoice]:
+    if not directory.exists():
+        return []
+
+    supported_suffixes = {".pdf", ".png", ".jpg", ".jpeg", ".webp", ".txt"}
+    imported: list[UploadedInvoice] = []
+    for path in sorted(item for item in directory.iterdir() if item.is_file() and item.suffix.lower() in supported_suffixes):
+        relative_name = path.name
+        title = path.stem.replace("_", " ").replace("-", " ").strip() or path.stem
+        uploaded_invoice, created = UploadedInvoice.objects.get_or_create(
+            title=title,
+            document=f"finance/invoices/{relative_name}",
+            defaults={
+                "direction": default_direction,
+                "created_by": created_by,
+                "assigned_to": assigned_to,
+            },
+        )
+        if not created:
+            imported.append(uploaded_invoice)
+            continue
+        target_dir = Path(settings.MEDIA_ROOT) / "finance" / "invoices"
+        target_dir.mkdir(parents=True, exist_ok=True)
+        target_path = target_dir / relative_name
+        if not target_path.exists():
+            target_path.write_bytes(path.read_bytes())
+        uploaded_invoice.document.name = f"finance/invoices/{relative_name}"
+        uploaded_invoice.created_by = created_by
+        uploaded_invoice.assigned_to = assigned_to
+        uploaded_invoice.direction = default_direction
+        uploaded_invoice.save(update_fields=["document", "created_by", "assigned_to", "direction", "updated_at"])
+        if analyze:
+            analyze_uploaded_invoice(uploaded_invoice)
+        imported.append(uploaded_invoice)
+    return imported

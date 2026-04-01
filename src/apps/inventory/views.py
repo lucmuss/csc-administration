@@ -27,6 +27,8 @@ def strain_list(request):
         Strain.PRODUCT_TYPE_FLOWER,
         Strain.PRODUCT_TYPE_CUTTING,
         Strain.PRODUCT_TYPE_EDIBLE,
+        Strain.PRODUCT_TYPE_ACCESSORY,
+        Strain.PRODUCT_TYPE_MERCH,
     }:
         strains = strains.filter(product_type=active_type)
     strains = strains.order_by("product_type", "name")
@@ -87,6 +89,16 @@ def location_edit(request, pk: int):
         "inventory/location_form.html",
         {"form": form, "title": f"Lagerort bearbeiten: {location.name}", "location": location},
     )
+
+
+@user_passes_test(_is_staff_or_board)
+def location_delete(request, pk: int):
+    location = get_object_or_404(InventoryLocation, pk=pk)
+    if request.method == "POST":
+        location_name = location.name
+        location.delete()
+        messages.warning(request, f"Lagerort {location_name} wurde geloescht.")
+    return redirect("inventory:location_list")
 
 
 @user_passes_test(_is_staff_or_board)

@@ -10,3 +10,6 @@ Bestelldetails:
 {{ order_url }}
 
 Die zugehoerige Rechnung ist dieser E-Mail als PDF angehaengt.
+
+{{ club_name }}
+{{ club_contact_address }}

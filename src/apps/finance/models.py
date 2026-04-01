@@ -216,3 +216,73 @@ class BalanceTopUp(models.Model):
 
     def __str__(self):
         return f"{self.profile} {self.amount} {self.provider} {self.status}"
+
+
+class UploadedInvoice(models.Model):
+    DIRECTION_INCOMING = "incoming"
+    DIRECTION_OUTGOING = "outgoing"
+    DIRECTION_CHOICES = [
+        (DIRECTION_INCOMING, "Eingangsrechnung"),
+        (DIRECTION_OUTGOING, "Ausgangsrechnung"),
+    ]
+
+    EXTRACTION_PENDING = "pending"
+    EXTRACTION_SUCCESS = "success"
+    EXTRACTION_FAILED = "failed"
+    EXTRACTION_CHOICES = [
+        (EXTRACTION_PENDING, "Ausstehend"),
+        (EXTRACTION_SUCCESS, "Erkannt"),
+        (EXTRACTION_FAILED, "Pruefen"),
+    ]
+
+    PAYMENT_OPEN = "open"
+    PAYMENT_PAID = "paid"
+    PAYMENT_CANCELLED = "cancelled"
+    PAYMENT_CHOICES = [
+        (PAYMENT_OPEN, "Offen"),
+        (PAYMENT_PAID, "Bezahlt"),
+        (PAYMENT_CANCELLED, "Storniert"),
+    ]
+
+    title = models.CharField(max_length=180)
+    direction = models.CharField(max_length=16, choices=DIRECTION_CHOICES, default=DIRECTION_INCOMING)
+    document = models.FileField(upload_to="finance/invoices/")
+    invoice_number = models.CharField(max_length=120, blank=True)
+    vendor_name = models.CharField(max_length=180, blank=True)
+    customer_name = models.CharField(max_length=180, blank=True)
+    issue_date = models.DateField(null=True, blank=True)
+    due_date = models.DateField(null=True, blank=True)
+    amount_net = models.DecimalField(max_digits=10, decimal_places=2, default=Decimal("0.00"))
+    amount_tax = models.DecimalField(max_digits=10, decimal_places=2, default=Decimal("0.00"))
+    amount_gross = models.DecimalField(max_digits=10, decimal_places=2, default=Decimal("0.00"))
+    currency = models.CharField(max_length=8, default="EUR")
+    payment_status = models.CharField(max_length=16, choices=PAYMENT_CHOICES, default=PAYMENT_OPEN)
+    paid_at = models.DateField(null=True, blank=True)
+    assigned_to = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="assigned_uploaded_invoices",
+    )
+    created_by = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="created_uploaded_invoices",
+    )
+    notes = models.TextField(blank=True)
+    ai_summary = models.TextField(blank=True)
+    ai_payload = models.JSONField(default=dict, blank=True)
+    extraction_status = models.CharField(max_length=16, choices=EXTRACTION_CHOICES, default=EXTRACTION_PENDING)
+    extraction_error = models.CharField(max_length=255, blank=True)
+    extracted_at = models.DateTimeField(null=True, blank=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        ordering = ["-issue_date", "-created_at", "-id"]
+
+    def __str__(self):
+        return self.title

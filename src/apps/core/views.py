@@ -2,10 +2,11 @@ from decimal import Decimal
 
 from django.conf import settings as django_settings
 from django.contrib.auth.decorators import login_required, user_passes_test
+from django.contrib import messages
 from django.db import connection
 from django.db.models import Count, Q, Sum
 from django.http import JsonResponse
-from django.shortcuts import render
+from django.shortcuts import get_object_or_404, redirect, render
 from django.utils import timezone
 
 from apps.accounts.models import User
@@ -17,6 +18,9 @@ from apps.inventory.models import InventoryCount, InventoryItem, Strain
 from apps.members.models import Profile
 from apps.orders.models import Order
 from apps.participation.models import MemberEngagement, Shift, WorkHours
+
+from .forms import PublicDocumentForm
+from .models import PublicDocument
 
 LOW_STOCK_THRESHOLD = Decimal(django_settings.LOW_STOCK_THRESHOLD_EUR)
 MEMBER_CAPACITY = django_settings.MEMBER_CAPACITY
@@ -63,9 +67,9 @@ def _module_links():
             "tone": "ink",
         },
         {
-            "title": "Governance",
-            "description": "Versammlungen, Aufgabenboard, Audit-Logs und Integrationen.",
-            "href": "/governance/",
+            "title": "Mein Profil",
+            "description": "Eigene Stammdaten, SEPA und persoenliche Angaben pflegen.",
+            "href": "/members/profile/",
             "tone": "forest",
         },
     ]
@@ -200,6 +204,11 @@ def dashboard(request):
         )
     else:
         context["board_mode"] = False
+        context["pending_member_limited_access"] = bool(
+            profile
+            and profile.status == Profile.STATUS_PENDING
+            and profile.onboarding_complete
+        )
 
     return render(request, "core/dashboard.html", context)
 
@@ -222,6 +231,45 @@ def imprint(request):
             "club_vat_id": django_settings.CLUB_VAT_ID,
             "club_supervisory_authority": django_settings.CLUB_SUPERVISORY_AUTHORITY,
             "club_content_responsible": django_settings.CLUB_CONTENT_RESPONSIBLE,
+            "club_membership_email": django_settings.CLUB_MEMBERSHIP_EMAIL,
+            "club_prevention_email": django_settings.CLUB_PREVENTION_EMAIL,
+            "club_finance_email": django_settings.CLUB_FINANCE_EMAIL,
+            "club_language_notice": django_settings.CLUB_LANGUAGE_NOTICE,
+            "club_register_court": django_settings.CLUB_REGISTER_COURT,
+            "club_tax_number": django_settings.CLUB_TAX_NUMBER,
+            "club_responsible_person": django_settings.CLUB_RESPONSIBLE_PERSON,
+        },
+    )
+
+
+def documents(request):
+    documents_qs = PublicDocument.objects.filter(is_public=True)
+    return render(request, "core/documents.html", {"documents": documents_qs})
+
+
+@user_passes_test(_is_staff_or_board)
+def documents_admin(request):
+    if request.method == "POST":
+        action = request.POST.get("action")
+        if action == "delete":
+            document = get_object_or_404(PublicDocument, pk=request.POST.get("document_id"))
+            title = document.title
+            document.delete()
+            messages.warning(request, f"Dokument {title} wurde geloescht.")
+            return redirect("core:documents_admin")
+        form = PublicDocumentForm(request.POST, request.FILES)
+        if form.is_valid():
+            form.save()
+            messages.success(request, "Dokument wurde gespeichert.")
+            return redirect("core:documents_admin")
+    else:
+        form = PublicDocumentForm()
+    return render(
+        request,
+        "core/documents_admin.html",
+        {
+            "form": form,
+            "documents": PublicDocument.objects.order_by("display_order", "title"),
         },
     )
 

@@ -34,14 +34,31 @@ def _save_cart(request, cart: dict[str, str]) -> None:
     request.session.modified = True
 
 
+def _member_may_order(user) -> tuple[bool, str]:
+    profile = getattr(user, "profile", None)
+    if not profile:
+        return False, "Kein Mitgliederprofil vorhanden."
+    if profile.status == "pending":
+        return False, "Shop, Bestellungen und Warenkorb werden erst nach Freigabe durch den Vorstand freigeschaltet."
+    if profile.is_locked_for_orders:
+        return False, "Deine Bestellungen sind aktuell gesperrt."
+    return True, ""
+
+
 @login_required
 def shop(request):
+    allowed, reason = _member_may_order(request.user)
+    if request.user.role == User.ROLE_MEMBER and not allowed:
+        messages.info(request, reason)
+        return redirect("core:dashboard")
     active_type = request.GET.get("type", "all")
     strains = Strain.objects.filter(is_active=True)
     if active_type in {
         Strain.PRODUCT_TYPE_FLOWER,
         Strain.PRODUCT_TYPE_CUTTING,
         Strain.PRODUCT_TYPE_EDIBLE,
+        Strain.PRODUCT_TYPE_ACCESSORY,
+        Strain.PRODUCT_TYPE_MERCH,
     }:
         strains = strains.filter(product_type=active_type)
     strains = strains.order_by("product_type", "name")
@@ -50,11 +67,17 @@ def shop(request):
 
 @login_required
 def add_to_cart(request):
+    allowed, reason = _member_may_order(request.user)
+    if request.user.role == User.ROLE_MEMBER and not allowed:
+        messages.info(request, reason)
+        return redirect("core:dashboard")
     if request.method != "POST":
         return redirect("orders:shop")
 
     strain_id = request.POST.get("strain_id")
     quantity = request.POST.get("quantity", request.POST.get("grams", "0"))
+    if quantity == "custom":
+        quantity = request.POST.get("custom_quantity", "0")
     try:
         quantity_decimal = Decimal(quantity)
         if quantity_decimal <= 0:
@@ -74,6 +97,10 @@ def add_to_cart(request):
 
 @login_required
 def cart(request):
+    allowed, reason = _member_may_order(request.user)
+    if request.user.role == User.ROLE_MEMBER and not allowed:
+        messages.info(request, reason)
+        return redirect("core:dashboard")
     raw_cart = _load_cart(request)
     rows = []
     total = Decimal("0.00")
@@ -135,6 +162,10 @@ def _cart_rows(raw_cart):
 
 @login_required
 def clear_cart(request):
+    allowed, reason = _member_may_order(request.user)
+    if request.user.role == User.ROLE_MEMBER and not allowed:
+        messages.info(request, reason)
+        return redirect("core:dashboard")
     _save_cart(request, {})
     messages.info(request, "Warenkorb geleert")
     return redirect("orders:cart")
@@ -142,6 +173,10 @@ def clear_cart(request):
 
 @login_required
 def checkout(request):
+    allowed, reason = _member_may_order(request.user)
+    if request.user.role == User.ROLE_MEMBER and not allowed:
+        messages.info(request, reason)
+        return redirect("core:dashboard")
     if request.method != "POST":
         return redirect("orders:cart")
 
@@ -186,6 +221,10 @@ def checkout(request):
 
 @login_required
 def order_list(request):
+    allowed, reason = _member_may_order(request.user)
+    if request.user.role == User.ROLE_MEMBER and not allowed:
+        messages.info(request, reason)
+        return redirect("core:dashboard")
     orders = Order.objects.filter(member=request.user).prefetch_related("items__strain")
     return render(request, "orders/order_list.html", {"orders": orders})
 
@@ -194,6 +233,10 @@ def order_list(request):
 def order_detail(request, order_id: int):
     queryset = Order.objects.select_related("member", "member__profile", "invoice").prefetch_related("items__strain")
     if request.user.role not in {User.ROLE_STAFF, User.ROLE_BOARD}:
+        allowed, reason = _member_may_order(request.user)
+        if not allowed:
+            messages.info(request, reason)
+            return redirect("core:dashboard")
         queryset = queryset.filter(member=request.user)
     order = get_object_or_404(queryset, id=order_id)
     return render(
@@ -209,6 +252,10 @@ def order_detail(request, order_id: int):
 @login_required
 @require_POST
 def order_cancel(request, order_id: int):
+    allowed, reason = _member_may_order(request.user)
+    if request.user.role == User.ROLE_MEMBER and not allowed:
+        messages.info(request, reason)
+        return redirect("core:dashboard")
     order = get_object_or_404(Order.objects.select_related("member"), id=order_id, member=request.user)
     order_number = order.id
     try:

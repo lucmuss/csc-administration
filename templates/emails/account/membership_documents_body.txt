@@ -9,9 +9,14 @@ Im Anhang findest du:
 - Mitgliederausweis
 
 Bitte pruefe die Unterlagen und reiche die unterschriebenen Dokumente beim Verein ein.
+Der Vorstand prueft nun deine hinterlegten Daten und meldet sich nach der Freigabe erneut.
 
 Login:
 {{ login_url }}
 
 Dashboard:
 {{ dashboard_url }}
+
+Rueckfragen zur Mitgliedschaft: {{ club_membership_email }}
+{{ club_name }}
+{{ club_contact_address }}

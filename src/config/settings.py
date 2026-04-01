@@ -94,6 +94,7 @@ TEMPLATES = [
                 "django.contrib.auth.context_processors.auth",
                 "django.contrib.messages.context_processors.messages",
                 "config.context_processors.ga_tracking_id",
+                "config.context_processors.club_info",
             ],
         },
     },
@@ -224,3 +225,15 @@ GENERAL_MEETING_AGENDA_SUBMISSION_EMAIL = _env_first(
 CLUB_CONTACT_EMAIL = _env_first("CLUB_CONTACT_EMAIL", default=DEFAULT_FROM_EMAIL)
 CLUB_CONTACT_PHONE = _env_first("CLUB_CONTACT_PHONE", default="")
 CLUB_CONTACT_ADDRESS = _env_first("CLUB_CONTACT_ADDRESS", default="")
+CLUB_MEMBERSHIP_EMAIL = _env_first("CLUB_MEMBERSHIP_EMAIL", default=CLUB_CONTACT_EMAIL)
+CLUB_PREVENTION_EMAIL = _env_first("CLUB_PREVENTION_EMAIL", default=CLUB_CONTACT_EMAIL)
+CLUB_FINANCE_EMAIL = _env_first("CLUB_FINANCE_EMAIL", default=CLUB_CONTACT_EMAIL)
+CLUB_LANGUAGE_NOTICE = _env_first("CLUB_LANGUAGE_NOTICE", default="")
+CLUB_REGISTER_COURT = _env_first("CLUB_REGISTER_COURT", default="")
+CLUB_TAX_NUMBER = _env_first("CLUB_TAX_NUMBER", default="")
+CLUB_RESPONSIBLE_PERSON = _env_first("CLUB_RESPONSIBLE_PERSON", default="")
+OPENROUTER_API_KEY = _env_first("OPENROUTER_API_KEY", default="")
+OPENROUTER_MODEL = _env_first("OPENROUTER_MODEL", default="Qwen/Qwen3.5-27B")
+OPENROUTER_BASE_URL = _env_first("OPENROUTER_BASE_URL", default="https://openrouter.ai/api/v1")
+OPENROUTER_SITE_URL = _env_first("OPENROUTER_SITE_URL", default=SITE_URL)
+OPENROUTER_APP_NAME = _env_first("OPENROUTER_APP_NAME", default="CSC Administration")

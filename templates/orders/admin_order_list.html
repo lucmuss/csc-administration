@@ -86,7 +86,7 @@
           </thead>
           <tbody>
             {% for order in page_obj %}
-              <tr>
+              <tr class="table-row-status table-row-status--{{ order.status }}">
                 <td>
                   <a href="{% url 'orders:detail' order.id %}" class="text-link"><strong>#{{ order.id }}</strong></a>
                   <div class="table-meta">{{ order.created_at|date:"d.m.Y H:i" }}</div>

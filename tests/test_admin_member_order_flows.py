@@ -271,15 +271,12 @@ def test_board_dashboard_cards_link_to_admin_sections(client, board_user):
 
 
 @pytest.mark.django_db
-def test_member_directory_hides_sensitive_admin_finance_fields(client, member_user):
+def test_member_directory_redirects_to_dashboard_for_member_accounts(client, member_user):
     client.force_login(member_user)
     response = client.get(reverse("members:directory"))
 
-    html = response.content.decode("utf-8")
-    assert response.status_code == 200
-    assert "Aktive Mitglieder und Profile im Verein auf einen Blick." in html
-    assert "offene Rechnungen" not in html
-    assert "CSV-Export" not in html
+    assert response.status_code == 302
+    assert response.url == reverse("core:dashboard")
 
 
 @pytest.mark.django_db
@@ -290,4 +287,4 @@ def test_member_directory_normalizes_unsafe_search_query(client, member_user):
 
     assert response.status_code == 302
     assert "<" not in response["Location"]
-    assert "scriptalertxscript" in response["Location"]
+    assert response["Location"].startswith(reverse("members:directory"))

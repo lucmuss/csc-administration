@@ -31,6 +31,9 @@
           {% if action == 'reject' %}Die Registrierung wird abgelehnt.{% endif %}
           {% if action == 'lock_orders' %}Bestellungen werden fuer dieses Mitglied gesperrt.{% endif %}
           {% if action == 'unlock_orders' %}Die Bestellsperre wird aufgehoben.{% endif %}
+          {% if action == 'promote_staff' %}Der Account erhaelt Mitarbeiterrechte und sieht kuenftig interne Verwaltungsbereiche.{% endif %}
+          {% if action == 'promote_board' %}Der Account erhaelt Vorstandsrechte mit erweiterten Verwaltungsfreigaben.{% endif %}
+          {% if action == 'demote_member' %}Der Account wird wieder auf einen regulaeren Mitgliederzugang zurueckgesetzt.{% endif %}
           {% if action == 'delete_member' %}Der Benutzeraccount und das Mitglied werden dauerhaft geloescht.{% endif %}
         </p>
         <form method="post" action="{% url 'members:action' profile.id %}" class="inline-actions inline-actions--stacked">

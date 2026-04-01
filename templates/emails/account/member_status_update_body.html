@@ -1,4 +1,16 @@
 <p>Hallo {{ user.first_name|default:user.email }},</p>
 <p>{{ message }}</p>
+{% if profile %}
+  <ul>
+    <li>Mitgliedsnummer: {{ profile.member_number|default:"wird nachgereicht" }}</li>
+    <li>Aufnahmedatum: {{ profile.desired_join_date|date:"d.m.Y"|default:"wird nach Pruefung bestaetigt" }}</li>
+    <li>Status: {{ profile.get_status_display }}</li>
+  </ul>
+{% endif %}
 <p><a href="{{ login_url }}">Zum Login</a></p>
 <p><a href="{{ dashboard_url }}">Zum Dashboard</a></p>
+<p>
+  Fragen zur Mitgliedschaft: <a href="mailto:{{ club_membership_email }}">{{ club_membership_email }}</a><br>
+  Fragen zu Beitraegen: <a href="mailto:{{ club_finance_email }}">{{ club_finance_email }}</a>
+</p>
+<p>{{ club_name }}<br>{{ club_contact_address|linebreaksbr }}</p>

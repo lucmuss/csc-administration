@@ -13,4 +13,5 @@ Sobald die Freischaltung erfolgt ist, kannst du dich hier anmelden:
 {% endif %}
 
 Viele Gruesse
-CSC Administration
+{{ club_name }}
+{{ club_contact_address }}

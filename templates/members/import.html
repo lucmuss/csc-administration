@@ -1,0 +1,113 @@
+{% extends 'base.html' %}
+{% block title %}Mitglieder importieren{% endblock %}
+{% block content %}
+  <section class="page-shell">
+    <div class="page-heading">
+      <div>
+        <p class="eyebrow">Mitglieder-Cockpit</p>
+        <h1>CSV-Import mit Analyse, Feldzuordnung und finaler Bestätigung.</h1>
+        <p class="lede">
+          Erst Datei pruefen, dann Spalten zuordnen und erst im letzten Schritt verbindlich importieren.
+        </p>
+      </div>
+      <div class="hero-actions">
+        <a href="{% url 'members:directory' %}" class="btn-ghost">Zur Mitgliederliste</a>
+      </div>
+    </div>
+
+    <section class="board-grid">
+      <article class="panel">
+        <div class="panel__header">
+          <div>
+            <p class="panel__eyebrow">Schritt 1</p>
+            <h2>Datei analysieren</h2>
+          </div>
+        </div>
+        <p class="empty-copy">
+          Unterstuetzt ist insbesondere das bereitgestellte Mitglieder-CSV-Format mit Kontakt-, Status- und Finanzspalten.
+        </p>
+        <form method="post" enctype="multipart/form-data" class="form-stack">
+          {% csrf_token %}
+          <input type="hidden" name="action" value="analyze">
+          <div class="field">
+            <label for="csv_file">CSV-Datei</label>
+            <input id="csv_file" type="file" name="csv_file" class="form-input" accept=".csv,text/csv">
+          </div>
+          <button type="submit" class="btn-primary">CSV analysieren</button>
+        </form>
+      </article>
+
+      <article class="panel panel--span-2">
+        <div class="panel__header">
+          <div>
+            <p class="panel__eyebrow">Schritt 2</p>
+            <h2>Spalten zuordnen</h2>
+          </div>
+        </div>
+        {% if import_data.headers %}
+          <form method="post" class="form-stack">
+            {% csrf_token %}
+            <input type="hidden" name="action" value="import">
+            <div class="info-strip">
+              <span>Datei: {{ import_data.filename }}</span>
+              <span>{{ import_data.preview_rows|length }} Vorschauzeilen</span>
+            </div>
+            <p class="empty-copy">
+              Nicht benoetigte Spalten koennen auf "Nicht importieren" bleiben. Die E-Mail-Adresse muss zugeordnet sein.
+            </p>
+            {% for item in suggested_mappings %}
+              <div class="field">
+                <label for="mapping_{{ forloop.counter0 }}">{{ item.header }}</label>
+                <select id="mapping_{{ forloop.counter0 }}" name="mapping_{{ forloop.counter0 }}" class="form-input form-select">
+                  {% for value, label in item.choices %}
+                    <option value="{{ value }}"{% if item.value == value %} selected{% endif %}>{{ label }}</option>
+                  {% endfor %}
+                </select>
+              </div>
+            {% endfor %}
+            <div class="hero-actions">
+              <button type="submit" class="btn-primary">Endgueltig importieren</button>
+              <button type="submit" name="action" value="clear" class="btn-ghost">Vorschau verwerfen</button>
+            </div>
+          </form>
+        {% else %}
+          <p class="empty-copy">Noch keine CSV analysiert.</p>
+        {% endif %}
+      </article>
+    </section>
+
+    {% if preview_rows %}
+      <section class="panel">
+        <div class="panel__header">
+          <div>
+            <p class="panel__eyebrow">Schritt 3</p>
+            <h2>Importvorschau</h2>
+          </div>
+        </div>
+        <p class="empty-copy">
+          Kontrolliere hier stichprobenartig, ob Inhalte und Spaltenreihenfolge zur erwarteten Zuordnung passen.
+        </p>
+        <div class="table-card">
+          <table class="table table--compact">
+            <thead>
+              <tr>
+                {% for header in import_data.headers %}
+                  <th>{{ header }}</th>
+                {% endfor %}
+              </tr>
+            </thead>
+            <tbody>
+              {% for row in preview_rows %}
+                <tr>
+                  {% for value in row.values %}
+                    <td>{{ value|default:'-' }}</td>
+                  {% endfor %}
+                </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+      </section>
+    {% endif %}
+  </section>
+{% endblock %}

@@ -84,7 +84,7 @@ class MassEmailForm(forms.ModelForm):
     )
     
     individual_recipients = forms.ModelMultipleChoiceField(
-        queryset=Profile.objects.filter(status="active").order_by("user__last_name", "user__first_name"),
+        queryset=Profile.objects.filter(status__in=["pending", "verified", "active"]).order_by("user__last_name", "user__first_name"),
         required=False,
         widget=forms.SelectMultiple(attrs={
             "class": "w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500",

@@ -1,0 +1,201 @@
+{% extends 'base.html' %}
+{% block title %}Rechnungsarchiv{% endblock %}
+{% block content %}
+  <section class="page-shell">
+    <div class="page-heading">
+      <div>
+        <p class="eyebrow">Finanzen</p>
+        <h1>Eingangs- und Ausgangsrechnungen zentral dokumentieren.</h1>
+        <p class="lede">PDFs und Bilddateien werden hochgeladen, automatisch analysiert und anschliessend durch Vorstand oder Mitarbeitende bearbeitet.</p>
+      </div>
+      <div class="hero-actions">
+        <a href="{% url 'finance:dashboard' %}" class="btn-ghost">Finanzdashboard</a>
+      </div>
+    </div>
+
+    <section class="kpi-grid">
+      <article class="kpi-card kpi-card--forest">
+        <span class="kpi-card__label">Einnahmen</span>
+        <strong class="kpi-card__value">{{ summary.income_total }} EUR</strong>
+        <small class="kpi-card__detail">{{ summary.outgoing_count }} Ausgangsrechnungen im Filter</small>
+      </article>
+      <article class="kpi-card kpi-card--sand">
+        <span class="kpi-card__label">Ausgaben</span>
+        <strong class="kpi-card__value">{{ summary.expense_total }} EUR</strong>
+        <small class="kpi-card__detail">{{ summary.incoming_count }} Eingangsrechnungen im Filter</small>
+      </article>
+      <article class="kpi-card kpi-card--ink">
+        <span class="kpi-card__label">Noch offen</span>
+        <strong class="kpi-card__value">{{ summary.open_total }} EUR</strong>
+        <small class="kpi-card__detail">{{ summary.pending_count }} Belege brauchen Nacharbeit</small>
+      </article>
+    </section>
+
+    <section class="board-grid">
+      <article class="panel">
+        <div class="panel__header">
+          <div>
+            <p class="panel__eyebrow">Upload</p>
+            <h2>Neue Rechnung erfassen</h2>
+          </div>
+        </div>
+        <form method="post" enctype="multipart/form-data" class="form-stack">
+          {% csrf_token %}
+          <div class="field">
+            <label for="{{ form.title.id_for_label }}">Bezeichnung</label>
+            {{ form.title }}
+            {{ form.title.errors }}
+          </div>
+          <div class="field-grid">
+            <div class="field">
+              <label for="{{ form.direction.id_for_label }}">Typ</label>
+              {{ form.direction }}
+              {{ form.direction.errors }}
+            </div>
+            <div class="field">
+              <label for="{{ form.payment_status.id_for_label }}">Zahlstatus</label>
+              {{ form.payment_status }}
+              {{ form.payment_status.errors }}
+            </div>
+          </div>
+          <div class="field">
+            <label for="{{ form.assigned_to.id_for_label }}">Bearbeiter</label>
+            {{ form.assigned_to }}
+            {{ form.assigned_to.errors }}
+          </div>
+          <div class="field">
+            <label for="{{ form.document.id_for_label }}">PDF oder Bilddatei</label>
+            {{ form.document }}
+            {{ form.document.errors }}
+            <small class="field-hint">Unterstuetzt: PDF, JPG, JPEG, PNG, WEBP und TXT. Fotos werden fuer die KI automatisch normalisiert.</small>
+          </div>
+          <div class="field">
+            <label for="{{ form.notes.id_for_label }}">Notizen</label>
+            {{ form.notes }}
+            {{ form.notes.errors }}
+          </div>
+          <button type="submit" class="btn-primary">Hochladen und analysieren</button>
+        </form>
+      </article>
+
+      <article class="panel panel--span-2">
+        <div class="panel__header">
+          <div>
+            <p class="panel__eyebrow">Archiv</p>
+            <h2>Rechnungen filtern und oeffnen</h2>
+          </div>
+        </div>
+        <form method="get" class="filter-grid">
+          <div class="field">
+            <label for="direction">Typ</label>
+            <select id="direction" name="direction">
+              <option value="">Alle</option>
+              <option value="incoming"{% if filters.direction == 'incoming' %} selected{% endif %}>Eingangsrechnungen</option>
+              <option value="outgoing"{% if filters.direction == 'outgoing' %} selected{% endif %}>Ausgangsrechnungen</option>
+            </select>
+          </div>
+          <div class="field">
+            <label for="payment_status">Zahlstatus</label>
+            <select id="payment_status" name="payment_status">
+              <option value="">Alle</option>
+              <option value="open"{% if filters.payment_status == 'open' %} selected{% endif %}>Offen</option>
+              <option value="paid"{% if filters.payment_status == 'paid' %} selected{% endif %}>Bezahlt</option>
+              <option value="cancelled"{% if filters.payment_status == 'cancelled' %} selected{% endif %}>Storniert</option>
+            </select>
+          </div>
+          <div class="field">
+            <label for="year">Jahr</label>
+            <select id="year" name="year">
+              <option value="">Alle</option>
+              {% for year_date in years %}
+                {% with year_value=year_date|date:"Y" %}
+                  <option value="{{ year_value }}"{% if filters.year == year_value %} selected{% endif %}>{{ year_value }}</option>
+                {% endwith %}
+              {% endfor %}
+            </select>
+          </div>
+          <div class="field">
+            <label for="month">Monat</label>
+            <select id="month" name="month">
+              <option value="">Alle</option>
+              <option value="1"{% if filters.month == '1' %} selected{% endif %}>1</option>
+              <option value="2"{% if filters.month == '2' %} selected{% endif %}>2</option>
+              <option value="3"{% if filters.month == '3' %} selected{% endif %}>3</option>
+              <option value="4"{% if filters.month == '4' %} selected{% endif %}>4</option>
+              <option value="5"{% if filters.month == '5' %} selected{% endif %}>5</option>
+              <option value="6"{% if filters.month == '6' %} selected{% endif %}>6</option>
+              <option value="7"{% if filters.month == '7' %} selected{% endif %}>7</option>
+              <option value="8"{% if filters.month == '8' %} selected{% endif %}>8</option>
+              <option value="9"{% if filters.month == '9' %} selected{% endif %}>9</option>
+              <option value="10"{% if filters.month == '10' %} selected{% endif %}>10</option>
+              <option value="11"{% if filters.month == '11' %} selected{% endif %}>11</option>
+              <option value="12"{% if filters.month == '12' %} selected{% endif %}>12</option>
+            </select>
+          </div>
+          <div class="field field--actions">
+            <button type="submit" class="btn-primary btn-block">Filter anwenden</button>
+          </div>
+          <div class="field field--actions">
+            <a href="{% url 'finance:archive' %}" class="btn-ghost btn-block">Zuruecksetzen</a>
+          </div>
+        </form>
+
+        <div class="table-card">
+          <table class="table table--compact archive-table">
+            <thead>
+              <tr>
+                <th>Rechnung</th>
+                <th>Typ</th>
+                <th class="archive-table__amount">Betrag</th>
+                <th class="archive-table__date">Datum</th>
+                <th>Status</th>
+                <th>Bearbeiter</th>
+                <th>Aktion</th>
+              </tr>
+            </thead>
+            <tbody>
+              {% for invoice in invoices %}
+                <tr>
+                  <td>
+                    <strong>{{ invoice.title }}</strong>
+                    <div class="table-meta">
+                      {{ invoice.invoice_number|default:"noch keine Rechnungsnummer" }}
+                      {% if invoice.vendor_name %}· {{ invoice.vendor_name }}{% endif %}
+                    </div>
+                    <div class="table-meta">
+                      Datei: {{ invoice.document.name|cut:"finance/invoices/" }}
+                    </div>
+                  </td>
+                  <td>{{ invoice.get_direction_display }}</td>
+                  <td class="archive-table__amount">
+                    <strong>{{ invoice.amount_gross }} {{ invoice.currency }}</strong>
+                    {% if invoice.amount_net or invoice.amount_tax %}
+                      <div class="table-meta">Netto {{ invoice.amount_net }} · Steuer {{ invoice.amount_tax }}</div>
+                    {% endif %}
+                  </td>
+                  <td class="archive-table__date">
+                    <strong>{{ invoice.issue_date|date:"d.m.Y"|default:"-" }}</strong>
+                    <div class="table-meta">Faellig {{ invoice.due_date|date:"d.m.Y"|default:"-" }}</div>
+                  </td>
+                  <td>
+                    <span class="status-pill{% if invoice.payment_status == 'paid' %} status-pill--active{% elif invoice.extraction_status == 'failed' %} status-pill--danger{% else %} status-pill--sand{% endif %}">
+                      {{ invoice.get_payment_status_display }}
+                    </span>
+                    <div class="table-meta">KI: {{ invoice.get_extraction_status_display }}</div>
+                  </td>
+                  <td>
+                    <strong>{{ invoice.assigned_to.full_name|default:invoice.assigned_to.email|default:"-" }}</strong>
+                    <div class="table-meta">{{ invoice.created_at|date:"d.m.Y H:i" }}</div>
+                  </td>
+                  <td><a href="{% url 'finance:archive_detail' invoice.id %}" class="btn-ghost btn-ghost--small">Oeffnen</a></td>
+                </tr>
+              {% empty %}
+                <tr><td colspan="7">Noch keine Rechnungen im Archiv vorhanden.</td></tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+      </article>
+    </section>
+  </section>
+{% endblock %}

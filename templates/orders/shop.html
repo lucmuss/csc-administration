@@ -9,6 +9,8 @@
     <a href="{% url 'orders:shop' %}?type=flower" class="{% if active_type == 'flower' %}btn-primary{% else %}btn-ghost{% endif %}">Blueten</a>
     <a href="{% url 'orders:shop' %}?type=cutting" class="{% if active_type == 'cutting' %}btn-primary{% else %}btn-ghost{% endif %}">Stecklinge</a>
     <a href="{% url 'orders:shop' %}?type=edible" class="{% if active_type == 'edible' %}btn-primary{% else %}btn-ghost{% endif %}">Edibles</a>
+    <a href="{% url 'orders:shop' %}?type=accessory" class="{% if active_type == 'accessory' %}btn-primary{% else %}btn-ghost{% endif %}">Rauchzubehoer</a>
+    <a href="{% url 'orders:shop' %}?type=merch" class="{% if active_type == 'merch' %}btn-primary{% else %}btn-ghost{% endif %}">Werbegeschenke</a>
   </div>
   <div class="mt-3 flex gap-2">
     <a href="{% url 'orders:cart' %}" class="btn-primary">Zum Warenkorb{% if request.session.cart %} ({{ request.session.cart|length }}){% endif %}</a>
@@ -31,7 +33,9 @@
     </div>
     {% if strain.image %}
     <div class="shop-card-compact__media">
-      <img src="{{ strain.image.url }}" alt="{{ strain.name }}" class="shop-card-compact__image">
+      <a href="{% url 'inventory:strain_detail' strain.id %}" class="shop-card-compact__image-link">
+        <img src="{{ strain.image.url }}" alt="{{ strain.name }}" class="shop-card-compact__image">
+      </a>
     </div>
     {% endif %}
     <div class="shop-card-compact__stats">
@@ -72,9 +76,14 @@
             <option value="1">1g</option>
             <option value="2">2g</option>
             <option value="3">3g</option>
+            <option value="4">4g</option>
             <option value="5">5g</option>
+            <option value="8">8g</option>
             <option value="10">10g</option>
-            <option value="25">25g</option>
+            <option value="15">15g</option>
+            <option value="20">20g</option>
+            <option value="50">50g</option>
+            <option value="custom">Eigene Menge</option>
           {% else %}
             <option value="1">1 Stk.</option>
             <option value="2">2 Stk.</option>
@@ -82,6 +91,23 @@
             <option value="5">5 Stk.</option>
           {% endif %}
         </select>
+        {% if strain.is_weight_based %}
+          <div class="shop-form__custom-quantity" data-custom-quantity hidden>
+            <label for="custom-quantity-{{ strain.id }}" class="sr-only">Eigene Menge in Gramm</label>
+            <input
+              id="custom-quantity-{{ strain.id }}"
+              type="number"
+              name="custom_quantity"
+              class="form-input"
+              min="0.1"
+              step="0.1"
+              inputmode="decimal"
+              placeholder="z. B. 16"
+              data-custom-quantity-input
+            >
+            <small class="field-hint">Beliebige Grammzahl eingeben, z. B. 16 g.</small>
+          </div>
+        {% endif %}
         <div class="shop-form__footer">
           <button class="btn-primary" type="submit">In den Warenkorb</button>
           <strong class="shop-form__total" data-line-total>{{ strain.price }} EUR</strong>
@@ -102,14 +128,38 @@
       document.querySelectorAll("[data-line-preview]").forEach(function (form) {
         var select = form.querySelector("[data-quantity-select]");
         var total = form.querySelector("[data-line-total]");
+        var customWrap = form.querySelector("[data-custom-quantity]");
+        var customInput = form.querySelector("[data-custom-quantity-input]");
         var unitPrice = parseFloat(form.dataset.price || "0");
         if (!select || !total || Number.isNaN(unitPrice)) return;
         var update = function () {
-          var qty = parseFloat(select.value || "0");
+          var useCustom = select.value === "custom";
+          var qty = useCustom ? parseFloat((customInput && customInput.value) || "0") : parseFloat(select.value || "0");
           var sum = unitPrice * qty;
-          total.textContent = sum.toFixed(2).replace(".", ",") + " EUR";
+          total.textContent = (Number.isFinite(sum) ? sum : 0).toFixed(2).replace(".", ",") + " EUR";
+          if (customWrap && customInput) {
+            customWrap.hidden = !useCustom;
+            customInput.required = useCustom;
+          }
         };
         select.addEventListener("change", update);
+        if (customInput) {
+          customInput.addEventListener("input", update);
+        }
+        form.addEventListener("submit", function (event) {
+          if (select.value === "custom" && (!customInput || !customInput.value)) {
+            event.preventDefault();
+            if (customInput) {
+              customInput.focus();
+              customInput.setCustomValidity("Bitte gib eine eigene Menge in Gramm ein.");
+              customInput.reportValidity();
+            }
+            return;
+          }
+          if (customInput) {
+            customInput.setCustomValidity("");
+          }
+        });
         update();
       });
     })();

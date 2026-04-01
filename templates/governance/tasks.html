@@ -14,6 +14,64 @@
     </div>
 
     <section class="board-grid">
+      <article class="panel panel--span-2">
+        <div class="panel__header">
+          <div>
+            <p class="panel__eyebrow">Statusboard</p>
+            <h2>Operative Aufgaben</h2>
+          </div>
+        </div>
+        <div class="kanban-grid" id="task-board">
+          {% for column in task_columns %}
+            <section class="kanban-column" data-task-dropzone="true" data-status="{{ column.status }}">
+              <header class="kanban-column__header">
+                <strong>{{ column.label }}</strong>
+                <span>{{ column.tasks|length }}</span>
+              </header>
+              {% for task in column.tasks %}
+                <article class="task-card task-card--{{ task.priority }} task-card--compact" draggable="true" data-task-card="true" data-task-id="{{ task.id }}" data-current-status="{{ task.status }}">
+                  <div class="task-card__headline">
+                    <strong>{{ task.title }}</strong>
+                    <span>{% if task.due_date %}{{ task.due_date|date:"d.m.Y" }}{% else %}-{% endif %}</span>
+                  </div>
+                  <div class="task-card__meta">
+                    <span>{{ task.owner.full_name|default:'Nicht zugewiesen' }}</span>
+                    <span>{{ task.get_priority_display }}</span>
+                  </div>
+                  {% if task.description %}
+                    <details class="task-card__details">
+                      <summary>{{ task.description|truncatechars:90 }}</summary>
+                      <p>{{ task.description }}</p>
+                    </details>
+                  {% endif %}
+                  <div class="inline-actions">
+                    <form method="post" class="inline-actions">
+                      {% csrf_token %}
+                      <input type="hidden" name="action" value="status">
+                      <input type="hidden" name="task_id" value="{{ task.id }}">
+                      <select name="status" class="form-input form-select">
+                        {% for next_status, next_label in status_choices %}
+                          <option value="{{ next_status }}" {% if task.status == next_status %}selected{% endif %}>{{ next_label }}</option>
+                        {% endfor %}
+                      </select>
+                      <button type="submit" class="btn-ghost btn-ghost--small">Aktualisieren</button>
+                    </form>
+                    <form method="post" class="inline-actions">
+                      {% csrf_token %}
+                      <input type="hidden" name="action" value="delete">
+                      <input type="hidden" name="task_id" value="{{ task.id }}">
+                      <button type="submit" class="btn-ghost btn-ghost--small">Aufgabe loeschen</button>
+                    </form>
+                  </div>
+                </article>
+              {% empty %}
+                <div class="empty-state-mini">Keine Eintraege.</div>
+              {% endfor %}
+            </section>
+          {% endfor %}
+        </div>
+      </article>
+
       <article class="panel">
         <div class="panel__header">
           <div>
@@ -33,54 +91,6 @@
           {% endfor %}
           <button type="submit" class="btn-primary">Aufgabe anlegen</button>
         </form>
-      </article>
-
-      <article class="panel panel--span-2">
-        <div class="panel__header">
-          <div>
-            <p class="panel__eyebrow">Statusboard</p>
-            <h2>Operative Aufgaben</h2>
-          </div>
-        </div>
-        <div class="kanban-grid" id="task-board">
-          {% for column in task_columns %}
-            <section class="kanban-column" data-task-dropzone="true" data-status="{{ column.status }}">
-              <header class="kanban-column__header">
-                <strong>{{ column.label }}</strong>
-                <span>{{ column.tasks|length }}</span>
-              </header>
-              {% for task in column.tasks %}
-                <article class="task-card task-card--{{ task.priority }}" draggable="true" data-task-card="true" data-task-id="{{ task.id }}" data-current-status="{{ task.status }}">
-                  <strong>{{ task.title }}</strong>
-                  <p>{{ task.description|default:'Ohne Beschreibung.'|truncatechars:110 }}</p>
-                  <div class="task-card__meta">
-                    <span>{{ task.owner.full_name|default:'Nicht zugewiesen' }}</span>
-                    <span>{% if task.due_date %}{{ task.due_date|date:"d.m.Y" }}{% else %}-{% endif %}</span>
-                  </div>
-                  <form method="post" class="inline-actions">
-                    {% csrf_token %}
-                    <input type="hidden" name="action" value="status">
-                    <input type="hidden" name="task_id" value="{{ task.id }}">
-                    <select name="status" class="form-input form-select">
-                      {% for next_status, next_label in status_choices %}
-                        <option value="{{ next_status }}" {% if task.status == next_status %}selected{% endif %}>{{ next_label }}</option>
-                      {% endfor %}
-                    </select>
-                    <button type="submit" class="btn-ghost btn-ghost--small">Aktualisieren</button>
-                  </form>
-                  <form method="post" class="inline-actions">
-                    {% csrf_token %}
-                    <input type="hidden" name="action" value="delete">
-                    <input type="hidden" name="task_id" value="{{ task.id }}">
-                    <button type="submit" class="btn-ghost btn-ghost--small">Aufgabe loeschen</button>
-                  </form>
-                </article>
-              {% empty %}
-                <div class="empty-state-mini">Keine Eintraege.</div>
-              {% endfor %}
-            </section>
-          {% endfor %}
-        </div>
       </article>
     </section>
   </section>

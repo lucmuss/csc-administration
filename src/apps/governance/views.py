@@ -93,6 +93,8 @@ def meetings(request):
         form = BoardMeetingForm(
             initial={
                 "meeting_type": BoardMeeting.TYPE_GENERAL,
+                "chairperson": request.user,
+                "location": "Online-Meeting",
                 "invitation_lead_days": settings.GENERAL_MEETING_INVITATION_LEAD_DAYS,
                 "reminder_lead_hours": settings.GENERAL_MEETING_REMINDER_LEAD_HOURS,
                 "agenda_submission_email": settings.GENERAL_MEETING_AGENDA_SUBMISSION_EMAIL,
@@ -283,7 +285,13 @@ def tasks(request):
             messages.warning(request, "Aufgabe geloescht.")
             return redirect("governance:tasks")
     else:
-        form = BoardTaskForm(initial={"status": BoardTask.STATUS_TODO})
+        form = BoardTaskForm(
+            initial={
+                "status": BoardTask.STATUS_TODO,
+                "owner": request.user,
+                "due_date": timezone.localdate() + timedelta(days=5),
+            }
+        )
 
     task_columns = [
         {

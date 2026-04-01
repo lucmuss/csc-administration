@@ -8,10 +8,14 @@ class Strain(models.Model):
     PRODUCT_TYPE_FLOWER = "flower"
     PRODUCT_TYPE_CUTTING = "cutting"
     PRODUCT_TYPE_EDIBLE = "edible"
+    PRODUCT_TYPE_ACCESSORY = "accessory"
+    PRODUCT_TYPE_MERCH = "merch"
     PRODUCT_TYPE_CHOICES = [
         (PRODUCT_TYPE_FLOWER, "Bluete"),
         (PRODUCT_TYPE_CUTTING, "Steckling"),
         (PRODUCT_TYPE_EDIBLE, "Edible"),
+        (PRODUCT_TYPE_ACCESSORY, "Rauchzubehoer"),
+        (PRODUCT_TYPE_MERCH, "Werbegeschenk"),
     ]
 
     CARD_TONE_APRICOT = "apricot"

@@ -10,6 +10,7 @@
       <div class="hero-actions">
         {% if not is_member_directory %}
           <a href="{% url 'members:export' %}" class="btn-ghost">CSV-Export</a>
+          <a href="{% url 'members:import' %}" class="btn-ghost">CSV-Import</a>
         {% endif %}
         <a href="{% url 'core:dashboard' %}" class="btn-primary">Zurueck zum Cockpit</a>
       </div>
@@ -84,6 +85,7 @@
                   <div class="table-meta">
                     {{ profile.user.email }}
                     {% if profile.member_number %}· Nr. {{ profile.member_number }}{% endif %}
+                    · <span class="role-pill role-pill--{{ profile.user.role }}">{{ profile.user.get_role_display }}</span>
                   </div>
                 </td>
                 <td>
@@ -104,6 +106,7 @@
                     {% if is_member_directory %}
                       Verifiziert: {{ profile.is_verified|yesno:"Ja,Nein" }}
                     {% else %}
+                      Rolle: {{ profile.user.get_role_display }} ·
                       {% if profile.is_locked_for_orders %}Bestellungen gesperrt · {% endif %}
                       {{ profile.open_invoice_count }} offene Rechnungen · {{ profile.suspicious_count }} Risiken
                     {% endif %}
@@ -115,6 +118,7 @@
                       {% csrf_token %}
                       <input type="hidden" name="next" value="{{ request.get_full_path }}">
                       <a href="{% url 'members:detail' profile.id %}" class="btn-ghost btn-ghost--small">Profil</a>
+                      <a href="{% url 'messaging:mass_email_create' %}?member={{ profile.id }}&subject=Rueckfrage%20zu%20deinem%20Mitgliedsprofil" class="btn-ghost btn-ghost--small">Kontakt</a>
                       {% if profile.status == 'pending' %}
                         <button type="submit" name="action" value="verify" class="btn-ghost btn-ghost--small">Freischalten</button>
                         <button type="submit" name="action" value="reject" class="btn-ghost btn-ghost--small">Ablehnen</button>

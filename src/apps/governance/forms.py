@@ -1,4 +1,4 @@
-from datetime import datetime
+from datetime import datetime, timedelta
 from urllib.parse import urlparse
 
 from django import forms
@@ -139,6 +139,7 @@ class BoardTaskForm(StyledModelForm):
         self.fields["status"].label = "Status"
         self.fields["due_date"].label = "Faellig am"
         self.fields["owner"].label = "Verantwortlich"
+        self.fields["due_date"].initial = self.fields["due_date"].initial or (timezone.localdate() + timedelta(days=5))
 
 
 class MemberCardIssueForm(forms.Form):

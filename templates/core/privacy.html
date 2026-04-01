@@ -11,14 +11,12 @@
         des betreibenden Vereins oder Unternehmens hier eingetragen und fachlich geprueft werden.
       </p>
       <h2>Verantwortlicher</h2>
-      <p>
-        Bitte ergaenzen:
-      </p>
       <ul>
-        <li>Name des Vereins oder Betreibers</li>
-        <li>Ladungsfaehige Anschrift</li>
-        <li>E-Mail-Adresse und Telefonnummer</li>
-        <li>Datenschutz-Kontakt oder Datenschutzbeauftragte Person, falls vorhanden</li>
+        <li>{{ club_name }}</li>
+        <li>{{ club_contact_address|default:"Noch nicht hinterlegt" }}</li>
+        <li>{{ club_contact_email|default:"Noch nicht hinterlegt" }} / {{ club_contact_phone|default:"Noch nicht hinterlegt" }}</li>
+        <li>Mitgliedschaft: {{ club_membership_email|default:"Noch nicht hinterlegt" }}</li>
+        <li>Praevention: {{ club_prevention_email|default:"Noch nicht hinterlegt" }}</li>
       </ul>
 
       <h2>Zwecke und Kategorien der Verarbeitung</h2>
@@ -88,6 +86,9 @@
         fuer optionale Analytik. Rechtlich fertig ist die Seite erst, wenn die konkreten Betreiberangaben und
         Prozessdetails dieser Installation eingetragen wurden.
       </p>
+      {% if club_language_notice %}
+        <p>{{ club_language_notice }}</p>
+      {% endif %}
     </article>
   </section>
 {% endblock %}

@@ -2,8 +2,20 @@ Hallo {{ user.first_name|default:user.email }},
 
 {{ message }}
 
+{% if profile %}
+Mitgliedsnummer: {{ profile.member_number|default:"wird nachgereicht" }}
+Aufnahmedatum: {{ profile.desired_join_date|date:"d.m.Y"|default:"wird nach Pruefung bestaetigt" }}
+Status: {{ profile.get_status_display }}
+{% endif %}
+
 Login:
 {{ login_url }}
 
 Dashboard:
 {{ dashboard_url }}
+
+Fragen zur Mitgliedschaft: {{ club_membership_email }}
+Fragen zu Beitraegen: {{ club_finance_email }}
+
+{{ club_name }}
+{{ club_contact_address }}

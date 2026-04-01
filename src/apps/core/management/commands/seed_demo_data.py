@@ -12,8 +12,8 @@ from django.utils.dateparse import parse_date, parse_datetime
 
 from apps.accounts.models import User
 from apps.compliance.models import PreventionInfo
-from apps.finance.models import BalanceTopUp, BalanceTransaction, Invoice, Payment, Reminder, SepaMandate
-from apps.finance.services import add_balance_transaction, ensure_seed_credit, sync_profile_balance
+from apps.finance.models import BalanceTopUp, BalanceTransaction, Invoice, Payment, Reminder, SepaMandate, UploadedInvoice
+from apps.finance.services import add_balance_transaction, ensure_seed_credit, import_uploaded_invoices_from_directory, sync_profile_balance
 from apps.governance.models import MemberCard
 from apps.inventory.models import Batch, InventoryCount, InventoryItem, InventoryLocation, Strain
 from apps.members.models import Profile
@@ -68,6 +68,7 @@ class Command(BaseCommand):
             self._seed_users(users_data, refs)
             self._seed_catalog(catalog_data, refs)
             self._seed_activity(activity_data, refs)
+            self._seed_invoice_archive(data_dir / "invoices", refs)
 
         self.stdout.write(
             self.style.SUCCESS(
@@ -75,7 +76,8 @@ class Command(BaseCommand):
                 f"{User.objects.count()} users, "
                 f"{Strain.objects.count()} strains, "
                 f"{Order.objects.count()} orders, "
-                f"{Invoice.objects.count()} invoices."
+                f"{Invoice.objects.count()} invoices, "
+                f"{UploadedInvoice.objects.count()} archive documents."
             )
         )
 
@@ -90,6 +92,7 @@ class Command(BaseCommand):
         self._safe_delete(Reminder)
         self._safe_delete(Invoice)
         self._safe_delete(BalanceTopUp)
+        self._safe_delete(UploadedInvoice)
         self._safe_delete(BalanceTransaction)
         self._safe_delete(Order)
         self._safe_delete(InventoryCount)
@@ -326,6 +329,19 @@ class Command(BaseCommand):
                         "notes": prevention_info.get("notes", ""),
                     },
                 )
+
+    def _seed_invoice_archive(self, directory: Path, refs) -> None:
+        seed_user = (
+            refs.get("board", {}).get("user")
+            or refs.get("admin", {}).get("user")
+            or User.objects.filter(role__in=[User.ROLE_BOARD, User.ROLE_STAFF]).order_by("id").first()
+        )
+        import_uploaded_invoices_from_directory(
+            directory=directory,
+            created_by=seed_user,
+            assigned_to=seed_user,
+            analyze=True,
+        )
 
     def _upsert_order(self, entry, refs):
         member = refs[entry["member"]]["user"]

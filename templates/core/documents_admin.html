@@ -1,0 +1,89 @@
+{% extends 'base.html' %}
+{% block title %}Dokumente verwalten{% endblock %}
+{% block content %}
+  <section class="page-shell">
+    <div class="page-heading">
+      <div>
+        <p class="eyebrow">Verwaltung</p>
+        <h1>Dokumente hochladen, sortieren und oeffentlich bereitstellen.</h1>
+        <p class="lede">
+          Hier pflegst du Satzung, Ordnungen, Gesundheitskonzept und weitere PDFs zentral an einer Stelle.
+        </p>
+      </div>
+      <div class="hero-actions">
+        <a href="{% url 'core:documents' %}" class="btn-ghost">Oeffentliche Ansicht</a>
+      </div>
+    </div>
+    <section class="board-grid">
+      <article class="panel">
+        <div class="panel__header">
+          <div>
+            <p class="panel__eyebrow">Neues Dokument</p>
+            <h2>Upload</h2>
+          </div>
+        </div>
+        <p class="empty-copy">
+          Ideal fuer Satzung, Weitergabeordnung, Gesundheitskonzept, Formulare oder interne Merkblaetter.
+        </p>
+        <form method="post" enctype="multipart/form-data" class="form-stack">
+          {% csrf_token %}
+          {% for field in form %}
+            <div class="field">
+              <label for="{{ field.id_for_label }}">{{ field.label }}</label>
+              {{ field }}
+              {{ field.errors }}
+            </div>
+          {% endfor %}
+          <button type="submit" class="btn-primary">Dokument speichern</button>
+        </form>
+      </article>
+      <article class="panel panel--span-2">
+        <div class="panel__header">
+          <div>
+            <p class="panel__eyebrow">Bestand</p>
+            <h2>Alle Dokumente</h2>
+          </div>
+        </div>
+        <div class="info-strip">
+          <span>{{ documents|length }} Dokumente insgesamt</span>
+          <span>Oeffentliche Dateien erscheinen automatisch im Footer-Bereich "Dokumente"</span>
+        </div>
+        <div class="table-card">
+          <table class="table table--compact">
+            <thead>
+              <tr>
+                <th>Titel</th>
+                <th>Kategorie</th>
+                <th>Status</th>
+                <th>Datei</th>
+                <th>Aktion</th>
+              </tr>
+            </thead>
+            <tbody>
+              {% for document in documents %}
+                <tr>
+                  <td><strong>{{ document.title }}</strong></td>
+                  <td>{{ document.get_category_display }}</td>
+                  <td>{{ document.is_public|yesno:'Oeffentlich,Intern' }}</td>
+                  <td><a href="{{ document.file.url }}" class="text-link" target="_blank" rel="noopener">PDF ansehen</a></td>
+                  <td>
+                    <form method="post" class="inline-actions">
+                      {% csrf_token %}
+                      <input type="hidden" name="action" value="delete">
+                      <input type="hidden" name="document_id" value="{{ document.id }}">
+                      <button type="submit" class="btn-ghost btn-ghost--small">Loeschen</button>
+                    </form>
+                  </td>
+                </tr>
+              {% empty %}
+                <tr>
+                  <td colspan="5">Noch keine Dokumente vorhanden.</td>
+                </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+      </article>
+    </section>
+  </section>
+{% endblock %}

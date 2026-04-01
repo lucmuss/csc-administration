@@ -11,6 +11,8 @@ from django.template.loader import render_to_string
 from django.urls import reverse
 from django.utils import timezone
 
+from apps.core.club import get_club_settings
+from apps.core.pdf import draw_club_footer, draw_club_letterhead, generated_at_label, governance_footer_lines
 from apps.finance.models import Invoice
 from apps.members.models import Profile
 
@@ -89,6 +91,7 @@ def _eligible_meeting_profiles():
 
 def _meeting_context(meeting: BoardMeeting) -> dict:
     agenda_deadline = meeting.scheduled_for - timedelta(days=7)
+    club_settings = get_club_settings()
     return {
         "meeting": meeting,
         "meeting_url": meeting.participation_url or meeting.location or "",
@@ -96,9 +99,11 @@ def _meeting_context(meeting: BoardMeeting) -> dict:
         "meeting_date": timezone.localtime(meeting.scheduled_for),
         "agenda_deadline": timezone.localtime(agenda_deadline),
         "agenda_submission_email": meeting.agenda_submission_email or settings.GENERAL_MEETING_AGENDA_SUBMISSION_EMAIL,
-        "club_contact_email": settings.CLUB_CONTACT_EMAIL,
-        "club_contact_phone": settings.CLUB_CONTACT_PHONE,
-        "club_contact_address": settings.CLUB_CONTACT_ADDRESS,
+        "club_contact_email": club_settings["club_contact_email"],
+        "club_contact_phone": club_settings["club_contact_phone"],
+        "club_contact_address": club_settings["club_contact_address"],
+        "club_email_signature_text": club_settings["club_email_signature_text"],
+        "club_email_signature_html": club_settings["club_email_signature_html"],
         "dashboard_url": f"{_site_url()}{reverse('governance:meetings')}",
     }
 
@@ -110,6 +115,10 @@ def _send_meeting_message(*, meeting: BoardMeeting, subject: str, text_template:
         context = {**base_context, "profile": profile, "user": profile.user}
         text_body = render_to_string(text_template, context)
         html_body = render_to_string(html_template, context)
+        if context.get("club_email_signature_text"):
+            text_body = f"{text_body.rstrip()}\n\n-- \n{context['club_email_signature_text']}\n"
+        if context.get("club_email_signature_html"):
+            html_body = f"{html_body.rstrip()}<hr><div>{context['club_email_signature_html']}</div>"
         msg = EmailMultiAlternatives(
             subject=subject,
             body=text_body,
@@ -183,10 +192,13 @@ def render_operational_record_pdf(record: OperationalRecord) -> bytes:
     pdf = canvas.Canvas(stream, pagesize=A4)
     width, height = A4
 
-    pdf.setTitle(record.reference)
-    pdf.setFont("Helvetica-Bold", 18)
-    pdf.drawString(20 * mm, height - 25 * mm, record.get_record_type_display())
-    pdf.setFont("Helvetica", 10)
+    bottom_of_header = draw_club_letterhead(
+        pdf,
+        width=width,
+        height=height,
+        title=record.get_record_type_display(),
+        right_lines=[record.reference, f"Erstellt am {generated_at_label()}"],
+    )
 
     lines = [
         ("Referenz", record.reference),
@@ -204,7 +216,7 @@ def render_operational_record_pdf(record: OperationalRecord) -> bytes:
         ("Freigegeben von", record.approved_by.full_name if record.approved_by else "-"),
     ]
 
-    y = height - 40 * mm
+    y = bottom_of_header - 16 * mm
     for label, value in lines:
         pdf.setFont("Helvetica-Bold", 10)
         pdf.drawString(20 * mm, y, f"{label}:")
@@ -220,6 +232,7 @@ def render_operational_record_pdf(record: OperationalRecord) -> bytes:
         text.textLine(line)
     pdf.drawText(text)
 
+    draw_club_footer(pdf, width=width, footer_y=18 * mm, lines=governance_footer_lines())
     pdf.showPage()
     pdf.save()
     return stream.getvalue()

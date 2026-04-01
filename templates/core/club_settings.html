@@ -1,0 +1,58 @@
+{% extends 'base.html' %}
+{% block title %}Clubdaten{% endblock %}
+{% block content %}
+  <section class="page-shell">
+    <div class="page-heading">
+      <div>
+        <p class="eyebrow">Verwaltung</p>
+        <h1>Clubdaten, Rechtstexte und E-Mail-Signatur zentral konfigurieren.</h1>
+        <p class="lede">Diese Angaben werden fuer Impressum, Datenschutz, PDFs, E-Mails und die allgemeine App-Beschriftung verwendet. Leere Felder fallen automatisch auf die Server-Konfiguration zurueck.</p>
+      </div>
+      <div class="hero-actions">
+        <a href="{% url 'core:imprint' %}" class="btn-ghost">Impressum ansehen</a>
+        <a href="{% url 'core:privacy' %}" class="btn-ghost">Datenschutz ansehen</a>
+      </div>
+    </div>
+
+    <section class="board-grid">
+      <article class="panel panel--span-2">
+        <div class="panel__header">
+          <div>
+            <p class="panel__eyebrow">General Information</p>
+            <h2>Mandantenfaehige Club-Konfiguration</h2>
+          </div>
+        </div>
+        <form method="post" class="form-stack">
+          {% csrf_token %}
+          {% for field in form %}
+            <div class="field">
+              <label for="{{ field.id_for_label }}">{{ field.label }}{% if not field.field.required %} <small>(optional)</small>{% endif %}</label>
+              {{ field }}
+              {% if field.help_text %}<small>{{ field.help_text }}</small>{% endif %}
+              {{ field.errors }}
+            </div>
+          {% endfor %}
+          <button type="submit" class="btn-primary">Clubdaten speichern</button>
+        </form>
+      </article>
+
+      <article class="panel">
+        <div class="panel__header">
+          <div>
+            <p class="panel__eyebrow">Wirksam</p>
+            <h2>Aktuelle Live-Daten</h2>
+          </div>
+        </div>
+        <div class="detail-list">
+          <div><span>Clubname</span><strong>{{ effective_settings.club_name|default:"-" }}</strong></div>
+          <div><span>Kontakt</span><strong>{{ effective_settings.club_contact_email|default:"-" }}</strong></div>
+          <div><span>Register</span><strong>{{ effective_settings.club_register_entry|default:"-" }}</strong></div>
+          <div><span>Steuernummer</span><strong>{{ effective_settings.club_tax_number|default:"-" }}</strong></div>
+          <div><span>Praevention</span><strong>{{ effective_settings.prevention_officer_name|default:effective_settings.club_prevention_email|default:"-" }}</strong></div>
+          <div><span>Instagram</span><strong>{{ effective_settings.instagram_url|default:"-" }}</strong></div>
+        </div>
+        <p class="empty-copy">Tipp: Diese Seite eignet sich fuer andere Social Clubs als zentrale Ersteinrichtung, ohne dass `.env`-Dateien manuell bearbeitet werden muessen.</p>
+      </article>
+    </section>
+  </section>
+{% endblock %}

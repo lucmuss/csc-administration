@@ -60,7 +60,7 @@
               <a href="{% url 'cultivation:dashboard' %}" class="nav-link{% if '/cultivation/' in request.path %} is-active{% endif %}">Anbau</a>
               <a href="{% url 'finance:dashboard' %}" class="nav-link{% if '/finance/' in request.path %} is-active{% endif %}">Finanzen</a>
               <a href="{% url 'participation:admin_hours' %}" class="nav-link{% if '/participation/' in request.path %} is-active{% endif %}">Mitwirkung</a>
-              <details class="nav-dropdown{% if '/inventory/' in request.path or '/messaging/' in request.path or '/compliance/' in request.path or '/governance/' in request.path or '/documents/' in request.path or '/finance/archive/' in request.path or '/finance/statistics/' in request.path %} is-active{% endif %}">
+              <details class="nav-dropdown{% if '/inventory/' in request.path or '/messaging/' in request.path or '/compliance/' in request.path or '/governance/' in request.path or '/documents/' in request.path or '/finance/archive/' in request.path or '/finance/statistics/' in request.path or '/settings/club/' in request.path %} is-active{% endif %}">
                 <summary class="nav-link">Verwaltung</summary>
                 <div class="nav-dropdown__menu">
                   <a href="{% url 'inventory:strain_list' %}" class="nav-dropdown__item">Inventar</a>
@@ -70,6 +70,7 @@
                   <a href="{% url 'finance:archive' %}" class="nav-dropdown__item">Rechnungsarchiv</a>
                   <a href="{% url 'finance:statistics' %}" class="nav-dropdown__item">Statistiken</a>
                   <a href="{% url 'core:documents_admin' %}" class="nav-dropdown__item">Dokumente</a>
+                  <a href="{% url 'core:club_settings' %}" class="nav-dropdown__item">Clubdaten</a>
                 </div>
               </details>
             {% endif %}

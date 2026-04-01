@@ -10,6 +10,7 @@ from django.shortcuts import get_object_or_404, redirect, render
 from django.utils import timezone
 
 from apps.accounts.models import User
+from apps.core.club import get_club_settings
 from apps.core.authz import staff_or_board_required
 from apps.compliance.models import ComplianceReport, SuspiciousActivity
 from apps.cultivation.models import GrowCycle, HarvestBatch, Plant
@@ -20,8 +21,8 @@ from apps.members.models import Profile
 from apps.orders.models import Order
 from apps.participation.models import MemberEngagement, Shift, WorkHours
 
-from .forms import PublicDocumentForm
-from .models import PublicDocument
+from .forms import ClubConfigurationForm, PublicDocumentForm
+from .models import ClubConfiguration, PublicDocument
 
 LOW_STOCK_THRESHOLD = Decimal(django_settings.LOW_STOCK_THRESHOLD_EUR)
 MEMBER_CAPACITY = django_settings.MEMBER_CAPACITY
@@ -43,7 +44,8 @@ def _request_ip(request) -> str:
 
 
 def _configured_service_providers() -> list[str]:
-    providers = list(django_settings.CLUB_EXTERNAL_SERVICES)
+    club_settings = get_club_settings()
+    providers = list(club_settings["club_external_services"])
     if django_settings.STRIPE_SECRET_KEY and "Stripe" not in providers:
         providers.append("Stripe fuer Online-Zahlungen und Guthabenaufladungen")
     if django_settings.OPENROUTER_API_KEY and "OpenRouter" not in providers:
@@ -54,13 +56,14 @@ def _configured_service_providers() -> list[str]:
 
 
 def _legal_setup_complete() -> bool:
+    club_settings = get_club_settings()
     required = [
-        django_settings.CLUB_NAME,
-        django_settings.CLUB_CONTACT_ADDRESS,
-        django_settings.CLUB_CONTACT_EMAIL,
-        django_settings.CLUB_BOARD_REPRESENTATIVES,
-        django_settings.CLUB_REGISTER_COURT,
-        django_settings.CLUB_TAX_NUMBER,
+        club_settings["club_name"],
+        club_settings["club_contact_address"],
+        club_settings["club_contact_email"],
+        club_settings["club_board_representatives"],
+        club_settings["club_register_court"],
+        club_settings["club_tax_number"],
     ]
     return all(bool(value) for value in required)
 
@@ -245,41 +248,26 @@ def dashboard(request):
 
 
 def privacy(request):
+    club_settings = get_club_settings()
     return render(
         request,
         "core/privacy.html",
         {
             "club_service_providers": _configured_service_providers(),
             "legal_setup_complete": _legal_setup_complete(),
-            "club_legal_basis_notice": django_settings.CLUB_LEGAL_BASIS_NOTICE,
-            "club_retention_notice": django_settings.CLUB_RETENTION_NOTICE,
+            "club_legal_basis_notice": club_settings["club_legal_basis_notice"],
+            "club_retention_notice": club_settings["club_retention_notice"],
         },
     )
 
 
 def imprint(request):
+    club_settings = get_club_settings()
     return render(
         request,
         "core/imprint.html",
         {
-            "club_name": django_settings.CLUB_NAME,
-            "club_contact_address": django_settings.CLUB_CONTACT_ADDRESS,
-            "club_contact_email": django_settings.CLUB_CONTACT_EMAIL,
-            "club_contact_phone": django_settings.CLUB_CONTACT_PHONE,
-            "club_board_representatives": django_settings.CLUB_BOARD_REPRESENTATIVES,
-            "club_register_entry": django_settings.CLUB_REGISTER_ENTRY,
-            "club_vat_id": django_settings.CLUB_VAT_ID,
-            "club_supervisory_authority": django_settings.CLUB_SUPERVISORY_AUTHORITY,
-            "club_content_responsible": django_settings.CLUB_CONTENT_RESPONSIBLE,
-            "club_membership_email": django_settings.CLUB_MEMBERSHIP_EMAIL,
-            "club_prevention_email": django_settings.CLUB_PREVENTION_EMAIL,
-            "club_finance_email": django_settings.CLUB_FINANCE_EMAIL,
-            "club_privacy_contact": django_settings.CLUB_PRIVACY_CONTACT,
-            "club_data_protection_officer": django_settings.CLUB_DATA_PROTECTION_OFFICER,
-            "club_language_notice": django_settings.CLUB_LANGUAGE_NOTICE,
-            "club_register_court": django_settings.CLUB_REGISTER_COURT,
-            "club_tax_number": django_settings.CLUB_TAX_NUMBER,
-            "club_responsible_person": django_settings.CLUB_RESPONSIBLE_PERSON,
+            **club_settings,
             "legal_setup_complete": _legal_setup_complete(),
         },
     )
@@ -313,6 +301,27 @@ def documents_admin(request):
         {
             "form": form,
             "documents": PublicDocument.objects.order_by("display_order", "title"),
+        },
+    )
+
+
+@staff_or_board_required(_is_staff_or_board)
+def club_settings_admin(request):
+    configuration = ClubConfiguration.objects.first() or ClubConfiguration(pk=1)
+    if request.method == "POST":
+        form = ClubConfigurationForm(request.POST, instance=configuration)
+        if form.is_valid():
+            form.save()
+            messages.success(request, "Club-Konfiguration wurde gespeichert und in der gesamten App aktualisiert.")
+            return redirect("core:club_settings")
+    else:
+        form = ClubConfigurationForm(instance=configuration)
+    return render(
+        request,
+        "core/club_settings.html",
+        {
+            "form": form,
+            "effective_settings": get_club_settings(),
         },
     )
 

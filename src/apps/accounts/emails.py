@@ -8,6 +8,8 @@ from django.template.loader import render_to_string
 from django.urls import NoReverseMatch, reverse
 from django.utils import timezone
 
+from apps.core.club import get_club_settings
+
 
 def _request_meta(request: HttpRequest) -> tuple[str, str]:
     forwarded_for = request.META.get("HTTP_X_FORWARDED_FOR", "").strip()
@@ -43,16 +45,17 @@ def _render_subject(template_name: str, context: dict) -> str:
 
 
 def _club_email_context() -> dict:
-    return {
-        "club_name": settings.CLUB_NAME,
-        "club_contact_email": settings.CLUB_CONTACT_EMAIL,
-        "club_contact_phone": settings.CLUB_CONTACT_PHONE,
-        "club_contact_address": settings.CLUB_CONTACT_ADDRESS,
-        "club_membership_email": settings.CLUB_MEMBERSHIP_EMAIL,
-        "club_prevention_email": settings.CLUB_PREVENTION_EMAIL,
-        "club_finance_email": settings.CLUB_FINANCE_EMAIL,
-        "club_language_notice": settings.CLUB_LANGUAGE_NOTICE,
-    }
+    return get_club_settings()
+
+
+def _apply_email_signature(text_body: str, html_body: str, context: dict) -> tuple[str, str]:
+    signature_text = (context.get("club_email_signature_text") or "").strip()
+    signature_html = (context.get("club_email_signature_html") or "").strip()
+    if signature_text:
+        text_body = f"{text_body.rstrip()}\n\n-- \n{signature_text}\n"
+    if signature_html:
+        html_body = f"{html_body.rstrip()}<hr><div>{signature_html}</div>"
+    return text_body, html_body
 
 
 def send_login_alert_email(user, request: HttpRequest) -> bool:
@@ -72,6 +75,7 @@ def send_login_alert_email(user, request: HttpRequest) -> bool:
     subject = _render_subject("emails/account/login_alert_subject.txt", context)
     text_body = render_to_string("emails/account/login_alert_body.txt", context)
     html_body = render_to_string("emails/account/login_alert_body.html", context)
+    text_body, html_body = _apply_email_signature(text_body, html_body, context)
 
     from_email = settings.DEFAULT_FROM_EMAIL
     msg = EmailMultiAlternatives(
@@ -96,6 +100,7 @@ def send_registration_received_email(user, request: HttpRequest, *, is_bootstrap
     subject = _render_subject("emails/account/registration_received_subject.txt", context)
     text_body = render_to_string("emails/account/registration_received_body.txt", context)
     html_body = render_to_string("emails/account/registration_received_body.html", context)
+    text_body, html_body = _apply_email_signature(text_body, html_body, context)
 
     msg = EmailMultiAlternatives(
         subject=subject,
@@ -128,6 +133,7 @@ def send_membership_status_email(
     subject = _render_subject("emails/account/member_status_update_subject.txt", context)
     text_body = render_to_string("emails/account/member_status_update_body.txt", context)
     html_body = render_to_string("emails/account/member_status_update_body.html", context)
+    text_body, html_body = _apply_email_signature(text_body, html_body, context)
 
     msg = EmailMultiAlternatives(
         subject=subject,
@@ -152,6 +158,7 @@ def send_membership_documents_email(profile, request: HttpRequest) -> bool:
     subject = _render_subject("emails/account/membership_documents_subject.txt", context)
     text_body = render_to_string("emails/account/membership_documents_body.txt", context)
     html_body = render_to_string("emails/account/membership_documents_body.html", context)
+    text_body, html_body = _apply_email_signature(text_body, html_body, context)
 
     msg = EmailMultiAlternatives(
         subject=subject,
@@ -180,6 +187,7 @@ def send_order_reserved_email(*, order, request: HttpRequest) -> bool:
     subject = _render_subject("emails/orders/reserved_subject.txt", context)
     text_body = render_to_string("emails/orders/reserved_body.txt", context)
     html_body = render_to_string("emails/orders/reserved_body.html", context)
+    text_body, html_body = _apply_email_signature(text_body, html_body, context)
 
     msg = EmailMultiAlternatives(
         subject=subject,
@@ -208,6 +216,7 @@ def send_order_completed_email(*, order, request: HttpRequest) -> bool:
     subject = _render_subject("emails/orders/completed_subject.txt", context)
     text_body = render_to_string("emails/orders/completed_body.txt", context)
     html_body = render_to_string("emails/orders/completed_body.html", context)
+    text_body, html_body = _apply_email_signature(text_body, html_body, context)
 
     msg = EmailMultiAlternatives(
         subject=subject,

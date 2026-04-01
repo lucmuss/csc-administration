@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import io
 
-from django.utils import timezone
+from apps.core.pdf import draw_club_footer, draw_club_letterhead, generated_at_label, membership_footer_lines
 
 
 def _build_pdf(title: str, lines: list[tuple[str, str]]) -> bytes:
@@ -14,14 +14,14 @@ def _build_pdf(title: str, lines: list[tuple[str, str]]) -> bytes:
     pdf = canvas.Canvas(stream, pagesize=A4)
     width, height = A4
 
-    pdf.setTitle(title)
-    pdf.setFont("Helvetica-Bold", 18)
-    pdf.drawString(20 * mm, height - 25 * mm, title)
-    pdf.setFont("Helvetica", 10)
-    pdf.drawString(20 * mm, height - 33 * mm, "Cannabis Social Club Leipzig Sued e.V.")
-    pdf.drawString(20 * mm, height - 39 * mm, f"Erstellt am {timezone.localtime().strftime('%d.%m.%Y %H:%M')}")
-
-    y = height - 55 * mm
+    bottom_of_header = draw_club_letterhead(
+        pdf,
+        width=width,
+        height=height,
+        title=title,
+        right_lines=[title, f"Erstellt am {generated_at_label()}"],
+    )
+    y = bottom_of_header - 18 * mm
     for label, value in lines:
         pdf.setFont("Helvetica-Bold", 10)
         pdf.drawString(20 * mm, y, f"{label}:")
@@ -29,9 +29,18 @@ def _build_pdf(title: str, lines: list[tuple[str, str]]) -> bytes:
         pdf.drawString(68 * mm, y, value or "-")
         y -= 7 * mm
         if y < 30 * mm:
+            draw_club_footer(pdf, width=width, footer_y=18 * mm, lines=membership_footer_lines())
             pdf.showPage()
-            y = height - 25 * mm
+            bottom_of_header = draw_club_letterhead(
+                pdf,
+                width=width,
+                height=height,
+                title=title,
+                right_lines=[title, f"Erstellt am {generated_at_label()}"],
+            )
+            y = bottom_of_header - 18 * mm
 
+    draw_club_footer(pdf, width=width, footer_y=18 * mm, lines=membership_footer_lines())
     pdf.showPage()
     pdf.save()
     return stream.getvalue()

@@ -19,6 +19,8 @@ from django.utils import timezone
 from PIL import Image, ImageOps
 from pypdf import PdfReader
 
+from apps.core.club import get_club_settings
+from apps.core.pdf import draw_club_footer, draw_club_letterhead, finance_footer_lines
 from apps.members.models import Profile
 
 from .models import BalanceTopUp, BalanceTransaction, Invoice, Payment, Reminder, SepaMandate, UploadedInvoice
@@ -235,26 +237,26 @@ def render_invoice_pdf(invoice: Invoice) -> bytes:
     stream = io.BytesIO()
     pdf = canvas.Canvas(stream, pagesize=A4)
     width, height = A4
+    club_settings = get_club_settings()
 
-    pdf.setTitle(invoice.invoice_number)
-    top_y = height - 20 * mm
-    pdf.setFont("Helvetica-Bold", 16)
-    pdf.drawString(20 * mm, top_y, settings.CLUB_NAME)
-    pdf.setFont("Helvetica", 9)
-    address_lines = [line.strip() for line in (settings.CLUB_CONTACT_ADDRESS or "").splitlines() if line.strip()]
-    for index, line in enumerate(address_lines[:4], start=1):
-        pdf.drawString(20 * mm, top_y - (index * 5 * mm), line)
-    pdf.drawRightString(width - 20 * mm, top_y, f"Rechnung {invoice.invoice_number}")
-    pdf.setFont("Helvetica", 9)
-    pdf.drawRightString(width - 20 * mm, top_y - 6 * mm, f"Erstellt am {timezone.localtime(invoice.created_at).strftime('%d.%m.%Y %H:%M')}")
-    pdf.drawRightString(width - 20 * mm, top_y - 11 * mm, f"Faellig am {invoice.due_date.strftime('%d.%m.%Y')}")
-    pdf.drawRightString(width - 20 * mm, top_y - 16 * mm, "Rechnungsart Mitgliedsabrechnung")
+    bottom_of_header = draw_club_letterhead(
+        pdf,
+        width=width,
+        height=height,
+        title=str(club_settings["club_name"]),
+        right_lines=[
+            f"Rechnung {invoice.invoice_number}",
+            f"Erstellt am {timezone.localtime(invoice.created_at).strftime('%d.%m.%Y %H:%M')}",
+            f"Faellig am {invoice.due_date.strftime('%d.%m.%Y')}",
+            "Rechnungsart Mitgliedsabrechnung",
+        ],
+    )
 
     tax_note = "Umsatzsteuer nach Vereins- und Leistungsart pruefen."
-    if getattr(settings, "CLUB_VAT_ID", ""):
-        tax_note = f"USt-ID: {settings.CLUB_VAT_ID}"
-    elif getattr(settings, "CLUB_TAX_NUMBER", ""):
-        tax_note = f"Steuernummer: {settings.CLUB_TAX_NUMBER}"
+    if club_settings["club_vat_id"]:
+        tax_note = f"USt-ID: {club_settings['club_vat_id']}"
+    elif club_settings["club_tax_number"]:
+        tax_note = f"Steuernummer: {club_settings['club_tax_number']}"
 
     member_name = invoice.profile.user.full_name or invoice.profile.user.email
     member_address = [
@@ -272,7 +274,7 @@ def render_invoice_pdf(invoice: Invoice) -> bytes:
         ("Zahlziel", f"zahlbar bis {invoice.due_date.strftime('%d.%m.%Y')}"),
     ]
 
-    y = height - 62 * mm
+    y = bottom_of_header - 18 * mm
     pdf.setFont("Helvetica-Bold", 10)
     pdf.drawString(20 * mm, y, "Rechnungsempfaenger")
     pdf.setFont("Helvetica", 10)
@@ -322,16 +324,6 @@ def render_invoice_pdf(invoice: Invoice) -> bytes:
     pdf.drawString(110 * mm, row_y - 14 * mm, f"Steuer: {tax_amount} EUR")
     pdf.drawRightString(width - 20 * mm, row_y - 20 * mm, f"Gesamtbetrag: {invoice.amount} EUR")
     pdf.setFont("Helvetica", 8)
-    footer_lines = [
-        settings.CLUB_CONTACT_EMAIL,
-        settings.CLUB_CONTACT_PHONE,
-        settings.CLUB_REGISTER_ENTRY,
-        settings.CLUB_REGISTER_COURT,
-        settings.CLUB_TAX_NUMBER,
-        settings.CLUB_VAT_ID,
-        settings.CLUB_SUPERVISORY_AUTHORITY,
-        settings.CLUB_CONTENT_RESPONSIBLE or settings.CLUB_RESPONSIBLE_PERSON,
-    ]
     note_y = row_y - 32 * mm
     pdf.setFont("Helvetica", 8)
     pdf.drawString(20 * mm, note_y, "Hinweise")
@@ -342,17 +334,7 @@ def render_invoice_pdf(invoice: Invoice) -> bytes:
     notes.textLine(f"Bitte ueberweise offene Betraege bis spaetestens {invoice.due_date.strftime('%d.%m.%Y')}.")
     pdf.drawText(notes)
 
-    footer_y = 18 * mm
-    pdf.line(20 * mm, footer_y + 8 * mm, width - 20 * mm, footer_y + 8 * mm)
-    footer_text = pdf.beginText(20 * mm, footer_y)
-    footer_text.setFont("Helvetica", 8)
-    footer_text.textLine(settings.CLUB_NAME)
-    for line in address_lines:
-        footer_text.textLine(line)
-    for line in footer_lines:
-        if line:
-            footer_text.textLine(str(line))
-    pdf.drawText(footer_text)
+    draw_club_footer(pdf, width=width, footer_y=18 * mm, lines=finance_footer_lines())
 
     pdf.showPage()
     pdf.save()

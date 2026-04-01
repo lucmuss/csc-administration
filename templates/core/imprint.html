@@ -27,6 +27,7 @@
         <li>Datenschutzkontakt: {{ club_privacy_contact|default:"Bitte konfigurieren" }}</li>
         <li>Datenschutzbeauftragte Stelle: {{ club_data_protection_officer|default:"Nicht benannt" }}</li>
         <li>Kontakt Telefon: {{ club_contact_phone|default:"Bitte konfigurieren" }}</li>
+        <li>Instagram: {% if instagram_url %}<a href="{{ instagram_url }}" class="text-link" target="_blank" rel="noopener">{{ instagram_url }}</a>{% else %}Nicht angegeben{% endif %}</li>
         <li>Registereintrag: {{ club_register_entry|default:"Bitte konfigurieren" }}</li>
         <li>Registergericht: {{ club_register_court|default:"Bitte konfigurieren" }}</li>
         <li>Steuernummer: {{ club_tax_number|default:"Bitte konfigurieren" }}</li>
@@ -34,6 +35,7 @@
         <li>Aufsichtsbehoerde: {{ club_supervisory_authority|default:"Nicht angegeben" }}</li>
         <li>Inhaltlich verantwortlich: {{ club_content_responsible|default:club_responsible_person|default:"Nicht angegeben" }}</li>
         <li>Verantwortlich gemaess § 55 Abs. 2 RStV: {{ club_responsible_person|default:"Nicht angegeben" }}</li>
+        <li>Praeventionsbeauftragte:r: {{ prevention_officer_name|default:"Nicht angegeben" }}</li>
       </ul>
 
       {% if club_language_notice %}
@@ -41,10 +43,16 @@
         <p>{{ club_language_notice }}</p>
       {% endif %}
 
+      {% if prevention_notice %}
+        <h2>Praevention und Jugendschutz</h2>
+        <p>{{ prevention_notice|linebreaksbr }}</p>
+      {% endif %}
+
       <h2>Hinweis zur Instanz-Konfiguration</h2>
       <p>
         Die Verwaltungssoftware ist mandantenfaehig fuers Self-Hosting gedacht. Betreiber koennen Name, Anschrift,
-        Kontaktrollen, Registerdaten und Datenschutzkontakte pro Club ueber die Umgebungsvariablen der Instanz setzen.
+        Kontaktrollen, Registerdaten, Praeventionsangaben und Datenschutzkontakte pro Club ueber die Clubdaten-Seite
+        im Verwaltungsbereich oder alternativ per Umgebungsvariablen setzen.
       </p>
     </article>
   </section>

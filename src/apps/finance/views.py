@@ -486,13 +486,19 @@ def archive_detail(request, pk: int):
         raise Http404
     uploaded_invoice = get_object_or_404(UploadedInvoice.objects.select_related("assigned_to", "created_by"), pk=pk)
     if request.method == "POST":
-        if request.POST.get("action") == "reanalyze":
+        action = request.POST.get("action")
+        if action == "reanalyze":
             analyze_uploaded_invoice(uploaded_invoice)
             if uploaded_invoice.extraction_status == UploadedInvoice.EXTRACTION_SUCCESS:
                 messages.success(request, "Rechnung erneut analysiert.")
             else:
                 messages.warning(request, "Die erneute Analyse konnte nicht vollstaendig abgeschlossen werden.")
             return redirect("finance:archive_detail", pk=uploaded_invoice.pk)
+        if action == "delete":
+            title = uploaded_invoice.title
+            uploaded_invoice.delete()
+            messages.warning(request, f"Rechnung {title} wurde aus dem Archiv geloescht.")
+            return redirect("finance:archive")
         form = UploadedInvoiceUpdateForm(request.POST, instance=uploaded_invoice)
         if form.is_valid():
             form.save()

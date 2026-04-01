@@ -77,6 +77,8 @@ def test_board_can_update_club_configuration_and_imprint_uses_it(client, board_u
             "prevention_officer_name": "Lisa Praevention",
             "prevention_notice": "Bitte wenden Sie sich an Lisa Praevention.",
             "instagram_url": "https://instagram.com/testclub",
+            "telegram_url": "https://t.me/testclub",
+            "whatsapp_url": "https://wa.me/4917612345678",
             "email_signature_text": "Testclub\ninfo@test-club.eu",
             "email_signature_html": "<strong>Testclub</strong><br>info@test-club.eu",
         },
@@ -89,6 +91,8 @@ def test_board_can_update_club_configuration_and_imprint_uses_it(client, board_u
     assert "Cannabis Social Club Test e.V." in html
     assert "Lisa Praevention" in html
     assert "https://instagram.com/testclub" in html
+    assert "https://t.me/testclub" in html
+    assert "https://wa.me/4917612345678" in html
 
 
 @pytest.mark.django_db

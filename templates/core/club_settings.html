@@ -43,13 +43,15 @@
             <h2>Aktuelle Live-Daten</h2>
           </div>
         </div>
-        <div class="detail-list">
+          <div class="detail-list">
           <div><span>Clubname</span><strong>{{ effective_settings.club_name|default:"-" }}</strong></div>
           <div><span>Kontakt</span><strong>{{ effective_settings.club_contact_email|default:"-" }}</strong></div>
           <div><span>Register</span><strong>{{ effective_settings.club_register_entry|default:"-" }}</strong></div>
           <div><span>Steuernummer</span><strong>{{ effective_settings.club_tax_number|default:"-" }}</strong></div>
           <div><span>Praevention</span><strong>{{ effective_settings.prevention_officer_name|default:effective_settings.club_prevention_email|default:"-" }}</strong></div>
           <div><span>Instagram</span><strong>{{ effective_settings.instagram_url|default:"-" }}</strong></div>
+          <div><span>Telegram</span><strong>{{ effective_settings.telegram_url|default:"-" }}</strong></div>
+          <div><span>WhatsApp</span><strong>{{ effective_settings.whatsapp_url|default:"-" }}</strong></div>
         </div>
         <p class="empty-copy">Tipp: Diese Seite eignet sich fuer andere Social Clubs als zentrale Ersteinrichtung, ohne dass `.env`-Dateien manuell bearbeitet werden muessen.</p>
       </article>

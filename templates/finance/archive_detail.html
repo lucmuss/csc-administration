@@ -11,6 +11,11 @@
       <div class="hero-actions">
         <a href="{{ uploaded_invoice.document.url }}" class="btn-primary" target="_blank" rel="noopener">Datei oeffnen</a>
         <a href="{% url 'finance:archive' %}" class="btn-ghost">Zurueck zum Archiv</a>
+        <form method="post" onsubmit="return confirm('Soll diese Rechnung wirklich geloescht werden?');">
+          {% csrf_token %}
+          <input type="hidden" name="action" value="delete">
+          <button type="submit" class="btn-ghost">Rechnung loeschen</button>
+        </form>
       </div>
     </div>
 

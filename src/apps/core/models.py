@@ -10,6 +10,8 @@ class ClubConfiguration(models.Model):
     club_contact_email = models.EmailField(blank=True)
     club_support_email = models.EmailField(blank=True)
     club_contact_phone = models.CharField(max_length=80, blank=True)
+    telegram_url = models.URLField(blank=True)
+    whatsapp_url = models.URLField(blank=True)
     club_contact_address = models.TextField(blank=True)
     club_board_representatives = models.TextField(blank=True)
     club_register_entry = models.CharField(max_length=180, blank=True)

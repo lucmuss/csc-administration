@@ -197,3 +197,26 @@ def test_archive_list_links_title_to_detail_view(client, board_user):
     html = response.content.decode("utf-8")
     assert response.status_code == 200
     assert reverse("finance:archive_detail", args=[UploadedInvoice.objects.latest("id").id]) in html
+
+
+@pytest.mark.django_db
+def test_board_can_delete_invoice_archive_entry_from_detail(client, board_user):
+    from apps.finance.models import UploadedInvoice
+
+    invoice = UploadedInvoice.objects.create(
+        title="Delete Me",
+        direction="incoming",
+        payment_status="open",
+        created_by=board_user,
+        document=SimpleUploadedFile("delete-me.txt", b"Rechnung", content_type="text/plain"),
+    )
+    client.force_login(board_user)
+
+    response = client.post(
+        reverse("finance:archive_detail", args=[invoice.id]),
+        {"action": "delete"},
+    )
+
+    assert response.status_code == 302
+    assert response.url == reverse("finance:archive")
+    assert not UploadedInvoice.objects.filter(id=invoice.id).exists()

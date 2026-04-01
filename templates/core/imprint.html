@@ -28,6 +28,8 @@
         <li>Datenschutzbeauftragte Stelle: {{ club_data_protection_officer|default:"Nicht benannt" }}</li>
         <li>Kontakt Telefon: {{ club_contact_phone|default:"Bitte konfigurieren" }}</li>
         <li>Instagram: {% if instagram_url %}<a href="{{ instagram_url }}" class="text-link" target="_blank" rel="noopener">{{ instagram_url }}</a>{% else %}Nicht angegeben{% endif %}</li>
+        <li>Telegram: {% if telegram_url %}<a href="{{ telegram_url }}" class="text-link" target="_blank" rel="noopener">{{ telegram_url }}</a>{% else %}Nicht angegeben{% endif %}</li>
+        <li>WhatsApp: {% if whatsapp_url %}<a href="{{ whatsapp_url }}" class="text-link" target="_blank" rel="noopener">{{ whatsapp_url }}</a>{% else %}Nicht angegeben{% endif %}</li>
         <li>Registereintrag: {{ club_register_entry|default:"Bitte konfigurieren" }}</li>
         <li>Registergericht: {{ club_register_court|default:"Bitte konfigurieren" }}</li>
         <li>Steuernummer: {{ club_tax_number|default:"Bitte konfigurieren" }}</li>

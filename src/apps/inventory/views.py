@@ -8,7 +8,8 @@ from django.forms import formset_factory
 from django.shortcuts import redirect
 from django.shortcuts import render
 from django.shortcuts import get_object_or_404
-from django.contrib.auth.decorators import user_passes_test
+
+from apps.core.authz import staff_or_board_required
 
 from .forms import InventoryCountValueField, InventoryLocationForm, StrainForm
 from .models import InventoryCount, InventoryItem, InventoryLocation, Strain
@@ -56,7 +57,7 @@ def location_list(request):
     )
 
 
-@user_passes_test(_is_staff_or_board)
+@staff_or_board_required(_is_staff_or_board)
 def location_create(request):
     if request.method == "POST":
         form = InventoryLocationForm(request.POST)
@@ -73,7 +74,7 @@ def location_create(request):
     )
 
 
-@user_passes_test(_is_staff_or_board)
+@staff_or_board_required(_is_staff_or_board)
 def location_edit(request, pk: int):
     location = get_object_or_404(InventoryLocation, pk=pk)
     if request.method == "POST":
@@ -91,7 +92,7 @@ def location_edit(request, pk: int):
     )
 
 
-@user_passes_test(_is_staff_or_board)
+@staff_or_board_required(_is_staff_or_board)
 def location_delete(request, pk: int):
     location = get_object_or_404(InventoryLocation, pk=pk)
     if request.method == "POST":
@@ -101,7 +102,7 @@ def location_delete(request, pk: int):
     return redirect("inventory:location_list")
 
 
-@user_passes_test(_is_staff_or_board)
+@staff_or_board_required(_is_staff_or_board)
 def strain_create(request):
     if request.method == "POST":
         form = StrainForm(request.POST, request.FILES)
@@ -127,7 +128,7 @@ def strain_detail(request, pk: int):
     )
 
 
-@user_passes_test(_is_staff_or_board)
+@staff_or_board_required(_is_staff_or_board)
 def strain_edit(request, pk: int):
     strain = get_object_or_404(Strain, pk=pk)
     if request.method == "POST":

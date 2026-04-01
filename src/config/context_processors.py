@@ -26,6 +26,9 @@ def club_info(request):
         and profile.onboarding_complete
     )
     return {
+        "app_name": getattr(settings, "APP_NAME", "CSC Administration"),
+        "app_tagline": getattr(settings, "APP_TAGLINE", ""),
+        "app_description": getattr(settings, "APP_DESCRIPTION", ""),
         "club_name": getattr(settings, "CLUB_NAME", ""),
         "club_contact_email": getattr(settings, "CLUB_CONTACT_EMAIL", ""),
         "club_contact_phone": getattr(settings, "CLUB_CONTACT_PHONE", ""),
@@ -33,6 +36,8 @@ def club_info(request):
         "club_membership_email": getattr(settings, "CLUB_MEMBERSHIP_EMAIL", ""),
         "club_prevention_email": getattr(settings, "CLUB_PREVENTION_EMAIL", ""),
         "club_finance_email": getattr(settings, "CLUB_FINANCE_EMAIL", ""),
+        "club_privacy_contact": getattr(settings, "CLUB_PRIVACY_CONTACT", ""),
+        "club_data_protection_officer": getattr(settings, "CLUB_DATA_PROTECTION_OFFICER", ""),
         "club_language_notice": getattr(settings, "CLUB_LANGUAGE_NOTICE", ""),
         "pending_member_limited_access": pending_member_limited_access,
     }

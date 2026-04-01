@@ -42,11 +42,18 @@
         <form method="post" enctype="multipart/form-data" class="form-stack">
           {% csrf_token %}
           <div class="field">
-            <label for="{{ form.title.id_for_label }}">Bezeichnung</label>
-            {{ form.title }}
-            {{ form.title.errors }}
+            <label for="{{ form.document.id_for_label }}">PDF oder Bilddatei</label>
+            {{ form.document }}
+            {{ form.document.errors }}
+            <small class="field-hint">Unterstuetzt: PDF, JPG, JPEG, PNG, WEBP und TXT. Fotos werden fuer die KI automatisch normalisiert.</small>
           </div>
           <div class="field-grid">
+            <div class="field">
+              <label for="{{ form.title.id_for_label }}">Bezeichnung <span class="field-hint">(optional)</span></label>
+              {{ form.title }}
+              {{ form.title.errors }}
+              <small class="field-hint">Wenn leer, wird die Bezeichnung aus Dateiname und KI-Auswertung abgeleitet.</small>
+            </div>
             <div class="field">
               <label for="{{ form.direction.id_for_label }}">Typ</label>
               {{ form.direction }}
@@ -62,12 +69,6 @@
             <label for="{{ form.assigned_to.id_for_label }}">Bearbeiter</label>
             {{ form.assigned_to }}
             {{ form.assigned_to.errors }}
-          </div>
-          <div class="field">
-            <label for="{{ form.document.id_for_label }}">PDF oder Bilddatei</label>
-            {{ form.document }}
-            {{ form.document.errors }}
-            <small class="field-hint">Unterstuetzt: PDF, JPG, JPEG, PNG, WEBP und TXT. Fotos werden fuer die KI automatisch normalisiert.</small>
           </div>
           <div class="field">
             <label for="{{ form.notes.id_for_label }}">Notizen</label>
@@ -157,7 +158,7 @@
               {% for invoice in invoices %}
                 <tr>
                   <td>
-                    <strong>{{ invoice.title }}</strong>
+                    <a href="{% url 'finance:archive_detail' invoice.id %}" class="text-link"><strong>{{ invoice.title|default:"Rechnung oeffnen" }}</strong></a>
                     <div class="table-meta">
                       {{ invoice.invoice_number|default:"noch keine Rechnungsnummer" }}
                       {% if invoice.vendor_name %}· {{ invoice.vendor_name }}{% endif %}
@@ -184,7 +185,11 @@
                     <div class="table-meta">KI: {{ invoice.get_extraction_status_display }}</div>
                   </td>
                   <td>
-                    <strong>{{ invoice.assigned_to.full_name|default:invoice.assigned_to.email|default:"-" }}</strong>
+                    {% if invoice.assigned_to %}
+                      <strong>{{ invoice.assigned_to.full_name|default:invoice.assigned_to.email }}</strong>
+                    {% else %}
+                      <strong>-</strong>
+                    {% endif %}
                     <div class="table-meta">{{ invoice.created_at|date:"d.m.Y H:i" }}</div>
                   </td>
                   <td><a href="{% url 'finance:archive_detail' invoice.id %}" class="btn-ghost btn-ghost--small">Oeffnen</a></td>

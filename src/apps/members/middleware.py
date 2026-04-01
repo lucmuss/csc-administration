@@ -14,7 +14,7 @@ class MemberOnboardingMiddleware:
                 profile = request.user.profile
             except ObjectDoesNotExist:
                 profile = None
-            onboarding_required = bool(profile and not profile.onboarding_complete)
+            onboarding_required = bool(profile and request.user.role == "member" and not profile.onboarding_complete)
             if onboarding_required:
                 onboarding_path = reverse("members:onboarding")
                 allowed_prefixes = (

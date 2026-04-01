@@ -823,9 +823,11 @@ def _local_invoice_fallback(uploaded_invoice: UploadedInvoice, extracted_text: s
     uploaded_invoice.amount_net = uploaded_invoice.amount_net or gross
     uploaded_invoice.amount_tax = uploaded_invoice.amount_tax or Decimal("0.00")
     uploaded_invoice.ai_summary = uploaded_invoice.ai_summary or "Lokale Analyse aus Dateitext/Filename erzeugt."
+    uploaded_invoice.title = uploaded_invoice.title or uploaded_invoice.invoice_number or Path(uploaded_invoice.document.name).stem
     uploaded_invoice.ai_payload = {
         "source": "local-fallback",
         "document_name": Path(uploaded_invoice.document.name).name,
+        "title": uploaded_invoice.title,
         "invoice_number": uploaded_invoice.invoice_number,
         "issue_date": uploaded_invoice.issue_date.isoformat() if uploaded_invoice.issue_date else "",
         "amount_gross": str(uploaded_invoice.amount_gross),
@@ -836,6 +838,7 @@ def _local_invoice_fallback(uploaded_invoice: UploadedInvoice, extracted_text: s
     uploaded_invoice.extracted_at = timezone.now()
     uploaded_invoice.save(
         update_fields=[
+            "title",
             "invoice_number",
             "issue_date",
             "amount_net",
@@ -933,7 +936,7 @@ def analyze_uploaded_invoice(uploaded_invoice: UploadedInvoice) -> UploadedInvoi
 
     prompt = (
         "Extrahiere aus dieser Rechnung die wichtigsten Daten und antworte ausschliesslich als JSON mit den Schluesseln "
-        "invoice_number, vendor_name, customer_name, issue_date, due_date, amount_net, amount_tax, amount_gross, currency, summary. "
+        "title, invoice_number, vendor_name, customer_name, issue_date, due_date, amount_net, amount_tax, amount_gross, currency, summary. "
         "Nutze ISO-Datumsformat YYYY-MM-DD. Wenn etwas fehlt, gib leere Strings oder 0 zurueck."
     )
     if extracted_text:
@@ -980,6 +983,7 @@ def analyze_uploaded_invoice(uploaded_invoice: UploadedInvoice) -> UploadedInvoi
         uploaded_invoice.save(update_fields=["extraction_status", "extraction_error", "ai_payload", "extracted_at", "updated_at"])
         return uploaded_invoice
 
+    uploaded_invoice.title = str(extracted.get("title", "")).strip() or uploaded_invoice.title or Path(uploaded_invoice.document.name).stem
     uploaded_invoice.invoice_number = str(extracted.get("invoice_number", "")).strip()
     uploaded_invoice.vendor_name = str(extracted.get("vendor_name", "")).strip()
     uploaded_invoice.customer_name = str(extracted.get("customer_name", "")).strip()
@@ -996,6 +1000,7 @@ def analyze_uploaded_invoice(uploaded_invoice: UploadedInvoice) -> UploadedInvoi
     uploaded_invoice.extracted_at = timezone.now()
     uploaded_invoice.save(
         update_fields=[
+            "title",
             "invoice_number",
             "vendor_name",
             "customer_name",

@@ -244,7 +244,7 @@ class UploadedInvoice(models.Model):
         (PAYMENT_CANCELLED, "Storniert"),
     ]
 
-    title = models.CharField(max_length=180)
+    title = models.CharField(max_length=180, blank=True)
     direction = models.CharField(max_length=16, choices=DIRECTION_CHOICES, default=DIRECTION_INCOMING)
     document = models.FileField(upload_to="finance/invoices/")
     invoice_number = models.CharField(max_length=120, blank=True)

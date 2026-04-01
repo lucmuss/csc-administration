@@ -1,6 +1,6 @@
 from django.urls import path
 
-from .views import archive, archive_detail, dashboard, invoice_detail, invoice_list, invoice_pdf, mandate_create, payment_list, topup_create, topup_success
+from .views import archive, archive_detail, dashboard, invoice_detail, invoice_list, invoice_pdf, mandate_create, payment_list, statistics, topup_create, topup_success
 
 app_name = "finance"
 
@@ -8,6 +8,7 @@ urlpatterns = [
     path("", dashboard, name="dashboard"),
     path("archive/", archive, name="archive"),
     path("archive/<int:pk>/", archive_detail, name="archive_detail"),
+    path("statistics/", statistics, name="statistics"),
     path("mandate/new/", mandate_create, name="mandate_create"),
     path("payments/", payment_list, name="payment_list"),
     path("invoices/", invoice_list, name="invoice_list"),

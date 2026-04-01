@@ -36,7 +36,7 @@
             <tbody>
               {% for entry in hours %}
                 <tr>
-                  <td>{{ entry.profile.user.email }}</td>
+                  <td><a href="{% url 'members:detail' entry.profile.id %}" class="text-link">{{ entry.profile.user.email }}</a></td>
                   <td>{{ entry.date|date:'d.m.Y' }}</td>
                   <td>{{ entry.hours }} h</td>
                   <td>{{ entry.shift.title|default:'-' }}</td>

@@ -163,8 +163,13 @@
             {% for payment in pending_payments %}
               <li class="stack-list__item">
                 <div>
-                  <strong>{{ payment.get_method_display }}</strong>
-                  <small>{{ payment.invoice.invoice_number|default:"ohne Rechnung" }}</small>
+                  {% if payment.invoice_id %}
+                    <a href="{% url 'finance:invoice_detail' payment.invoice.id %}" class="text-link"><strong>{{ payment.get_method_display }}</strong></a>
+                    <small><a href="{% url 'finance:invoice_detail' payment.invoice.id %}" class="text-link">{{ payment.invoice.invoice_number|default:"ohne Rechnung" }}</a></small>
+                  {% else %}
+                    <strong>{{ payment.get_method_display }}</strong>
+                    <small>{{ payment.invoice.invoice_number|default:"ohne Rechnung" }}</small>
+                  {% endif %}
                 </div>
                 <span class="status-pill status-pill--ink">{{ payment.get_status_display }}</span>
               </li>

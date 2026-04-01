@@ -2,12 +2,12 @@ from datetime import timedelta
 
 from django.conf import settings
 from django.contrib import messages
-from django.contrib.auth.decorators import user_passes_test
 from django.http import Http404, HttpResponse, JsonResponse
 from django.shortcuts import get_object_or_404, redirect, render
 from django.utils import timezone
 
 from apps.accounts.models import User
+from apps.core.authz import staff_or_board_required
 
 from .forms import (
     AuditLogFilterForm,
@@ -44,7 +44,7 @@ def _is_staff_or_board(user: User) -> bool:
     return user.is_authenticated and user.role in {User.ROLE_STAFF, User.ROLE_BOARD}
 
 
-@user_passes_test(_is_staff_or_board)
+@staff_or_board_required(_is_staff_or_board)
 def dashboard(request):
     send_due_meeting_notifications()
     now = timezone.now()
@@ -68,7 +68,7 @@ def dashboard(request):
     return render(request, "governance/dashboard.html", context)
 
 
-@user_passes_test(_is_staff_or_board)
+@staff_or_board_required(_is_staff_or_board)
 def meetings(request):
     if request.method == "POST":
         form = BoardMeetingForm(request.POST)
@@ -108,7 +108,7 @@ def meetings(request):
     )
 
 
-@user_passes_test(_is_staff_or_board)
+@staff_or_board_required(_is_staff_or_board)
 def meeting_detail(request, pk: int):
     meeting = get_object_or_404(BoardMeeting.objects.select_related("chairperson"), pk=pk)
     meeting_form = BoardMeetingForm(instance=meeting)
@@ -234,7 +234,7 @@ def meeting_detail(request, pk: int):
     )
 
 
-@user_passes_test(_is_staff_or_board)
+@staff_or_board_required(_is_staff_or_board)
 def tasks(request):
     if request.method == "POST":
         action = request.POST.get("action")
@@ -304,7 +304,7 @@ def tasks(request):
     return render(request, "governance/tasks.html", {"form": form, "task_columns": task_columns, "status_choices": BoardTask.STATUS_CHOICES})
 
 
-@user_passes_test(_is_staff_or_board)
+@staff_or_board_required(_is_staff_or_board)
 def cards(request):
     if request.method == "POST":
         form = MemberCardIssueForm(request.POST)
@@ -339,7 +339,7 @@ def cards(request):
     )
 
 
-@user_passes_test(_is_staff_or_board)
+@staff_or_board_required(_is_staff_or_board)
 def card_detail(request, pk: int):
     card = get_object_or_404(MemberCard.objects.select_related("profile__user", "issued_by"), pk=pk)
     if request.method == "POST":
@@ -393,7 +393,7 @@ def validate_card(request, token: str):
     )
 
 
-@user_passes_test(_is_staff_or_board)
+@staff_or_board_required(_is_staff_or_board)
 def records(request):
     if request.method == "POST":
         action = request.POST.get("action")
@@ -447,7 +447,7 @@ def records(request):
     )
 
 
-@user_passes_test(_is_staff_or_board)
+@staff_or_board_required(_is_staff_or_board)
 def record_pdf(request, pk: int):
     record = get_object_or_404(OperationalRecord.objects.select_related("strain", "related_member__user", "approved_by"), pk=pk)
     pdf = render_operational_record_pdf(record)
@@ -456,7 +456,7 @@ def record_pdf(request, pk: int):
     return response
 
 
-@user_passes_test(_is_staff_or_board)
+@staff_or_board_required(_is_staff_or_board)
 def audit_log(request):
     logs = AuditLog.objects.select_related("actor")
     filter_form = AuditLogFilterForm(request.GET or None)
@@ -465,7 +465,7 @@ def audit_log(request):
     return render(request, "governance/audit_log.html", {"logs": logs[:250], "filter_form": filter_form})
 
 
-@user_passes_test(_is_staff_or_board)
+@staff_or_board_required(_is_staff_or_board)
 def integrations(request):
     if request.method == "POST":
         form = IntegrationEndpointForm(request.POST)

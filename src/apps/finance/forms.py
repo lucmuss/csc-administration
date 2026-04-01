@@ -3,6 +3,7 @@ import re
 from pathlib import Path
 
 from django import forms
+from django.conf import settings
 
 from apps.accounts.models import User
 
@@ -81,14 +82,20 @@ class BalanceTopUpForm(forms.Form):
         cleaned_data = super().clean()
         preset = cleaned_data.get("preset_amount")
         amount = cleaned_data.get("amount")
+        min_amount = Decimal(str(getattr(settings, "BALANCE_TOPUP_MIN_AMOUNT", "1.00")))
+        max_amount = Decimal(str(getattr(settings, "BALANCE_TOPUP_MAX_AMOUNT", "500.00")))
         if preset and preset != "custom":
             selected = Decimal(preset)
+            if selected < min_amount or selected > max_amount:
+                raise forms.ValidationError("Der ausgewaehlte Betrag liegt ausserhalb des erlaubten Bereichs.")
             cleaned_data["amount"] = cleaned_data["selected_amount"] = cleaned_data["final_amount"] = selected
             return cleaned_data
         if amount is None:
             raise forms.ValidationError("Bitte waehle einen Betrag oder gib einen eigenen Betrag ein.")
-        if amount <= 0:
-            raise forms.ValidationError("Bitte gib einen positiven Betrag ein.")
+        if amount < min_amount:
+            raise forms.ValidationError(f"Bitte gib mindestens {min_amount} EUR ein.")
+        if amount > max_amount:
+            raise forms.ValidationError(f"Bitte gib hoechstens {max_amount} EUR ein.")
         cleaned_data["selected_amount"] = cleaned_data["final_amount"] = amount
         return cleaned_data
 
@@ -104,6 +111,7 @@ class UploadedInvoiceForm(forms.ModelForm):
     def __init__(self, *args, **kwargs):
         current_user = kwargs.pop("current_user", None)
         super().__init__(*args, **kwargs)
+        self.fields["title"].required = False
         self.fields["assigned_to"].queryset = User.objects.filter(role__in=[User.ROLE_STAFF, User.ROLE_BOARD]).order_by(
             "first_name",
             "last_name",
@@ -117,6 +125,7 @@ class UploadedInvoiceForm(forms.ModelForm):
                 field.widget.attrs["class"] = "form-checkbox"
             else:
                 field.widget.attrs["class"] = "form-input form-select" if isinstance(field.widget, forms.Select) else "form-input"
+        self.fields["title"].widget.attrs.setdefault("placeholder", "wird automatisch aus der Rechnung ermittelt")
 
     def clean_document(self):
         document = self.cleaned_data["document"]

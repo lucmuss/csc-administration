@@ -66,3 +66,41 @@ def test_admin_can_approve_work_hours_entry(client, member_user):
     assert response.status_code == 302
     assert entry.approved is True
     assert member_user.profile.work_hours_done == Decimal("3.00")
+
+
+@pytest.mark.django_db
+def test_admin_hours_links_member_to_profile(client, member_user):
+    from apps.accounts.models import User
+    from apps.members.models import Profile
+    from apps.participation.models import WorkHours
+
+    board = User.objects.create_user(
+        email="board-hours-links@example.com",
+        password="StrongPass123!",
+        first_name="Bea",
+        last_name="Board",
+        role=User.ROLE_BOARD,
+        is_staff=True,
+    )
+    Profile.objects.create(
+        user=board,
+        birth_date=date(1988, 5, 5),
+        status=Profile.STATUS_ACTIVE,
+        is_verified=True,
+        member_number=100011,
+        monthly_counter_key=date.today().strftime("%Y-%m"),
+    )
+    WorkHours.objects.create(
+        profile=member_user.profile,
+        date=date.today(),
+        hours=Decimal("1.50"),
+        notes="Community Schicht",
+        approved=False,
+    )
+
+    client.force_login(board)
+    response = client.get(reverse("participation:admin_hours"))
+
+    html = response.content.decode("utf-8")
+    assert response.status_code == 200
+    assert reverse("members:detail", args=[member_user.profile.id]) in html

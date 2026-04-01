@@ -41,3 +41,18 @@ def test_site_url_is_added_to_csrf_trusted_origins(monkeypatch):
     settings = reload_settings()
 
     assert settings.CSRF_TRUSTED_ORIGINS == ["https://csc.kolibri-kollektiv.eu"]
+
+
+def test_branding_and_health_defaults_can_be_configured(monkeypatch):
+    monkeypatch.setenv("DJANGO_DEBUG", "0")
+    monkeypatch.setenv("DJANGO_SECRET_KEY", "test-secret")
+    monkeypatch.setenv("ALLOWED_HOSTS", "club.example")
+    monkeypatch.setenv("APP_NAME", "Club Suite")
+    monkeypatch.setenv("APP_TAGLINE", "Mitglieder und Betrieb")
+    monkeypatch.setenv("HEALTH_ALLOWED_IPS", "10.0.0.1,127.0.0.1")
+
+    settings = reload_settings()
+
+    assert settings.APP_NAME == "Club Suite"
+    assert settings.APP_TAGLINE == "Mitglieder und Betrieb"
+    assert settings.HEALTH_ALLOWED_IPS == ["10.0.0.1", "127.0.0.1"]

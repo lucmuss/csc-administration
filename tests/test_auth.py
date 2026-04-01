@@ -17,6 +17,27 @@ def test_login_success(client, member_user):
 
 
 @pytest.mark.django_db
+def test_member_login_ignores_admin_next_redirect(client, member_user):
+    response = client.post(
+        reverse("accounts:login") + "?next=/orders/admin/",
+        data={"username": member_user.email, "password": "StrongPass123!"},
+    )
+
+    assert response.status_code == 302
+    assert response.url == reverse("core:dashboard")
+
+
+@pytest.mark.django_db
+def test_authenticated_member_getting_orders_admin_is_redirected_to_dashboard(client, member_user):
+    client.force_login(member_user)
+
+    response = client.get(reverse("orders:admin_list"))
+
+    assert response.status_code == 302
+    assert response.url == reverse("core:dashboard")
+
+
+@pytest.mark.django_db
 def test_member_profile_shows_visible_logout_action(client, member_user):
     client.force_login(member_user)
 
@@ -59,7 +80,27 @@ def test_login_template_links_to_password_reset(client):
     response = client.get(reverse("accounts:login"))
 
     assert response.status_code == 200
-    assert reverse("accounts:password_reset") in response.content.decode("utf-8")
+    html = response.content.decode("utf-8")
+    assert reverse("accounts:password_reset") in html
+    assert reverse("core:privacy") in html
+    assert reverse("core:documents") in html
+    assert reverse("core:imprint") in html
+    assert reverse("core:health") not in html
+
+
+@pytest.mark.django_db
+@override_settings(LOGIN_RATE_LIMIT_ATTEMPTS=2, LOGIN_RATE_LIMIT_WINDOW_SECONDS=60)
+def test_login_rate_limit_blocks_repeated_failed_attempts(client, member_user):
+    login_url = reverse("accounts:login")
+
+    first = client.post(login_url, data={"username": member_user.email, "password": "wrong-password"})
+    second = client.post(login_url, data={"username": member_user.email, "password": "wrong-password"})
+    blocked = client.post(login_url, data={"username": member_user.email, "password": "wrong-password"})
+
+    assert first.status_code == 200
+    assert second.status_code == 200
+    assert blocked.status_code == 200
+    assert "Zu viele fehlgeschlagene Anmeldeversuche" in blocked.content.decode("utf-8")
 
 
 def test_impressum_alias_redirects_to_imprint(client):

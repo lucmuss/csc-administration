@@ -1,7 +1,6 @@
 from datetime import datetime
 import csv
 
-from django.contrib.auth.decorators import user_passes_test
 from django.contrib import messages
 from django.http import HttpResponse
 from django.shortcuts import render
@@ -9,6 +8,7 @@ from django.template.defaultfilters import date as date_filter
 from django.utils import timezone
 
 from apps.accounts.models import User
+from apps.core.authz import board_required
 
 from .models import ComplianceReport, SuspiciousActivity
 from .services import generate_annual_report
@@ -18,7 +18,7 @@ def _is_board(user: User) -> bool:
     return user.is_authenticated and user.role == User.ROLE_BOARD
 
 
-@user_passes_test(_is_board)
+@board_required(_is_board)
 def dashboard(request):
     year = timezone.localdate().year
     latest_report = ComplianceReport.objects.order_by("-year").first()
@@ -35,7 +35,7 @@ def dashboard(request):
     )
 
 
-@user_passes_test(_is_board)
+@board_required(_is_board)
 def annual_report(request):
     current_year = timezone.localdate().year
     raw_year = request.GET.get("year", current_year)
@@ -95,7 +95,7 @@ def annual_report(request):
     )
 
 
-@user_passes_test(_is_board)
+@board_required(_is_board)
 def suspicious_activity_list(request):
     activities = SuspiciousActivity.objects.select_related("profile__user").order_by("-detected_at")
     return render(request, "compliance/suspicious_activity_list.html", {"activities": activities})

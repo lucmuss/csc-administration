@@ -1,9 +1,10 @@
 from django.contrib import messages
-from django.contrib.auth.decorators import login_required, user_passes_test
+from django.contrib.auth.decorators import login_required
 from django.db.models import Sum
 from django.shortcuts import get_object_or_404, redirect, render
 
 from apps.accounts.models import User
+from apps.core.authz import staff_or_board_required
 from apps.members.models import Profile
 
 from .forms import ShiftForm, WorkHoursEntryForm
@@ -74,7 +75,7 @@ def shift_detail_view(request, pk: int):
     )
 
 
-@user_passes_test(_is_staff_or_board)
+@staff_or_board_required(_is_staff_or_board)
 def shift_create_view(request):
     if request.method == "POST":
         form = ShiftForm(request.POST)
@@ -87,7 +88,7 @@ def shift_create_view(request):
     return render(request, "participation/shift_form.html", {"form": form, "title": "Neue Schicht anlegen"})
 
 
-@user_passes_test(_is_staff_or_board)
+@staff_or_board_required(_is_staff_or_board)
 def admin_hours_view(request):
     if request.method == "POST":
         entry = get_object_or_404(WorkHours.objects.select_related("profile__user"), id=request.POST.get("entry_id"))

@@ -146,4 +146,54 @@ def test_board_can_upload_invoice_archive_entry(client, board_user, settings):
     invoice = UploadedInvoice.objects.get(title="Strom April")
     assert response.status_code == 302
     assert invoice.assigned_to == board_user
-    assert invoice.extraction_status in {UploadedInvoice.EXTRACTION_FAILED, UploadedInvoice.EXTRACTION_PENDING}
+    assert invoice.extraction_status in {
+        UploadedInvoice.EXTRACTION_FAILED,
+        UploadedInvoice.EXTRACTION_PENDING,
+        UploadedInvoice.EXTRACTION_SUCCESS,
+    }
+
+
+@pytest.mark.django_db
+def test_board_can_upload_invoice_without_manual_title(client, board_user, settings):
+    from apps.finance.models import UploadedInvoice
+
+    client.force_login(board_user)
+    settings.OPENROUTER_API_KEY = ""
+    upload = SimpleUploadedFile("strom_april_2026.txt", b"Rechnung 4711\nGesamt 49,90 EUR", content_type="text/plain")
+
+    response = client.post(
+        reverse("finance:archive"),
+        {
+            "title": "",
+            "direction": "incoming",
+            "payment_status": "open",
+            "assigned_to": board_user.id,
+            "notes": "",
+            "document": upload,
+        },
+    )
+
+    invoice = UploadedInvoice.objects.latest("id")
+    assert response.status_code == 302
+    assert invoice.title
+    assert "strom" in invoice.title.lower()
+
+
+@pytest.mark.django_db
+def test_archive_list_links_title_to_detail_view(client, board_user):
+    from apps.finance.models import UploadedInvoice
+
+    UploadedInvoice.objects.create(
+        title="Miete April",
+        direction="incoming",
+        payment_status="open",
+        created_by=board_user,
+        document=SimpleUploadedFile("miete.txt", b"Rechnung", content_type="text/plain"),
+    )
+    client.force_login(board_user)
+
+    response = client.get(reverse("finance:archive"))
+
+    html = response.content.decode("utf-8")
+    assert response.status_code == 200
+    assert reverse("finance:archive_detail", args=[UploadedInvoice.objects.latest("id").id]) in html

@@ -6,17 +6,25 @@
       <p class="eyebrow">Datenschutz</p>
       <h1>Hinweise zur Verarbeitung von Mitglieds-, Finanz- und Compliance-Daten.</h1>
       <p>
-        CSC Administration ist fuer den vereinsinternen Betrieb ausgelegt. Diese Seite stellt ein technisches
-        Datenschutz-Template bereit. Fuer einen rechtlich belastbaren Live-Betrieb muessen die konkreten Angaben
-        des betreibenden Vereins oder Unternehmens hier eingetragen und fachlich geprueft werden.
+        {{ app_name }} ist fuer den vereinsinternen Betrieb ausgelegt und kann fuer unterschiedliche Social Clubs
+        mit eigenen Betreiber- und Kontaktangaben konfiguriert werden. Die folgenden Hinweise beschreiben die
+        Datenverarbeitung dieser Installation auf Basis der aktuell gesetzten Konfiguration.
       </p>
+      {% if not legal_setup_complete %}
+        <div class="flash flash--warning">
+          <strong>Konfiguration unvollstaendig.</strong>
+          <span>Bitte vervollstaendige vor dem Produktivbetrieb die Betreiber-, Datenschutz- und Prozessangaben dieser Instanz.</span>
+        </div>
+      {% endif %}
       <h2>Verantwortlicher</h2>
       <ul>
         <li>{{ club_name }}</li>
-        <li>{{ club_contact_address|default:"Noch nicht hinterlegt" }}</li>
-        <li>{{ club_contact_email|default:"Noch nicht hinterlegt" }} / {{ club_contact_phone|default:"Noch nicht hinterlegt" }}</li>
-        <li>Mitgliedschaft: {{ club_membership_email|default:"Noch nicht hinterlegt" }}</li>
-        <li>Praevention: {{ club_prevention_email|default:"Noch nicht hinterlegt" }}</li>
+        <li>{{ club_contact_address|default:"Bitte konfigurieren" }}</li>
+        <li>{{ club_contact_email|default:"Bitte konfigurieren" }} / {{ club_contact_phone|default:"Bitte konfigurieren" }}</li>
+        <li>Mitgliedschaft: {{ club_membership_email|default:"Bitte konfigurieren" }}</li>
+        <li>Praevention: {{ club_prevention_email|default:"Bitte konfigurieren" }}</li>
+        <li>Datenschutzkontakt: {{ club_privacy_contact|default:"Bitte konfigurieren" }}</li>
+        <li>Datenschutzbeauftragte Stelle: {{ club_data_protection_officer|default:"Nicht benannt" }}</li>
       </ul>
 
       <h2>Zwecke und Kategorien der Verarbeitung</h2>
@@ -42,23 +50,21 @@
       </ul>
 
       <h2>Rechtsgrundlagen</h2>
-      <p>
-        Die konkreten Rechtsgrundlagen haengen vom realen Betrieb ab und muessen vom Betreiber ergaenzt werden,
-        typischerweise etwa Vertrag bzw. vorvertragliche Massnahmen, rechtliche Verpflichtungen, berechtigte
-        Interessen oder ausdrueckliche Einwilligungen.
-      </p>
+      <p>{{ club_legal_basis_notice }}</p>
 
       <h2>Empfaenger und Auftragsverarbeitung</h2>
-      <p>
-        Bitte dokumentieren, welche externen Dienste tatsaechlich genutzt werden, zum Beispiel Hosting, E-Mail,
-        SMS, Zahlungsdienstleister, Backups, Monitoring oder Web-Analytics.
-      </p>
+      {% if club_service_providers %}
+        <ul>
+          {% for provider in club_service_providers %}
+            <li>{{ provider }}</li>
+          {% endfor %}
+        </ul>
+      {% else %}
+        <p>Aktuell sind fuer diese Instanz keine externen Dienstleister konfiguriert.</p>
+      {% endif %}
 
       <h2>Speicherdauer</h2>
-      <p>
-        Die Speicherfristen muessen vom Betreiber pro Datenkategorie festgelegt werden. Das betrifft insbesondere
-        Mitgliedsdaten, Finanzunterlagen, Kommunikationsdaten, Audit-Logs und gesetzliche Aufbewahrungspflichten.
-      </p>
+      <p>{{ club_retention_notice }}</p>
 
       <h2>Betroffenenrechte</h2>
       <p>
@@ -82,9 +88,9 @@
 
       <h2>Praktischer Status dieser Installation</h2>
       <p>
-        Technisch vorhanden sind eine Datenschutzseite, ein Impressum und ein zustimmungsbasiertes Cookie-Banner
-        fuer optionale Analytik. Rechtlich fertig ist die Seite erst, wenn die konkreten Betreiberangaben und
-        Prozessdetails dieser Installation eingetragen wurden.
+        Technisch vorhanden sind eine Datenschutzseite, ein Impressum, Passwort-Reset per E-Mail,
+        zustimmungsbasierte Analytik und konfigurierbare Betreiberangaben. Rechtlich belastbar ist die Instanz
+        erst, wenn die konkreten Vereinsangaben und Prozesse dieser Installation vollstaendig gepflegt sind.
       </p>
       {% if club_language_notice %}
         <p>{{ club_language_notice }}</p>

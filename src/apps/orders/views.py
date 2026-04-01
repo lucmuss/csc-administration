@@ -1,7 +1,7 @@
 from decimal import Decimal
 
 from django.contrib import messages
-from django.contrib.auth.decorators import login_required, user_passes_test
+from django.contrib.auth.decorators import login_required
 from django.core.exceptions import ValidationError
 from django.core.paginator import Paginator
 from django.db.models import Q
@@ -10,6 +10,7 @@ from django.views.decorators.http import require_POST
 
 from apps.accounts.emails import send_order_completed_email, send_order_reserved_email
 from apps.accounts.models import User
+from apps.core.authz import staff_or_board_required
 from apps.finance.services import balance_breakdown
 from apps.governance.services import record_audit_event
 from apps.inventory.models import Strain
@@ -276,7 +277,7 @@ def order_cancel(request, order_id: int):
     return redirect("orders:list")
 
 
-@user_passes_test(_is_staff_or_board)
+@staff_or_board_required(_is_staff_or_board)
 def admin_order_list(request):
     status_filter = request.GET.get("status", "").strip()
     query = request.GET.get("q", "").strip()
@@ -319,7 +320,7 @@ def admin_order_list(request):
     )
 
 
-@user_passes_test(_is_staff_or_board)
+@staff_or_board_required(_is_staff_or_board)
 def admin_order_action(request, order_id: int):
     order = get_object_or_404(Order.objects.select_related("member"), id=order_id)
     action = request.POST.get("action")

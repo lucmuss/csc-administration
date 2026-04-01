@@ -4,7 +4,7 @@ import re
 from datetime import datetime
 
 from django.contrib import messages
-from django.contrib.auth.decorators import login_required, user_passes_test
+from django.contrib.auth.decorators import login_required
 from django.db.models import Count, Q
 from django.http import HttpResponse
 from django.shortcuts import get_object_or_404, redirect, render
@@ -16,6 +16,7 @@ from apps.accounts.emails import (
     send_registration_received_email,
 )
 from apps.accounts.models import User
+from apps.core.authz import board_required, staff_or_board_required
 from apps.finance.models import SepaMandate
 from apps.finance.models import Invoice
 from apps.messaging.services import sync_member_messaging_preferences
@@ -397,7 +398,7 @@ def _member_directory(request):
     )
 
 
-@user_passes_test(_is_staff_or_board)
+@staff_or_board_required(_is_staff_or_board)
 def export_members_csv(request):
     profiles = Profile.objects.select_related("user").order_by("member_number", "user__last_name")
 
@@ -439,7 +440,7 @@ def export_members_csv(request):
     return response
 
 
-@user_passes_test(_is_staff_or_board)
+@staff_or_board_required(_is_staff_or_board)
 def import_members_csv(request):
     import_data = _session_import_data(request)
     headers = import_data.get("headers", [])
@@ -627,7 +628,7 @@ def import_members_csv(request):
     )
 
 
-@user_passes_test(_is_board)
+@board_required(_is_board)
 def member_action(request, profile_id: int):
     profile = get_object_or_404(Profile.objects.select_related("user"), id=profile_id)
     action = request.POST.get("action")
@@ -785,7 +786,7 @@ def member_action(request, profile_id: int):
     return redirect(next_target)
 
 
-@user_passes_test(_is_board)
+@board_required(_is_board)
 def verify_member(request, profile_id: int):
     request.POST = request.POST.copy()
     request.POST["action"] = "verify"

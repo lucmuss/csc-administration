@@ -15,6 +15,9 @@
   <div class="mt-3 flex gap-2">
     <a href="{% url 'orders:cart' %}" class="btn-primary">Zum Warenkorb{% if request.session.cart %} ({{ request.session.cart|length }}){% endif %}</a>
     <a href="{% url 'orders:list' %}" class="btn-ghost">Meine Bestellungen</a>
+    {% if user.role != 'member' %}
+      <a href="{% url 'inventory:strain_list' %}" class="btn-ghost">Produkte verwalten</a>
+    {% endif %}
   </div>
 </section>
 <div class="grid gap-4 lg:grid-cols-2 xl:grid-cols-3">
@@ -28,6 +31,9 @@
         <h2 class="text-lg font-semibold leading-tight">
           <a href="{% url 'inventory:strain_detail' strain.id %}" class="text-link">{{ strain.name }}</a>
         </h2>
+        {% if user.role != 'member' %}
+          <a href="{% url 'inventory:strain_edit' strain.id %}" class="text-link">Produkt bearbeiten</a>
+        {% endif %}
       </div>
       <span class="shop-card-compact__badge">{{ strain.get_product_type_display }}</span>
     </div>

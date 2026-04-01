@@ -1,15 +1,16 @@
 from decimal import Decimal
 
 from django.conf import settings as django_settings
-from django.contrib.auth.decorators import login_required, user_passes_test
+from django.contrib.auth.decorators import login_required
 from django.contrib import messages
 from django.db import connection
 from django.db.models import Count, Q, Sum
-from django.http import JsonResponse
+from django.http import HttpResponseForbidden, JsonResponse
 from django.shortcuts import get_object_or_404, redirect, render
 from django.utils import timezone
 
 from apps.accounts.models import User
+from apps.core.authz import staff_or_board_required
 from apps.compliance.models import ComplianceReport, SuspiciousActivity
 from apps.cultivation.models import GrowCycle, HarvestBatch, Plant
 from apps.finance.models import Invoice, Payment
@@ -27,11 +28,41 @@ MEMBER_CAPACITY = django_settings.MEMBER_CAPACITY
 
 
 def _is_staff_or_board(user: User) -> bool:
-    return user.is_authenticated and user.role in {User.ROLE_STAFF, User.ROLE_BOARD}
+    return bool(getattr(user, "is_authenticated", False) and getattr(user, "role", "") in {User.ROLE_STAFF, User.ROLE_BOARD})
 
 
 def _is_board(user: User) -> bool:
-    return user.is_authenticated and user.role == User.ROLE_BOARD
+    return bool(getattr(user, "is_authenticated", False) and getattr(user, "role", "") == User.ROLE_BOARD)
+
+
+def _request_ip(request) -> str:
+    forwarded = request.META.get("HTTP_X_FORWARDED_FOR", "")
+    if forwarded:
+        return forwarded.split(",")[0].strip()
+    return (request.META.get("REMOTE_ADDR") or "").strip()
+
+
+def _configured_service_providers() -> list[str]:
+    providers = list(django_settings.CLUB_EXTERNAL_SERVICES)
+    if django_settings.STRIPE_SECRET_KEY and "Stripe" not in providers:
+        providers.append("Stripe fuer Online-Zahlungen und Guthabenaufladungen")
+    if django_settings.OPENROUTER_API_KEY and "OpenRouter" not in providers:
+        providers.append("OpenRouter fuer optionale KI-gestuetzte Rechnungserkennung")
+    if django_settings.GA_TRACKING_ID and "Google Analytics" not in providers:
+        providers.append("Google Analytics nach ausdruecklicher Einwilligung")
+    return providers
+
+
+def _legal_setup_complete() -> bool:
+    required = [
+        django_settings.CLUB_NAME,
+        django_settings.CLUB_CONTACT_ADDRESS,
+        django_settings.CLUB_CONTACT_EMAIL,
+        django_settings.CLUB_BOARD_REPRESENTATIVES,
+        django_settings.CLUB_REGISTER_COURT,
+        django_settings.CLUB_TAX_NUMBER,
+    ]
+    return all(bool(value) for value in required)
 
 
 def _module_links():
@@ -214,7 +245,16 @@ def dashboard(request):
 
 
 def privacy(request):
-    return render(request, "core/privacy.html")
+    return render(
+        request,
+        "core/privacy.html",
+        {
+            "club_service_providers": _configured_service_providers(),
+            "legal_setup_complete": _legal_setup_complete(),
+            "club_legal_basis_notice": django_settings.CLUB_LEGAL_BASIS_NOTICE,
+            "club_retention_notice": django_settings.CLUB_RETENTION_NOTICE,
+        },
+    )
 
 
 def imprint(request):
@@ -234,10 +274,13 @@ def imprint(request):
             "club_membership_email": django_settings.CLUB_MEMBERSHIP_EMAIL,
             "club_prevention_email": django_settings.CLUB_PREVENTION_EMAIL,
             "club_finance_email": django_settings.CLUB_FINANCE_EMAIL,
+            "club_privacy_contact": django_settings.CLUB_PRIVACY_CONTACT,
+            "club_data_protection_officer": django_settings.CLUB_DATA_PROTECTION_OFFICER,
             "club_language_notice": django_settings.CLUB_LANGUAGE_NOTICE,
             "club_register_court": django_settings.CLUB_REGISTER_COURT,
             "club_tax_number": django_settings.CLUB_TAX_NUMBER,
             "club_responsible_person": django_settings.CLUB_RESPONSIBLE_PERSON,
+            "legal_setup_complete": _legal_setup_complete(),
         },
     )
 
@@ -247,7 +290,7 @@ def documents(request):
     return render(request, "core/documents.html", {"documents": documents_qs})
 
 
-@user_passes_test(_is_staff_or_board)
+@staff_or_board_required(_is_staff_or_board)
 def documents_admin(request):
     if request.method == "POST":
         action = request.POST.get("action")
@@ -274,6 +317,9 @@ def documents_admin(request):
     )
 
 def health(request):
+    request_ip = _request_ip(request)
+    if request_ip not in django_settings.HEALTH_ALLOWED_IPS and not _is_staff_or_board(getattr(request, "user", None)):
+        return HttpResponseForbidden("Health endpoint is restricted.")
     return JsonResponse({"status": "ok", "service": "csc-administration"})
 
 

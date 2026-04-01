@@ -1,0 +1,234 @@
+{% extends 'base.html' %}
+{% block title %}Statistiken{% endblock %}
+{% block content %}
+  <section class="page-shell">
+    <div class="page-heading">
+      <div>
+        <p class="eyebrow">Verwaltung</p>
+        <h1>Ausgaben und Produktbewegungen im Monatsverlauf.</h1>
+        <p class="lede">Die Uebersicht zeigt abgeschlossene Ausgaben nach Monat, Produktart und stark nachgefragten Sorten beziehungsweise Artikeln.</p>
+      </div>
+      <div class="hero-actions">
+        <a href="{% url 'finance:dashboard' %}" class="btn-ghost">Finanzdashboard</a>
+        <a href="{% url 'orders:admin_list' %}" class="btn-ghost">Bestellungen</a>
+        <a href="{% url 'finance:statistics' %}?{% if selected_year %}year={{ selected_year }}&{% endif %}format=csv" class="btn-ghost">CSV-Export</a>
+      </div>
+    </div>
+
+    <section class="kpi-grid">
+      <article class="kpi-card kpi-card--forest">
+        <span class="kpi-card__label">Blueten gesamt</span>
+        <strong class="kpi-card__value">{{ summary.flower_grams_total }} g</strong>
+        <small class="kpi-card__detail">{{ summary.months }} Monate im Filter</small>
+      </article>
+      <article class="kpi-card kpi-card--sand">
+        <span class="kpi-card__label">Stueckartikel gesamt</span>
+        <strong class="kpi-card__value">{{ summary.units_total }}</strong>
+        <small class="kpi-card__detail">Stecklinge, Edibles, Zubehoer, Werbegeschenke</small>
+      </article>
+      <article class="kpi-card kpi-card--ink">
+        <span class="kpi-card__label">Umsatz aus Ausgaben</span>
+        <strong class="kpi-card__value">{{ summary.revenue_total }} EUR</strong>
+        <small class="kpi-card__detail">nur abgeschlossene Bestellungen</small>
+      </article>
+      <article class="kpi-card kpi-card--sand">
+        <span class="kpi-card__label">Stecklinge gesamt</span>
+        <strong class="kpi-card__value">{{ summary.cuttings_total }}</strong>
+        <small class="kpi-card__detail">als eigene Verlaufsspur ausgewertet</small>
+      </article>
+    </section>
+
+    {% if comparison and effective_year %}
+      <section class="board-grid">
+        <article class="panel panel--span-2">
+          <div class="panel__header">
+            <div>
+              <p class="panel__eyebrow">Jahresvergleich</p>
+              <h2>{{ effective_year }} gegen {{ comparison.reference_year }}</h2>
+            </div>
+          </div>
+          <div class="detail-list">
+            <div>
+              <span>Blueten</span>
+              <strong>
+                {% if comparison.flower_delta is not None %}
+                  {{ comparison.flower_delta }} %
+                {% else %}
+                  kein Vergleich
+                {% endif %}
+              </strong>
+            </div>
+            <div>
+              <span>Stecklinge</span>
+              <strong>
+                {% if comparison.cuttings_delta is not None %}
+                  {{ comparison.cuttings_delta }} %
+                {% else %}
+                  kein Vergleich
+                {% endif %}
+              </strong>
+            </div>
+            <div>
+              <span>Umsatz</span>
+              <strong>
+                {% if comparison.revenue_delta is not None %}
+                  {{ comparison.revenue_delta }} %
+                {% else %}
+                  kein Vergleich
+                {% endif %}
+              </strong>
+            </div>
+          </div>
+        </article>
+      </section>
+    {% endif %}
+
+    <section class="board-grid">
+      <article class="panel panel--span-2">
+        <div class="panel__header">
+          <div>
+            <p class="panel__eyebrow">Monatsverlauf</p>
+            <h2>Wie viel wurde pro Monat ausgegeben?</h2>
+          </div>
+        </div>
+        <form method="get" class="filter-grid">
+          <div class="field">
+            <label for="year">Jahr</label>
+            <select id="year" name="year">
+              <option value="">Alle</option>
+              {% for year in available_years %}
+                <option value="{{ year }}"{% if selected_year == year|stringformat:"s" %} selected{% endif %}>{{ year }}</option>
+              {% endfor %}
+            </select>
+          </div>
+          <div class="field field--actions">
+            <button type="submit" class="btn-primary btn-block">Filter anwenden</button>
+          </div>
+          <div class="field field--actions">
+            <a href="{% url 'finance:statistics' %}" class="btn-ghost btn-block">Zuruecksetzen</a>
+          </div>
+        </form>
+        {% if month_rows %}
+          <div class="stack-list">
+            {% for row in month_rows %}
+              <article class="stack-list__item" style="display:block">
+                <div class="panel__header">
+                  <div>
+                    <strong>{{ row.label }}</strong>
+                    <small>{{ row.revenue|floatformat:2 }} EUR Umsatz aus abgeschlossenen Ausgaben</small>
+                  </div>
+                </div>
+                <div class="detail-list">
+                  <div>
+                    <span>Blueten</span>
+                    <strong>{{ row.flower_grams|floatformat:2 }} g</strong>
+                    <div class="progress"><span class="progress-bar-green" style="width: {{ row.flower_width }}%"></span></div>
+                  </div>
+                  <div>
+                    <span>Stecklinge</span>
+                    <strong>{{ row.cuttings|floatformat:0 }} Stk.</strong>
+                    <div class="progress"><span class="progress-bar-blue" style="width: {{ row.cuttings_width }}%"></span></div>
+                  </div>
+                  <div>
+                    <span>Edibles</span>
+                    <strong>{{ row.edibles|floatformat:0 }} Stk.</strong>
+                    <div class="progress"><span class="progress-bar-red" style="width: {{ row.edibles_width }}%"></span></div>
+                  </div>
+                  <div>
+                    <span>Rauchzubehoer</span>
+                    <strong>{{ row.accessories|floatformat:0 }} Stk.</strong>
+                    <div class="progress"><span class="progress-bar-blue" style="width: {{ row.accessories_width }}%"></span></div>
+                  </div>
+                  <div>
+                    <span>Werbegeschenke</span>
+                    <strong>{{ row.merch|floatformat:0 }} Stk.</strong>
+                    <div class="progress"><span class="progress-bar-red" style="width: {{ row.merch_width }}%"></span></div>
+                  </div>
+                </div>
+              </article>
+            {% endfor %}
+          </div>
+        {% else %}
+          <p class="empty-copy">Fuer den gewaehlten Zeitraum liegen noch keine abgeschlossenen Ausgaben vor.</p>
+        {% endif %}
+      </article>
+
+      <article class="panel">
+        <div class="panel__header">
+          <div>
+            <p class="panel__eyebrow">Top-Produkte</p>
+            <h2>Was wurde am haeufigsten ausgegeben?</h2>
+          </div>
+        </div>
+        {% if product_rows %}
+          <ul class="stack-list">
+            {% for product in product_rows %}
+              <li class="stack-list__item" style="display:block">
+                <div>
+                  <strong>{{ product.name }}</strong>
+                  <small>{{ product.product_type }} · {{ product.revenue|floatformat:2 }} EUR</small>
+                </div>
+                <div class="progress"><span class="progress-bar-green" style="width: {{ product.width }}%"></span></div>
+              <small>{{ product.quantity|floatformat:2 }} {{ product.unit }}</small>
+            </li>
+          {% endfor %}
+          </ul>
+        {% else %}
+          <p class="empty-copy">Noch keine Produktbewegungen vorhanden.</p>
+        {% endif %}
+      </article>
+    </section>
+
+    <section class="board-grid">
+      <article class="panel">
+        <div class="panel__header">
+          <div>
+            <p class="panel__eyebrow">Blueten</p>
+            <h2>Top-Sorten nach Gramm</h2>
+          </div>
+        </div>
+        {% if flower_rows %}
+          <ul class="stack-list">
+            {% for product in flower_rows %}
+              <li class="stack-list__item" style="display:block">
+                <div>
+                  <strong>{{ product.name }}</strong>
+                  <small>{{ product.revenue|floatformat:2 }} EUR</small>
+                </div>
+                <div class="progress"><span class="progress-bar-green" style="width: {{ product.width }}%"></span></div>
+                <small>{{ product.quantity|floatformat:2 }} {{ product.unit }}</small>
+              </li>
+            {% endfor %}
+          </ul>
+        {% else %}
+          <p class="empty-copy">Noch keine Bluetenbewegungen vorhanden.</p>
+        {% endif %}
+      </article>
+
+      <article class="panel">
+        <div class="panel__header">
+          <div>
+            <p class="panel__eyebrow">Stecklinge</p>
+            <h2>Top-Sorten nach Stueck</h2>
+          </div>
+        </div>
+        {% if cutting_rows %}
+          <ul class="stack-list">
+            {% for product in cutting_rows %}
+              <li class="stack-list__item" style="display:block">
+                <div>
+                  <strong>{{ product.name }}</strong>
+                  <small>{{ product.revenue|floatformat:2 }} EUR</small>
+                </div>
+                <div class="progress"><span class="progress-bar-blue" style="width: {{ product.width }}%"></span></div>
+                <small>{{ product.quantity|floatformat:2 }} {{ product.unit }}</small>
+              </li>
+            {% endfor %}
+          </ul>
+        {% else %}
+          <p class="empty-copy">Noch keine Stecklingsbewegungen vorhanden.</p>
+        {% endif %}
+      </article>
+    </section>
+  </section>
+{% endblock %}

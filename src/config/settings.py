@@ -37,6 +37,12 @@ if not SECRET_KEY:
         raise ValueError("DJANGO_SECRET_KEY environment variable must be set in production!")
 
 DEBUG = _env_bool("DJANGO_DEBUG", default=True)
+APP_NAME = _env_first("APP_NAME", default="CSC Administration")
+APP_TAGLINE = _env_first("APP_TAGLINE", default="Vorstand, Mitglieder, Compliance")
+APP_DESCRIPTION = _env_first(
+    "APP_DESCRIPTION",
+    default="Verwaltungssoftware fuer Social Clubs mit Mitglieder-, Finanz-, Governance- und Compliance-Modulen.",
+)
 
 # SECURITY WARNING: don't run with debug turned on in production!
 if DEBUG:
@@ -75,6 +81,7 @@ MIDDLEWARE = [
     "django.middleware.common.CommonMiddleware",
     "django.middleware.csrf.CsrfViewMiddleware",
     "django.contrib.auth.middleware.AuthenticationMiddleware",
+    "apps.core.middleware.NoStorePageCacheMiddleware",
     "apps.members.middleware.MemberOnboardingMiddleware",
     "django.contrib.messages.middleware.MessageMiddleware",
     "django.middleware.clickjacking.XFrameOptionsMiddleware",
@@ -203,6 +210,8 @@ MEMBER_CAPACITY = int(os.getenv("MEMBER_CAPACITY", "500"))  # Maximale Mitgliede
 LOW_STOCK_THRESHOLD_EUR = os.getenv("LOW_STOCK_THRESHOLD_EUR", "25.00")  # Mindestbestand in EUR
 MEMBER_MINIMUM_AGE = int(_env_first("MEMBER_MINIMUM_AGE", "DJANGO_MEMBER_MINIMUM_AGE", default="21"))
 MEMBER_MONTHLY_FEE = _env_first("MEMBER_MONTHLY_FEE", default="24.00")
+BALANCE_TOPUP_MIN_AMOUNT = _env_first("BALANCE_TOPUP_MIN_AMOUNT", default="1.00")
+BALANCE_TOPUP_MAX_AMOUNT = _env_first("BALANCE_TOPUP_MAX_AMOUNT", default="500.00")
 STRIPE_SECRET_KEY = _env_first("STRIPE_SECRET_KEY", default="")
 STRIPE_PUBLISHABLE_KEY = _env_first("STRIPE_PUBLISHABLE_KEY", default="")
 ORDER_SELF_CANCEL_HOURS = int(_env_first("ORDER_SELF_CANCEL_HOURS", default="24"))
@@ -228,10 +237,30 @@ CLUB_CONTACT_ADDRESS = _env_first("CLUB_CONTACT_ADDRESS", default="")
 CLUB_MEMBERSHIP_EMAIL = _env_first("CLUB_MEMBERSHIP_EMAIL", default=CLUB_CONTACT_EMAIL)
 CLUB_PREVENTION_EMAIL = _env_first("CLUB_PREVENTION_EMAIL", default=CLUB_CONTACT_EMAIL)
 CLUB_FINANCE_EMAIL = _env_first("CLUB_FINANCE_EMAIL", default=CLUB_CONTACT_EMAIL)
+CLUB_PRIVACY_CONTACT = _env_first("CLUB_PRIVACY_CONTACT", default=CLUB_CONTACT_EMAIL)
+CLUB_DATA_PROTECTION_OFFICER = _env_first("CLUB_DATA_PROTECTION_OFFICER", default="")
 CLUB_LANGUAGE_NOTICE = _env_first("CLUB_LANGUAGE_NOTICE", default="")
 CLUB_REGISTER_COURT = _env_first("CLUB_REGISTER_COURT", default="")
 CLUB_TAX_NUMBER = _env_first("CLUB_TAX_NUMBER", default="")
 CLUB_RESPONSIBLE_PERSON = _env_first("CLUB_RESPONSIBLE_PERSON", default="")
+CLUB_LEGAL_BASIS_NOTICE = _env_first(
+    "CLUB_LEGAL_BASIS_NOTICE",
+    default=(
+        "Die Verarbeitung erfolgt je nach Vorgang auf Grundlage von Vertrag oder Mitgliedschaftsanbahnung, "
+        "gesetzlichen Aufbewahrungspflichten, berechtigten Interessen des Vereins sowie erteilten Einwilligungen."
+    ),
+)
+CLUB_RETENTION_NOTICE = _env_first(
+    "CLUB_RETENTION_NOTICE",
+    default=(
+        "Mitglieds-, Finanz- und Vereinsunterlagen werden nur so lange gespeichert, wie dies fuer die "
+        "Vereinsverwaltung, Nachweiszwecke und gesetzliche Aufbewahrungsfristen erforderlich ist."
+    ),
+)
+CLUB_EXTERNAL_SERVICES = _env_csv("CLUB_EXTERNAL_SERVICES")
+LOGIN_RATE_LIMIT_ATTEMPTS = int(_env_first("LOGIN_RATE_LIMIT_ATTEMPTS", default="5"))
+LOGIN_RATE_LIMIT_WINDOW_SECONDS = int(_env_first("LOGIN_RATE_LIMIT_WINDOW_SECONDS", default="900"))
+HEALTH_ALLOWED_IPS = _env_csv("HEALTH_ALLOWED_IPS") or ["127.0.0.1", "::1", "localhost"]
 OPENROUTER_API_KEY = _env_first("OPENROUTER_API_KEY", default="")
 OPENROUTER_MODEL = _env_first("OPENROUTER_MODEL", default="Qwen/Qwen3.5-27B")
 OPENROUTER_BASE_URL = _env_first("OPENROUTER_BASE_URL", default="https://openrouter.ai/api/v1")

@@ -23,6 +23,7 @@
           </div>
         </div>
         <ul class="detail-list">
+          <li><span>Bezeichnung</span><strong>{{ uploaded_invoice.title|default:"-" }}</strong></li>
           <li><span>Rechnungsnummer</span><strong>{{ uploaded_invoice.invoice_number|default:"-" }}</strong></li>
           <li><span>Aussteller</span><strong>{{ uploaded_invoice.vendor_name|default:"-" }}</strong></li>
           <li><span>Empfaenger</span><strong>{{ uploaded_invoice.customer_name|default:"-" }}</strong></li>
@@ -33,6 +34,12 @@
         </ul>
         {% if uploaded_invoice.ai_summary %}
           <p class="empty-copy">{{ uploaded_invoice.ai_summary }}</p>
+        {% endif %}
+        {% if uploaded_invoice.ai_payload %}
+          <details class="panel panel--subtle">
+            <summary>Rohdaten der KI-Auswertung anzeigen</summary>
+            <pre class="code-block">{{ uploaded_invoice.ai_payload|pprint }}</pre>
+          </details>
         {% endif %}
         {% if uploaded_invoice.extraction_error %}
           <p class="empty-copy">Hinweis: {{ uploaded_invoice.extraction_error }}</p>

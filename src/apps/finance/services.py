@@ -248,6 +248,13 @@ def render_invoice_pdf(invoice: Invoice) -> bytes:
     pdf.setFont("Helvetica", 9)
     pdf.drawRightString(width - 20 * mm, top_y - 6 * mm, f"Erstellt am {timezone.localtime(invoice.created_at).strftime('%d.%m.%Y %H:%M')}")
     pdf.drawRightString(width - 20 * mm, top_y - 11 * mm, f"Faellig am {invoice.due_date.strftime('%d.%m.%Y')}")
+    pdf.drawRightString(width - 20 * mm, top_y - 16 * mm, "Rechnungsart Mitgliedsabrechnung")
+
+    tax_note = "Umsatzsteuer nach Vereins- und Leistungsart pruefen."
+    if getattr(settings, "CLUB_VAT_ID", ""):
+        tax_note = f"USt-ID: {settings.CLUB_VAT_ID}"
+    elif getattr(settings, "CLUB_TAX_NUMBER", ""):
+        tax_note = f"Steuernummer: {settings.CLUB_TAX_NUMBER}"
 
     member_name = invoice.profile.user.full_name or invoice.profile.user.email
     member_address = [
@@ -261,6 +268,8 @@ def render_invoice_pdf(invoice: Invoice) -> bytes:
         ("Status", invoice.get_status_display()),
         ("Mahnstufe", str(invoice.reminder_level)),
         ("Bestellung", f"#{invoice.order_id}" if invoice.order_id else "-"),
+        ("Leistungsdatum", invoice.due_date.strftime("%d.%m.%Y")),
+        ("Zahlziel", f"zahlbar bis {invoice.due_date.strftime('%d.%m.%Y')}"),
     ]
 
     y = height - 62 * mm
@@ -306,17 +315,34 @@ def render_invoice_pdf(invoice: Invoice) -> bytes:
         row_y -= 6 * mm
 
     pdf.line(20 * mm, row_y - 2 * mm, width - 20 * mm, row_y - 2 * mm)
+    subtotal = invoice.amount
+    tax_amount = Decimal("0.00")
     pdf.setFont("Helvetica-Bold", 10)
-    pdf.drawRightString(width - 20 * mm, row_y - 8 * mm, f"Gesamtbetrag: {invoice.amount} EUR")
+    pdf.drawString(110 * mm, row_y - 8 * mm, f"Zwischensumme: {subtotal} EUR")
+    pdf.drawString(110 * mm, row_y - 14 * mm, f"Steuer: {tax_amount} EUR")
+    pdf.drawRightString(width - 20 * mm, row_y - 20 * mm, f"Gesamtbetrag: {invoice.amount} EUR")
     pdf.setFont("Helvetica", 8)
     footer_lines = [
         settings.CLUB_CONTACT_EMAIL,
         settings.CLUB_CONTACT_PHONE,
+        settings.CLUB_REGISTER_ENTRY,
         settings.CLUB_REGISTER_COURT,
         settings.CLUB_TAX_NUMBER,
+        settings.CLUB_VAT_ID,
+        settings.CLUB_SUPERVISORY_AUTHORITY,
         settings.CLUB_CONTENT_RESPONSIBLE or settings.CLUB_RESPONSIBLE_PERSON,
     ]
-    footer_y = 28 * mm
+    note_y = row_y - 32 * mm
+    pdf.setFont("Helvetica", 8)
+    pdf.drawString(20 * mm, note_y, "Hinweise")
+    notes = pdf.beginText(20 * mm, note_y - 5 * mm)
+    notes.setFont("Helvetica", 8)
+    notes.textLine(tax_note)
+    notes.textLine(f"Leistungszeitraum und Rechnungsdatum entsprechen der Bestellung #{invoice.order_id}." if invoice.order_id else "Leistungszeitraum siehe Rechnungs- und Mitgliedsdaten.")
+    notes.textLine(f"Bitte ueberweise offene Betraege bis spaetestens {invoice.due_date.strftime('%d.%m.%Y')}.")
+    pdf.drawText(notes)
+
+    footer_y = 18 * mm
     pdf.line(20 * mm, footer_y + 8 * mm, width - 20 * mm, footer_y + 8 * mm)
     footer_text = pdf.beginText(20 * mm, footer_y)
     footer_text.setFont("Helvetica", 8)

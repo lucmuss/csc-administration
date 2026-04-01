@@ -29,3 +29,26 @@ class PublicDocument(models.Model):
 
     def __str__(self):
         return self.title
+
+    @property
+    def file_extension(self) -> str:
+        name = getattr(self.file, "name", "") or ""
+        if "." not in name:
+            return ""
+        return name.rsplit(".", 1)[-1].lower()
+
+    @property
+    def file_badge(self) -> str:
+        extension = self.file_extension
+        if not extension:
+            return "Datei"
+        return extension.upper()
+
+    @property
+    def file_action_label(self) -> str:
+        extension = self.file_extension
+        if extension == "pdf":
+            return "PDF herunterladen"
+        if extension in {"jpg", "jpeg", "png", "webp", "gif"}:
+            return "Datei ansehen"
+        return "Datei herunterladen"

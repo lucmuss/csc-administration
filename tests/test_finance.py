@@ -1,8 +1,10 @@
+import io
 from datetime import timedelta
 from decimal import Decimal
 
 import pytest
 from django.core import mail
+from django.core.files.uploadedfile import SimpleUploadedFile
 from django.test import override_settings
 from django.urls import reverse
 from django.utils import timezone
@@ -154,6 +156,64 @@ def test_topup_form_supports_preset_amounts():
 
     assert form.is_valid()
     assert form.cleaned_data["final_amount"] == Decimal("50.00")
+
+
+@pytest.mark.django_db
+@override_settings(
+    CLUB_NAME="Cannabis Social Club Leipzig Sued e.V.",
+    CLUB_CONTACT_ADDRESS="Postfach 35 03 04\n04165 Leipzig",
+    CLUB_CONTACT_EMAIL="info@example.com",
+    CLUB_CONTACT_PHONE="+49 176 0000000",
+    CLUB_REGISTER_ENTRY="Sachsen Amtsgericht Leipzig VR 8249",
+    CLUB_REGISTER_COURT="Amtsgericht Leipzig",
+    CLUB_TAX_NUMBER="232/140/22168",
+    CLUB_VAT_ID="DE123456789",
+    CLUB_SUPERVISORY_AUTHORITY="Stadt Leipzig",
+)
+def test_invoice_pdf_contains_formal_header_and_footer_data(member_user):
+    from pypdf import PdfReader
+
+    from apps.finance.models import Invoice
+    from apps.finance.services import render_invoice_pdf
+
+    invoice = Invoice.objects.create(
+        profile=member_user.profile,
+        invoice_number="INV-FORMAL-001",
+        amount=Decimal("88.00"),
+        due_date=timezone.localdate(),
+        status=Invoice.STATUS_OPEN,
+    )
+
+    pdf_bytes = render_invoice_pdf(invoice)
+    text = "\n".join(page.extract_text() or "" for page in PdfReader(io.BytesIO(pdf_bytes)).pages)
+
+    assert "Rechnungsart Mitgliedsabrechnung" in text
+    assert "Mitgliedsnummer" in text
+    assert "Zahlziel" in text
+    assert "Zwischensumme" in text
+    assert "Steuer" in text
+    assert "Gesamtbetrag" in text
+    assert "Sachsen Amtsgericht Leipzig VR 8249" in text
+    assert "DE123456789" in text
+    assert "Stadt Leipzig" in text
+
+
+@pytest.mark.django_db
+def test_public_documents_page_uses_generic_labels_for_non_pdf_files(client):
+    from apps.core.models import PublicDocument
+
+    image = SimpleUploadedFile("lageplan.png", b"png-data", content_type="image/png")
+    pdf = SimpleUploadedFile("satzung.pdf", b"%PDF-1.4\n%", content_type="application/pdf")
+    PublicDocument.objects.create(title="Lageplan", category="info", file=image, is_public=True)
+    PublicDocument.objects.create(title="Satzung", category="statute", file=pdf, is_public=True)
+
+    response = client.get(reverse("core:documents"))
+
+    html = response.content.decode("utf-8")
+    assert response.status_code == 200
+    assert "Datei ansehen" in html
+    assert "PDF herunterladen" in html
+    assert "PNG" in html
 
 
 @pytest.mark.django_db

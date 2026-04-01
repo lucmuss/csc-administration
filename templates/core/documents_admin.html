@@ -7,7 +7,7 @@
         <p class="eyebrow">Verwaltung</p>
         <h1>Dokumente hochladen, sortieren und oeffentlich bereitstellen.</h1>
         <p class="lede">
-          Hier pflegst du Satzung, Ordnungen, Gesundheitskonzept und weitere PDFs zentral an einer Stelle.
+          Hier pflegst du Satzung, Ordnungen, Gesundheitskonzept und weitere Dateien zentral an einer Stelle.
         </p>
       </div>
       <div class="hero-actions">
@@ -65,7 +65,7 @@
                   <td><strong>{{ document.title }}</strong></td>
                   <td>{{ document.get_category_display }}</td>
                   <td>{{ document.is_public|yesno:'Oeffentlich,Intern' }}</td>
-                  <td><a href="{{ document.file.url }}" class="text-link" target="_blank" rel="noopener">PDF ansehen</a></td>
+                  <td><a href="{{ document.file.url }}" class="text-link" target="_blank" rel="noopener">{{ document.file_action_label }}</a></td>
                   <td>
                     <form method="post" class="inline-actions">
                       {% csrf_token %}

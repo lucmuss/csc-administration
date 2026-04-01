@@ -7,7 +7,7 @@
         <p class="eyebrow">Vereinsdokumente</p>
         <h1>Wichtige Dokumente und Unterlagen des Clubs.</h1>
         <p class="lede">
-          Hier findest du oeffentliche PDFs wie Satzung, Ordnungen, Formulare und weitere Vereinsinformationen.
+          Hier findest du oeffentliche Dokumente wie Satzung, Ordnungen, Formulare und weitere Vereinsinformationen.
         </p>
       </div>
     </div>
@@ -15,7 +15,7 @@
       {% if documents %}
         <div class="info-strip">
           <span>{{ documents|length }} Dokumente verfuegbar</span>
-          <span>Alle Dateien oeffnen in einem neuen Tab</span>
+          <span>PDFs, Bilder und weitere Dateien oeffnen in einem neuen Tab</span>
         </div>
         <div class="table-card">
           <table class="table table--compact">
@@ -25,6 +25,7 @@
                 <th>Kategorie</th>
                 <th>Beschreibung</th>
                 <th>Datei</th>
+                <th>Format</th>
               </tr>
             </thead>
             <tbody>
@@ -33,7 +34,8 @@
                   <td><strong>{{ document.title }}</strong></td>
                   <td>{{ document.get_category_display }}</td>
                   <td>{{ document.description|default:'-' }}</td>
-                  <td><a href="{{ document.file.url }}" class="btn-ghost btn-ghost--small" target="_blank" rel="noopener">PDF herunterladen</a></td>
+                  <td><a href="{{ document.file.url }}" class="btn-ghost btn-ghost--small" target="_blank" rel="noopener">{{ document.file_action_label }}</a></td>
+                  <td><span class="badge badge--muted">{{ document.file_badge }}</span></td>
                 </tr>
               {% endfor %}
             </tbody>

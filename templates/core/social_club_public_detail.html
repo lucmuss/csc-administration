@@ -1,0 +1,175 @@
+{% extends 'base.html' %}
+{% block title %}{{ club.name }}{% endblock %}
+{% block content %}
+<section class="page-shell">
+  {% if club.banner_image %}
+    <section class="panel" style="padding:0; overflow:hidden;">
+      <img src="{{ club.banner_image.url }}" alt="Banner {{ club.name }}" style="width:100%; max-height:320px; object-fit:cover; display:block;">
+    </section>
+  {% endif %}
+  <div class="page-heading">
+    <div>
+      <p class="eyebrow">Social Club Profil</p>
+      <h1>{{ club.name }}</h1>
+      <p class="lede">{{ club.public_description|default:"Dieser Social Club hat noch keine oeffentliche Beschreibung hinterlegt." }}</p>
+    </div>
+    <div class="hero-actions">
+      <a href="{% url 'core:social_club_register' %}" class="btn-primary">Social Club registrieren</a>
+      <a href="{% url 'core:social_club_public_list' %}" class="btn-ghost">Zur Club-Übersicht</a>
+    </div>
+  </div>
+
+  <section class="kpi-grid">
+    <article class="kpi-card kpi-card--sand">
+      <span class="kpi-card__label">Profilbild</span>
+      {% if club.profile_image %}
+        <img src="{{ club.profile_image.url }}" alt="Profilbild {{ club.name }}" style="width:88px; height:88px; border-radius:999px; object-fit:cover; margin-top:.5rem;">
+      {% else %}
+        <strong class="kpi-card__value">Kein Bild</strong>
+      {% endif %}
+      <small class="kpi-card__detail">Club-Logo / Profilbild</small>
+    </article>
+    <article class="kpi-card kpi-card--ink">
+      <span class="kpi-card__label">Bewertung</span>
+      <strong class="kpi-card__value">{% if avg_rating %}{{ avg_rating }} / 5{% else %}-{% endif %}</strong>
+      <small class="kpi-card__detail">{{ review_count }} Bewertungen</small>
+    </article>
+    <article class="kpi-card kpi-card--forest">
+      <span class="kpi-card__label">Standort</span>
+      <strong class="kpi-card__value">{{ club.city }}</strong>
+      <small class="kpi-card__detail">{{ club.street_address }}{% if club.get_federal_state_display %} · {{ club.get_federal_state_display }}{% endif %}</small>
+    </article>
+    <article class="kpi-card kpi-card--forest">
+      <span class="kpi-card__label">Verifizierte Mitglieder</span>
+      <strong class="kpi-card__value">{{ verified_member_count }} / {{ max_verified_members }}</strong>
+      <small class="kpi-card__detail">{{ verified_member_slots_left }} Plaetze verfuegbar</small>
+    </article>
+    <article class="kpi-card kpi-card--sand">
+      <span class="kpi-card__label">Sorten im Shop</span>
+      <strong class="kpi-card__value">{{ shop_strain_count }}</strong>
+      <small class="kpi-card__detail">aktuell aktive Sorten</small>
+    </article>
+    <article class="kpi-card kpi-card--ink">
+      <span class="kpi-card__label">Ø Sortenpreis</span>
+      <strong class="kpi-card__value">{{ club.avg_strain_price }} EUR</strong>
+      <small class="kpi-card__detail">aus allen aktiven Sorten</small>
+    </article>
+    <article class="kpi-card kpi-card--sand">
+      <span class="kpi-card__label">Preisbereich</span>
+      <strong class="kpi-card__value">{{ club.min_strain_price }} - {{ club.max_strain_price }} EUR</strong>
+      <small class="kpi-card__detail">niedrigster bis hoechster Sortenpreis</small>
+    </article>
+    <article class="kpi-card kpi-card--ink">
+      <span class="kpi-card__label">Aufnahmegebuehr</span>
+      <strong class="kpi-card__value">{{ club.admission_fee }} EUR</strong>
+      <small class="kpi-card__detail">einmalig bei finaler Freigabe</small>
+    </article>
+    <article class="kpi-card kpi-card--sand">
+      <span class="kpi-card__label">Monatsbeitrag</span>
+      <strong class="kpi-card__value">{{ club.monthly_membership_fee }} EUR</strong>
+      <small class="kpi-card__detail">pro verifiziertem Mitglied</small>
+    </article>
+  </section>
+
+  <section class="panel">
+    <div class="panel__header"><div><p class="panel__eyebrow">Ausgabezeiten</p><h2>Cannabis-Ausgabe im Wochenplan</h2></div></div>
+    <div class="table-card">
+      <table class="table table--compact">
+        <thead>
+          <tr>
+            <th>Wochentag</th>
+            <th>Ausgabezeiten</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for weekday in opening_week_schedule %}
+            {% if weekday.slots %}
+              <tr style="background:#e9f8ef;">
+                <td><strong>{{ weekday.label }}</strong></td>
+                <td>
+                  {% for slot in weekday.slots %}
+                    <span class="status-pill status-pill--forest">{{ slot.starts_at|time:"H:i" }} - {{ slot.ends_at|time:"H:i" }}</span>
+                  {% endfor %}
+                </td>
+              </tr>
+            {% else %}
+              <tr style="background:#f3f4f6;">
+                <td><strong>{{ weekday.label }}</strong></td>
+                <td><span class="table-meta">Keine Ausgabezeit hinterlegt</span></td>
+              </tr>
+            {% endif %}
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <section class="panel">
+    <div class="panel__header"><div><p class="panel__eyebrow">Galerie</p><h2>Einblicke in den Social Club</h2></div></div>
+    <div style="display:grid; grid-template-columns:repeat(auto-fill, minmax(180px, 1fr)); gap:1rem;">
+      {% for image in club.gallery_images %}
+        {% if image %}
+          <a href="{{ image.url }}" target="_blank" rel="noopener" class="panel panel--subtle" style="padding:0; overflow:hidden;">
+            <img src="{{ image.url }}" alt="Galeriebild {{ forloop.counter }} {{ club.name }}" style="width:100%; height:180px; object-fit:cover; display:block;">
+          </a>
+        {% endif %}
+      {% endfor %}
+    </div>
+    {% if not club.gallery_image_1 and not club.gallery_image_2 and not club.gallery_image_3 and not club.gallery_image_4 and not club.gallery_image_5 %}
+      <p class="empty-copy">Noch keine Galerie-Bilder hinterlegt.</p>
+    {% endif %}
+  </section>
+
+  <section class="board-grid">
+    <article class="panel">
+      <div class="panel__header"><div><p class="panel__eyebrow">Kontakt</p><h2>Relevante Informationen</h2></div></div>
+      <ul class="detail-list">
+        <li><span>E-Mail</span><strong>{{ club.email }}</strong></li>
+        <li><span>Telefon</span><strong>{{ club.phone|default:"-" }}</strong></li>
+        <li><span>Website</span><strong>{% if club.website %}<a class="text-link" href="{{ club.website }}" target="_blank" rel="noopener">{{ club.website }}</a>{% else %}-{% endif %}</strong></li>
+        <li><span>Vertreten durch</span><strong>{{ club.board_representatives|default:"-" }}</strong></li>
+        <li><span>Registergericht</span><strong>{{ club.register_court|default:"-" }}</strong></li>
+        <li><span>Steuernummer</span><strong>{{ club.tax_number|default:"-" }}</strong></li>
+      </ul>
+    </article>
+
+    <article class="panel panel--span-2">
+      <div class="panel__header"><div><p class="panel__eyebrow">Satzung & Dokumente</p><h2>Oeffentlich einsehbare Unterlagen</h2></div></div>
+      {% if statute_documents %}
+        <ul class="stack-list">
+          {% for document in statute_documents %}
+            <li class="stack-list__item"><div><strong>{{ document.title }}</strong><small>{{ document.description|default:"Satzungsdokument" }}</small></div><a class="btn-ghost btn-ghost--small" href="{{ document.file.url }}" target="_blank" rel="noopener">Oeffnen</a></li>
+          {% endfor %}
+        </ul>
+      {% elif documents %}
+        <ul class="stack-list">
+          {% for document in documents %}
+            <li class="stack-list__item"><div><strong>{{ document.title }}</strong><small>{{ document.get_category_display }}</small></div><a class="btn-ghost btn-ghost--small" href="{{ document.file.url }}" target="_blank" rel="noopener">Oeffnen</a></li>
+          {% endfor %}
+        </ul>
+      {% else %}
+        <p class="empty-copy">Aktuell keine oeffentlichen Dokumente hinterlegt.</p>
+      {% endif %}
+    </article>
+  </section>
+
+  <section class="panel">
+    <div class="panel__header"><div><p class="panel__eyebrow">Mitgliederfeedback</p><h2>Bewertungen aus dem Club</h2></div></div>
+    {% if reviews %}
+      <ul class="stack-list">
+        {% for review in reviews %}
+          <li class="stack-list__item">
+            <div>
+              <strong>{{ review.rating }} / 5 Sterne</strong>
+              <small>{{ review.user.first_name|default:review.user.email }} · {{ review.updated_at|date:"d.m.Y" }}</small>
+              {% if review.comment %}<div class="table-meta">{{ review.comment }}</div>{% endif %}
+            </div>
+          </li>
+        {% endfor %}
+      </ul>
+    {% else %}
+      <p class="empty-copy">Noch keine Bewertungen vorhanden.</p>
+    {% endif %}
+  </section>
+</section>
+{% endblock %}

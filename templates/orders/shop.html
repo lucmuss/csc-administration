@@ -69,6 +69,16 @@
         <strong>{% if strain.is_weight_based %}{{ strain.cbd }}%{% else %}pro Stueck{% endif %}</strong>
       </div>
     </div>
+    {% if strain.is_weight_based %}
+      {% if strain.cbg is not None or strain.cbn is not None or strain.cbc is not None or strain.cbv is not None %}
+        <p class="shop-card-compact__meta">
+          {% if strain.cbg is not None %}CBG {{ strain.cbg }}%{% endif %}
+          {% if strain.cbn is not None %}{% if strain.cbg is not None %} · {% endif %}CBN {{ strain.cbn }}%{% endif %}
+          {% if strain.cbc is not None %}{% if strain.cbg is not None or strain.cbn is not None %} · {% endif %}CBC {{ strain.cbc }}%{% endif %}
+          {% if strain.cbv is not None %}{% if strain.cbg is not None or strain.cbn is not None or strain.cbc is not None %} · {% endif %}CBV {{ strain.cbv }}%{% endif %}
+        </p>
+      {% endif %}
+    {% endif %}
     <p class="shop-card-compact__meta">{{ strain.unit_price_label }} · Qualitaet {{ strain.quality_grade }}</p>
     {% if strain.stock > 0 %}
       <form method="post" action="{% url 'orders:add_to_cart' %}" class="shop-form" aria-label="{{ strain.name }} zum Warenkorb hinzufuegen" data-price="{{ strain.price }}" data-line-preview>

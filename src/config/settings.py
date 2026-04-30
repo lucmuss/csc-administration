@@ -78,6 +78,7 @@ MIDDLEWARE = [
     "django.middleware.security.SecurityMiddleware",
     "whitenoise.middleware.WhiteNoiseMiddleware",
     "django.contrib.sessions.middleware.SessionMiddleware",
+    "django.middleware.locale.LocaleMiddleware",
     "django.middleware.common.CommonMiddleware",
     "django.middleware.csrf.CsrfViewMiddleware",
     "django.contrib.auth.middleware.AuthenticationMiddleware",
@@ -101,6 +102,7 @@ TEMPLATES = [
                 "django.contrib.auth.context_processors.auth",
                 "django.contrib.messages.context_processors.messages",
                 "config.context_processors.ga_tracking_id",
+                "config.context_processors.app_version",
                 "config.context_processors.club_info",
             ],
         },
@@ -214,6 +216,8 @@ BALANCE_TOPUP_MIN_AMOUNT = _env_first("BALANCE_TOPUP_MIN_AMOUNT", default="1.00"
 BALANCE_TOPUP_MAX_AMOUNT = _env_first("BALANCE_TOPUP_MAX_AMOUNT", default="500.00")
 STRIPE_SECRET_KEY = _env_first("STRIPE_SECRET_KEY", default="")
 STRIPE_PUBLISHABLE_KEY = _env_first("STRIPE_PUBLISHABLE_KEY", default="")
+STRIPE_WEBHOOK_SECRET = _env_first("STRIPE_WEBHOOK_SECRET", default="")
+STRIPE_CONNECT_CLIENT_ID = _env_first("STRIPE_CONNECT_CLIENT_ID", default="")
 ORDER_SELF_CANCEL_HOURS = int(_env_first("ORDER_SELF_CANCEL_HOURS", default="24"))
 CLUB_NAME = _env_first("CLUB_NAME", default="Cannabis Social Club Leipzig Sued e.V.")
 CLUB_BOARD_REPRESENTATIVES = _env_first("CLUB_BOARD_REPRESENTATIVES", default="")

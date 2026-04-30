@@ -836,11 +836,14 @@ def api_render_sms_template(request):
     
     try:
         template = SmsTemplate.objects.get(pk=template_id)
-        # Beispiel-Kontext
+        profile = getattr(request.user, "profile", None)
+        first_name = (getattr(request.user, "first_name", "") or "").strip() or "Mitglied"
+        last_name = (getattr(request.user, "last_name", "") or "").strip() or "Demo"
+        member_number = str(getattr(profile, "member_number", "") or "")
         context = {
-            "first_name": "Max",
-            "last_name": "Mustermann",
-            "member_number": "123456"
+            "first_name": first_name,
+            "last_name": last_name,
+            "member_number": member_number,
         }
         rendered = template.render(context)
         

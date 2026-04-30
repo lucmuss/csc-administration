@@ -19,6 +19,7 @@ class User(AbstractBaseUser, PermissionsMixin):
     first_name = models.CharField(max_length=150)
     last_name = models.CharField(max_length=150)
     role = models.CharField(max_length=16, choices=ROLE_CHOICES, default=ROLE_MEMBER)
+    social_club = models.ForeignKey("core.SocialClub", null=True, blank=True, on_delete=models.SET_NULL, related_name="users")
     is_active = models.BooleanField(default=True)
     is_staff = models.BooleanField(default=False)
     date_joined = models.DateTimeField(default=timezone.now)

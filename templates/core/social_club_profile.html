@@ -1,0 +1,98 @@
+{% extends 'base.html' %}
+{% block title %}Social Club Profil{% endblock %}
+{% block content %}
+<section class="page-shell">
+  <div class="page-heading">
+    <div>
+      <p class="eyebrow">Social Club</p>
+      <h1>Rechts- und Profildaten von {{ club.name }}</h1>
+      <p class="lede">Diese Angaben steuern club-spezifisch Impressum, Datenschutz und Kontaktdaten.</p>
+    </div>
+  </div>
+  <section class="panel">
+    <form method="post" enctype="multipart/form-data" class="form-stack">
+      {% csrf_token %}
+      {% for field in form %}
+        <div class="field">
+          <label for="{{ field.id_for_label }}">{{ field.label }}</label>
+          {{ field }}
+          {{ field.errors }}
+        </div>
+      {% endfor %}
+      <section class="panel">
+        <div class="panel__header">
+          <div>
+            <p class="panel__eyebrow">Cannabis-Ausgabe</p>
+            <h2>Ausgabezeiten verwalten</h2>
+          </div>
+        </div>
+        {{ opening_hour_formset.management_form }}
+        {% if opening_hour_formset.non_form_errors %}
+          <div class="flash flash--error">{{ opening_hour_formset.non_form_errors }}</div>
+        {% endif %}
+        <div class="table-card">
+          <table class="table table--compact" id="opening-hours-table">
+            <thead>
+              <tr>
+                <th>Wochentag</th>
+                <th>Von</th>
+                <th>Bis</th>
+                <th>Loeschen</th>
+              </tr>
+            </thead>
+            <tbody>
+              {% for row_form in opening_hour_formset %}
+                <tr class="opening-hour-row">
+                  <td>{{ row_form.id }}{{ row_form.weekday }}{{ row_form.weekday.errors }}</td>
+                  <td>{{ row_form.starts_at }}{{ row_form.starts_at.errors }}</td>
+                  <td>{{ row_form.ends_at }}{{ row_form.ends_at.errors }}</td>
+                  <td>{{ row_form.DELETE }}</td>
+                </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+        <button type="button" id="add-opening-hour-row" class="btn-ghost">Weitere Ausgabezeit</button>
+      </section>
+      <button type="submit" class="btn-primary">Social-Club-Daten speichern</button>
+    </form>
+  </section>
+</section>
+<template id="opening-hour-empty-row">
+  <tr class="opening-hour-row">
+    <td>__WEEKDAY__</td>
+    <td>__STARTS_AT__</td>
+    <td>__ENDS_AT__</td>
+    <td>__DELETE__</td>
+  </tr>
+</template>
+<script>
+  (function () {
+    const addButton = document.getElementById("add-opening-hour-row");
+    const tableBody = document.querySelector("#opening-hours-table tbody");
+    const totalForms = document.getElementById("id_opening_hours-TOTAL_FORMS");
+    const emptyTemplate = document.getElementById("opening-hour-empty-row");
+    if (!addButton || !tableBody || !totalForms || !emptyTemplate) {
+      return;
+    }
+    const emptyRowWeekday = `{{ opening_hour_formset.empty_form.weekday.as_widget|escapejs }}`;
+    const emptyRowStartsAt = `{{ opening_hour_formset.empty_form.starts_at.as_widget|escapejs }}`;
+    const emptyRowEndsAt = `{{ opening_hour_formset.empty_form.ends_at.as_widget|escapejs }}`;
+    const emptyRowDelete = `{{ opening_hour_formset.empty_form.DELETE.as_widget|escapejs }}`;
+
+    addButton.addEventListener("click", function () {
+      const currentIndex = Number(totalForms.value);
+      const withPrefix = function (value) {
+        return value.replaceAll("__prefix__", String(currentIndex));
+      };
+      const html = emptyTemplate.innerHTML
+        .replace("__WEEKDAY__", withPrefix(emptyRowWeekday))
+        .replace("__STARTS_AT__", withPrefix(emptyRowStartsAt))
+        .replace("__ENDS_AT__", withPrefix(emptyRowEndsAt))
+        .replace("__DELETE__", withPrefix(emptyRowDelete));
+      tableBody.insertAdjacentHTML("beforeend", html);
+      totalForms.value = String(currentIndex + 1);
+    });
+  })();
+</script>
+{% endblock %}

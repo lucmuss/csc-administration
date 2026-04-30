@@ -1,0 +1,88 @@
+{% extends 'base.html' %}
+{% block title %}Regionale Social Clubs{% endblock %}
+{% block content %}
+<section class="page-shell">
+  <div class="page-heading">
+    <div>
+      <p class="eyebrow">Regionale Clubs</p>
+      <h1>Social Clubs in deiner Naehe</h1>
+      <p class="lede">Waehle dein Bundesland und finde bereits registrierte Social Clubs auf der Plattform.</p>
+    </div>
+  </div>
+  <section class="panel">
+    <form method="post" action="{% url 'core:social_club_state_switch' %}" class="filter-grid">
+      {% csrf_token %}
+      <input type="hidden" name="next" value="{% url 'core:social_club_regional_list' %}">
+      <div class="field">
+        <label for="state-switch">Bundesland speichern</label>
+        <select id="state-switch" name="federal_state" class="form-input form-select">
+          <option value="">Kein Bundesland gespeichert</option>
+          {% for code, label in state_options %}
+            <option value="{{ code }}" {% if state_filter == code %}selected{% endif %}>{{ label }}</option>
+          {% endfor %}
+        </select>
+      </div>
+      <div class="field field--actions"><button type="submit" class="btn-primary btn-block">Bundesland speichern</button></div>
+    </form>
+  </section>
+  <section class="panel">
+    <form method="get" class="filter-grid" id="regional-club-filter-form">
+      <div class="field">
+        <label for="federal_state">Bundesland</label>
+        <select id="federal_state" name="federal_state" class="form-input form-select">
+          <option value="">Alle Bundeslaender</option>
+          {% for code, label in state_options %}
+            <option value="{{ code }}" {% if state_filter == code %}selected{% endif %}>{{ label }}</option>
+          {% endfor %}
+        </select>
+      </div>
+      <div class="field">
+        <label for="q">Suche</label>
+        <input id="q" name="q" type="text" value="{{ query }}" class="form-input" placeholder="z. B. Leipzig oder Clubname">
+      </div>
+      <div class="field">
+        <label for="price_min">Min Ø Preis (EUR)</label>
+        <input id="price_min" name="price_min" type="number" step="0.01" min="0" value="{{ price_min }}" class="form-input" placeholder="z. B. 6.50">
+      </div>
+      <div class="field">
+        <label for="price_max">Max Ø Preis (EUR)</label>
+        <input id="price_max" name="price_max" type="number" step="0.01" min="0" value="{{ price_max }}" class="form-input" placeholder="z. B. 11.00">
+      </div>
+      <div class="field field--actions"><button type="submit" class="btn-primary btn-block">Filtern</button></div>
+      <div class="field field--actions"><a href="{% url 'core:social_club_regional_list' %}" class="btn-ghost btn-block">Zuruecksetzen</a></div>
+    </form>
+  </section>
+  <section class="panel" id="regional-club-results">
+    {% include "core/_social_club_regional_results.html" with clubs=clubs %}
+  </section>
+</section>
+<script>
+  (function () {
+    const form = document.getElementById("regional-club-filter-form");
+    const stateSelect = document.getElementById("federal_state");
+    const results = document.getElementById("regional-club-results");
+    if (!form || !stateSelect || !results) {
+      return;
+    }
+    const fetchResults = function () {
+      const params = new URLSearchParams(new FormData(form));
+      const url = `${form.action || window.location.pathname}?${params.toString()}`;
+      fetch(url, { headers: { "X-Requested-With": "XMLHttpRequest" } })
+        .then(function (response) { return response.json(); })
+        .then(function (payload) {
+          if (payload && payload.html) {
+            results.innerHTML = payload.html;
+          }
+        })
+        .catch(function () {
+          form.submit();
+        });
+    };
+    stateSelect.addEventListener("change", fetchResults);
+    form.addEventListener("submit", function (event) {
+      event.preventDefault();
+      fetchResults();
+    });
+  })();
+</script>
+{% endblock %}

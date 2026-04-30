@@ -1,6 +1,20 @@
 from django.urls import path
 
-from .views import archive, archive_detail, dashboard, invoice_detail, invoice_list, invoice_pdf, mandate_create, payment_list, statistics, topup_create, topup_success
+from .views import (
+    archive,
+    archive_detail,
+    dashboard,
+    invoice_detail,
+    invoice_list,
+    invoice_pdf,
+    mandate_create,
+    payment_list,
+    statistics,
+    stripe_method_create,
+    stripe_method_success,
+    topup_create,
+    topup_success,
+)
 
 app_name = "finance"
 
@@ -10,6 +24,8 @@ urlpatterns = [
     path("archive/<int:pk>/", archive_detail, name="archive_detail"),
     path("statistics/", statistics, name="statistics"),
     path("mandate/new/", mandate_create, name="mandate_create"),
+    path("stripe-method/new/", stripe_method_create, name="stripe_method_create"),
+    path("stripe-method/success/", stripe_method_success, name="stripe_method_success"),
     path("payments/", payment_list, name="payment_list"),
     path("invoices/", invoice_list, name="invoice_list"),
     path("invoices/<int:pk>/", invoice_detail, name="invoice_detail"),

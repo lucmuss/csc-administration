@@ -109,5 +109,44 @@
         </div>
       </section>
     {% endif %}
+
+    {% if import_result.imported_entries %}
+      <section class="panel">
+        <div class="panel__header">
+          <div>
+            <p class="panel__eyebrow">Ergebnis</p>
+            <h2>Importierte Benutzer</h2>
+          </div>
+        </div>
+        <p class="empty-copy">
+          Importiert: {{ import_result.created_count }} neu, {{ import_result.updated_count }} aktualisiert, {{ import_result.skipped_count }} uebersprungen.
+          Alle importierten Profile sind als noch nicht anerkannt hinterlegt und muessen im Mitglieder-Cockpit freigegeben werden.
+        </p>
+        <div class="table-card">
+          <table class="table table--compact">
+            <thead>
+              <tr>
+                <th>Name</th>
+                <th>E-Mail</th>
+                <th>Status</th>
+                <th>Verifiziert</th>
+                <th>Import</th>
+              </tr>
+            </thead>
+            <tbody>
+              {% for row in import_result.imported_entries %}
+                <tr>
+                  <td>{{ row.first_name }} {{ row.last_name }}</td>
+                  <td>{{ row.email }}</td>
+                  <td>{{ row.status }}</td>
+                  <td>{{ row.verified|yesno:"Ja,Nein" }}</td>
+                  <td>{% if row.created %}Neu{% else %}Aktualisiert{% endif %}</td>
+                </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+      </section>
+    {% endif %}
   </section>
 {% endblock %}

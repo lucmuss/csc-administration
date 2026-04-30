@@ -69,6 +69,30 @@
           </div>
           <div class="field-grid">
             <div class="field">
+              <label for="{{ form.cbg.id_for_label }}">{{ form.cbg.label }}</label>
+              {{ form.cbg }}
+              {{ form.cbg.errors }}
+            </div>
+            <div class="field">
+              <label for="{{ form.cbn.id_for_label }}">{{ form.cbn.label }}</label>
+              {{ form.cbn }}
+              {{ form.cbn.errors }}
+            </div>
+          </div>
+          <div class="field-grid">
+            <div class="field">
+              <label for="{{ form.cbc.id_for_label }}">{{ form.cbc.label }}</label>
+              {{ form.cbc }}
+              {{ form.cbc.errors }}
+            </div>
+            <div class="field">
+              <label for="{{ form.cbv.id_for_label }}">{{ form.cbv.label }}</label>
+              {{ form.cbv }}
+              {{ form.cbv.errors }}
+            </div>
+          </div>
+          <div class="field-grid">
+            <div class="field">
               <label for="{{ form.quality_grade.id_for_label }}">{{ form.quality_grade.label }}</label>
               {{ form.quality_grade }}
               {{ form.quality_grade.errors }}

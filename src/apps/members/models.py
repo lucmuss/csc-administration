@@ -8,7 +8,24 @@ from django.db.models import Max
 from django.utils import timezone
 
 
+def current_month_key() -> str:
+    return timezone.localdate().strftime("%Y-%m")
+
+
 class Profile(models.Model):
+    LANGUAGE_DE = "de"
+    LANGUAGE_EN = "en"
+    LANGUAGE_CHOICES = [
+        (LANGUAGE_DE, "Deutsch"),
+        (LANGUAGE_EN, "Englisch"),
+    ]
+    PAYMENT_METHOD_SEPA = "sepa"
+    PAYMENT_METHOD_STRIPE_CARD = "stripe_card"
+    PAYMENT_METHOD_CHOICES = [
+        (PAYMENT_METHOD_SEPA, "SEPA-Lastschrift"),
+        (PAYMENT_METHOD_STRIPE_CARD, "Stripe Karte"),
+    ]
+
     STATUS_PENDING = "pending"
     STATUS_VERIFIED = "verified"
     STATUS_ACTIVE = "active"
@@ -40,6 +57,10 @@ class Profile(models.Model):
     id_document_confirmed = models.BooleanField(default=False)
     important_newsletter_opt_in = models.BooleanField(default=False)
     optional_newsletter_opt_in = models.BooleanField(default=False)
+    preferred_language = models.CharField(max_length=2, choices=LANGUAGE_CHOICES, default=LANGUAGE_DE)
+    payment_method_preference = models.CharField(max_length=16, choices=PAYMENT_METHOD_CHOICES, default=PAYMENT_METHOD_SEPA)
+    stripe_customer_id = models.CharField(max_length=128, blank=True)
+    stripe_payment_method_id = models.CharField(max_length=128, blank=True)
     instagram_opt_in = models.BooleanField(default=False)
     telegram_opt_in = models.BooleanField(default=False)
     application_notes = models.TextField(blank=True)
@@ -54,11 +75,12 @@ class Profile(models.Model):
         blank=True,
     )
     is_locked_for_orders = models.BooleanField(default=False)
+    verification_reminder_sent_at = models.DateTimeField(null=True, blank=True)
 
     daily_used = models.DecimalField(max_digits=6, decimal_places=2, default=Decimal("0.00"))
     monthly_used = models.DecimalField(max_digits=6, decimal_places=2, default=Decimal("0.00"))
     daily_counter_date = models.DateField(default=date.today)
-    monthly_counter_key = models.CharField(max_length=7, default="1970-01")
+    monthly_counter_key = models.CharField(max_length=7, default=current_month_key)
     last_activity = models.DateTimeField(null=True, blank=True)
     work_hours_done = models.DecimalField(max_digits=6, decimal_places=2, default=Decimal("0.00"))
 
@@ -171,3 +193,51 @@ class Profile(models.Model):
     def mark_registration_completed(self) -> None:
         self.registration_completed_at = timezone.now()
         self.save(update_fields=["registration_completed_at", "updated_at"])
+
+
+def verification_upload_path(instance, filename: str) -> str:
+    return f"verification/{instance.profile.user_id}/{filename}"
+
+
+class VerificationSubmission(models.Model):
+    STATUS_DRAFT = "draft"
+    STATUS_SUBMITTED = "submitted"
+    STATUS_APPROVED = "approved"
+    STATUS_REJECTED = "rejected"
+    STATUS_CHOICES = [
+        (STATUS_DRAFT, "Entwurf"),
+        (STATUS_SUBMITTED, "Eingereicht"),
+        (STATUS_APPROVED, "Bestaetigt"),
+        (STATUS_REJECTED, "Abgelehnt"),
+    ]
+
+    profile = models.OneToOneField(Profile, on_delete=models.CASCADE, related_name="verification_submission")
+    status = models.CharField(max_length=16, choices=STATUS_CHOICES, default=STATUS_DRAFT)
+
+    id_front_image = models.FileField(upload_to=verification_upload_path, blank=True)
+    id_back_image = models.FileField(upload_to=verification_upload_path, blank=True)
+    membership_application_document = models.FileField(upload_to=verification_upload_path, blank=True)
+    sepa_mandate_document = models.FileField(upload_to=verification_upload_path, blank=True)
+
+    submitted_at = models.DateTimeField(null=True, blank=True)
+    approved_at = models.DateTimeField(null=True, blank=True)
+    approved_by = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="approved_member_verifications",
+    )
+    admin_notes = models.TextField(blank=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        ordering = ["-updated_at"]
+
+    def __str__(self):
+        return f"Verifizierung {self.profile.user.email} ({self.status})"
+
+    @property
+    def has_required_documents(self) -> bool:
+        return bool(self.id_front_image and self.id_back_image)

@@ -228,3 +228,27 @@ def send_order_completed_email(*, order, request: HttpRequest) -> bool:
     if invoice:
         msg.attach(f"{invoice.invoice_number}.pdf", render_invoice_pdf(invoice), "application/pdf")
     return msg.send(fail_silently=True) > 0
+
+
+def send_verification_reminder_email(user, profile) -> bool:
+    verification_url = f"{_app_public_url()}/members/verification/"
+    context = {
+        "user": user,
+        "profile": profile,
+        "verification_url": verification_url,
+        "dashboard_url": f"{_app_public_url()}/",
+    }
+    context.update(_club_email_context())
+    subject = _render_subject("emails/account/verification_reminder_subject.txt", context)
+    text_body = render_to_string("emails/account/verification_reminder_body.txt", context)
+    html_body = render_to_string("emails/account/verification_reminder_body.html", context)
+    text_body, html_body = _apply_email_signature(text_body, html_body, context)
+
+    msg = EmailMultiAlternatives(
+        subject=subject,
+        body=text_body,
+        from_email=settings.DEFAULT_FROM_EMAIL,
+        to=[user.email],
+    )
+    msg.attach_alternative(html_body, "text/html")
+    return msg.send(fail_silently=True) > 0

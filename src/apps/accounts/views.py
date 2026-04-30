@@ -21,20 +21,29 @@ from django.urls import reverse_lazy
 from .emails import send_login_alert_email
 from .forms import EmailAuthenticationForm, StyledPasswordResetForm, StyledSetPasswordForm
 from .models import User
-
-
-MEMBER_RESTRICTED_PREFIXES = (
-    "/members/admin/",
-    "/orders/admin/",
-    "/inventory/",
-    "/messaging/",
-    "/compliance/",
-    "/governance/",
-    "/documents/admin/",
-    "/finance/archive/",
-    "/finance/statistics/",
-    "/cultivation/",
+from apps.core.club import (
+    ACTIVE_FEDERAL_STATE_COOKIE,
+    ACTIVE_FEDERAL_STATE_SESSION_KEY,
+    ACTIVE_SOCIAL_CLUB_COOKIE,
+    ACTIVE_SOCIAL_CLUB_SESSION_KEY,
+    resolve_active_federal_state,
+    resolve_active_social_club,
 )
+
+
+def _member_restricted_prefixes() -> tuple[str, ...]:
+    return (
+        reverse("members:directory"),
+        reverse("orders:admin_list"),
+        reverse("inventory:strain_list").rsplit("/", 1)[0] + "/",
+        reverse("messaging:dashboard"),
+        reverse("compliance:dashboard"),
+        reverse("governance:dashboard"),
+        reverse("core:documents_admin"),
+        reverse("finance:archive"),
+        reverse("finance:statistics"),
+        reverse("cultivation:dashboard"),
+    )
 
 
 def _client_ip(request) -> str:
@@ -53,7 +62,7 @@ def _restricted_redirect_for_user(request: HttpRequest, redirect_to: str) -> boo
         return False
     if request.user.role in {User.ROLE_STAFF, User.ROLE_BOARD}:
         return False
-    return any(redirect_to.startswith(prefix) for prefix in MEMBER_RESTRICTED_PREFIXES)
+    return any(redirect_to.startswith(prefix) for prefix in _member_restricted_prefixes())
 
 
 @method_decorator(never_cache, name="dispatch")
@@ -70,9 +79,29 @@ class EmailLoginView(LoginView):
             return super().form_invalid(form)
         return super().post(request, *args, **kwargs)
 
+    def get_initial(self):
+        initial = super().get_initial()
+        active_club = resolve_active_social_club(self.request)
+        active_state = resolve_active_federal_state(self.request)
+        if active_club:
+            initial["social_club"] = active_club.id
+        if active_state:
+            initial["federal_state"] = active_state
+        return initial
+
     def form_valid(self, form):
         self._clear_rate_limit(self.request, form.cleaned_data.get("username", ""))
         response = super().form_valid(form)
+        selected_club = form.cleaned_data.get("social_club")
+        if selected_club:
+            self.request.session[ACTIVE_SOCIAL_CLUB_SESSION_KEY] = selected_club.id
+            self.request.session.modified = True
+            response.set_cookie(ACTIVE_SOCIAL_CLUB_COOKIE, str(selected_club.id), max_age=60 * 60 * 24 * 365, samesite="Lax")
+        selected_state = (form.cleaned_data.get("federal_state") or "").strip()
+        if selected_state:
+            self.request.session[ACTIVE_FEDERAL_STATE_SESSION_KEY] = selected_state
+            self.request.session.modified = True
+            response.set_cookie(ACTIVE_FEDERAL_STATE_COOKIE, selected_state, max_age=60 * 60 * 24 * 365, samesite="Lax")
         if getattr(self.request.user, "email", ""):
             send_login_alert_email(self.request.user, self.request)
         return response

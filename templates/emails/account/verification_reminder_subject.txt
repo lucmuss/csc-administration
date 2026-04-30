@@ -1,0 +1,1 @@
+Bitte Verifizierung abschliessen – {{ club_name }}

@@ -1,7 +1,11 @@
 from django.conf import settings
 from django.core.exceptions import ObjectDoesNotExist
+from django.db.utils import OperationalError, ProgrammingError
+from functools import lru_cache
+import subprocess
 
-from apps.core.club import get_club_settings
+from apps.core.club import get_club_settings, resolve_active_federal_state, resolve_active_social_club
+from apps.core.models import SocialClub
 
 
 def ga_tracking_id(request):
@@ -9,6 +13,38 @@ def ga_tracking_id(request):
     return {
         "ga_tracking_id": getattr(settings, "GA_TRACKING_ID", ""),
     }
+
+
+@lru_cache(maxsize=1)
+def _resolve_app_version() -> str:
+    configured = (getattr(settings, "APP_VERSION", "") or "").strip()
+    if configured:
+        return configured
+    try:
+        tag = subprocess.check_output(
+            ["git", "describe", "--tags", "--abbrev=0"],
+            stderr=subprocess.DEVNULL,
+            text=True,
+        ).strip()
+        if tag:
+            return tag
+    except Exception:
+        pass
+    try:
+        commit = subprocess.check_output(
+            ["git", "rev-parse", "--short", "HEAD"],
+            stderr=subprocess.DEVNULL,
+            text=True,
+        ).strip()
+        if commit:
+            return f"dev-{commit}"
+    except Exception:
+        pass
+    return "dev"
+
+
+def app_version(request):
+    return {"app_version": _resolve_app_version()}
 
 
 def club_info(request):
@@ -23,10 +59,20 @@ def club_info(request):
         getattr(user, "is_authenticated", False)
         and getattr(user, "role", "") == "member"
         and profile is not None
-        and profile.status == "pending"
+        and not profile.is_verified
         and profile.onboarding_complete
     )
+    active_social_club = resolve_active_social_club(request)
+    active_federal_state = resolve_active_federal_state(request)
+    try:
+        social_club_options = SocialClub.objects.filter(is_active=True, is_approved=True).order_by("name")[:200]
+    except (OperationalError, ProgrammingError):
+        social_club_options = []
     return {
-        **get_club_settings(),
+        **get_club_settings(social_club=active_social_club),
         "pending_member_limited_access": pending_member_limited_access,
+        "active_social_club": active_social_club,
+        "active_federal_state": active_federal_state,
+        "federal_state_options": SocialClub.FEDERAL_STATE_CHOICES,
+        "social_club_switch_options": social_club_options,
     }

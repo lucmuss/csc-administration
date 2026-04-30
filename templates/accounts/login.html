@@ -34,6 +34,18 @@
           {{ form.username.errors }}
         </div>
         <div class="field">
+          <label for="{{ form.federal_state.id_for_label }}">Bundesland</label>
+          {{ form.federal_state }}
+          {{ form.federal_state.errors }}
+          <small class="field-hint">Optional: Filtere Clubs in deiner Region.</small>
+        </div>
+        <div class="field">
+          <label for="{{ form.social_club.id_for_label }}">Social Club</label>
+          {{ form.social_club }}
+          {{ form.social_club.errors }}
+          <small class="field-hint">Tipp: Du kannst im Dropdown nach Ort/Name suchen, z. B. Leipzig.</small>
+        </div>
+        <div class="field">
           <label for="{{ form.password.id_for_label }}">Passwort</label>
           {{ form.password }}
           {{ form.password.errors }}
@@ -46,6 +58,14 @@
       <div class="auth-card__footer">
         <span>Noch kein Zugang?</span>
         <a href="{% url 'members:register' %}" class="text-link">Jetzt registrieren</a>
+      </div>
+      <div class="auth-card__footer">
+        <span>Neuer Social Club?</span>
+        <a href="{% url 'core:social_club_register' %}" class="text-link">Social Club registrieren</a>
+      </div>
+      <div class="auth-card__footer">
+        <span>Regional suchen?</span>
+        <a href="{% url 'core:social_club_regional_list' %}" class="text-link">Clubs in der Naehe ansehen</a>
       </div>
     </div>
   </section>

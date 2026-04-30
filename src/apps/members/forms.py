@@ -4,15 +4,17 @@ import re
 from django import forms
 from django.conf import settings
 from django.contrib.auth.password_validation import validate_password
+from django.core.exceptions import ValidationError
 from django.core.validators import validate_email
 from django.utils import timezone
 
 from apps.accounts.models import User
+from apps.core.models import SocialClub
 from apps.finance.models import SepaMandate
 from apps.messaging.services import sync_member_messaging_preferences
 from apps.participation.models import MemberEngagement
 
-from .models import Profile
+from .models import Profile, VerificationSubmission
 
 
 NAME_RE = re.compile(r"^[A-Za-zÄÖÜäöüß][A-Za-zÄÖÜäöüß' -]{2,149}$")
@@ -99,15 +101,25 @@ def _default_join_date() -> date:
 
 
 class MemberRegistrationForm(forms.Form):
+    social_club = forms.ModelChoiceField(
+        queryset=SocialClub.objects.filter(is_active=True, is_approved=True).order_by("name"),
+        required=False,
+        label="Social Club",
+        empty_label="Social Club auswaehlen",
+    )
     email = forms.EmailField()
     first_name = forms.CharField(max_length=150)
     last_name = forms.CharField(max_length=150)
     birth_date = forms.DateField(widget=forms.DateInput(attrs={"type": "date"}))
     password = forms.CharField(widget=forms.PasswordInput)
 
-    def __init__(self, *args, **kwargs):
+    def __init__(self, *args, federal_state: str = "", **kwargs):
         super().__init__(*args, **kwargs)
+        state_code = (federal_state or "").strip()
+        if state_code:
+            self.fields["social_club"].queryset = self.fields["social_club"].queryset.filter(federal_state=state_code)
         self.fields["email"].widget.attrs.update({"autocomplete": "email", "placeholder": "name@beispiel.de"})
+        self.fields["social_club"].widget.attrs.setdefault("data-search-hint", "z. B. Leipzig")
         self.fields["first_name"].widget.attrs.setdefault("autocomplete", "given-name")
         self.fields["last_name"].widget.attrs.setdefault("autocomplete", "family-name")
         self.fields["birth_date"].widget.attrs.setdefault("autocomplete", "bday")
@@ -145,6 +157,9 @@ class MemberRegistrationForm(forms.Form):
 
     def save(self) -> User:
         bootstrap_board = not User.objects.exists()
+        selected_club = self.cleaned_data.get("social_club")
+        if not selected_club:
+            selected_club = SocialClub.objects.filter(is_active=True, is_approved=True).order_by("id").first()
         user = User.objects.create_user(
             email=self.cleaned_data["email"],
             password=self.cleaned_data["password"],
@@ -153,6 +168,7 @@ class MemberRegistrationForm(forms.Form):
             role=User.ROLE_BOARD if bootstrap_board else User.ROLE_MEMBER,
             is_staff=bootstrap_board,
             is_superuser=bootstrap_board,
+            social_club=selected_club,
         )
         profile = Profile.objects.create(
             user=user,
@@ -357,6 +373,17 @@ class MemberProfileEditForm(forms.Form):
         coerce=lambda value: value in {True, "True", "true", "1"},
         widget=forms.RadioSelect,
     )
+    preferred_language = forms.ChoiceField(
+        label="Benutzeroberflaeche",
+        choices=Profile.LANGUAGE_CHOICES,
+        initial=Profile.LANGUAGE_DE,
+    )
+    payment_method_preference = forms.ChoiceField(
+        label="Beitrags-Zahlungsart",
+        choices=Profile.PAYMENT_METHOD_CHOICES,
+        initial=Profile.PAYMENT_METHOD_SEPA,
+        required=False,
+    )
     application_notes = forms.CharField(label="Weitere Hinweise", required=False, widget=forms.Textarea(attrs={"rows": 4}))
 
     def __init__(self, *args, profile: Profile, **kwargs):
@@ -373,6 +400,8 @@ class MemberProfileEditForm(forms.Form):
         self.fields["bank_name"].initial = profile.bank_name
         self.fields["account_holder_name"].initial = profile.account_holder_name or profile.user.full_name
         self.fields["optional_newsletter_opt_in"].initial = profile.optional_newsletter_opt_in
+        self.fields["preferred_language"].initial = profile.preferred_language or Profile.LANGUAGE_DE
+        self.fields["payment_method_preference"].initial = profile.payment_method_preference or Profile.PAYMENT_METHOD_SEPA
         self.fields["application_notes"].initial = profile.application_notes
         if mandate:
             self.fields["iban"].initial = mandate.iban
@@ -436,6 +465,8 @@ class MemberProfileEditForm(forms.Form):
         self.profile.bank_name = self.cleaned_data["bank_name"].strip()
         self.profile.account_holder_name = self.cleaned_data["account_holder_name"].strip()
         self.profile.optional_newsletter_opt_in = self.cleaned_data["optional_newsletter_opt_in"]
+        self.profile.preferred_language = self.cleaned_data["preferred_language"]
+        self.profile.payment_method_preference = self.cleaned_data.get("payment_method_preference") or self.profile.payment_method_preference
         self.profile.application_notes = self.cleaned_data["application_notes"].strip()
         self.profile.save(
             update_fields=[
@@ -446,6 +477,8 @@ class MemberProfileEditForm(forms.Form):
                 "bank_name",
                 "account_holder_name",
                 "optional_newsletter_opt_in",
+                "preferred_language",
+                "payment_method_preference",
                 "application_notes",
                 "updated_at",
             ]
@@ -475,3 +508,53 @@ class MemberProfileEditForm(forms.Form):
 
         sync_member_messaging_preferences(self.profile)
         return self.profile
+
+
+class VerificationSubmissionForm(forms.ModelForm):
+    MAX_UPLOAD_SIZE = 5 * 1024 * 1024
+
+    class Meta:
+        model = VerificationSubmission
+        fields = [
+            "id_front_image",
+            "id_back_image",
+            "membership_application_document",
+            "sepa_mandate_document",
+        ]
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.fields["id_front_image"].required = True
+        self.fields["id_back_image"].required = True
+        self.fields["membership_application_document"].required = False
+        self.fields["sepa_mandate_document"].required = False
+        for field in self.fields.values():
+            _apply_form_control(field.widget)
+
+    def _validate_upload_size(self, upload, label: str):
+        if upload and upload.size > self.MAX_UPLOAD_SIZE:
+            raise ValidationError(f"{label} darf maximal 5 MB gross sein.")
+
+    def clean_id_front_image(self):
+        upload = self.cleaned_data.get("id_front_image")
+        self._validate_upload_size(upload, "Vorderseite")
+        if upload and not (upload.content_type or "").startswith("image/"):
+            raise ValidationError("Bitte eine Bilddatei fuer die Vorderseite hochladen.")
+        return upload
+
+    def clean_id_back_image(self):
+        upload = self.cleaned_data.get("id_back_image")
+        self._validate_upload_size(upload, "Rueckseite")
+        if upload and not (upload.content_type or "").startswith("image/"):
+            raise ValidationError("Bitte eine Bilddatei fuer die Rueckseite hochladen.")
+        return upload
+
+    def clean_membership_application_document(self):
+        upload = self.cleaned_data.get("membership_application_document")
+        self._validate_upload_size(upload, "Aufnahmeantrag")
+        return upload
+
+    def clean_sepa_mandate_document(self):
+        upload = self.cleaned_data.get("sepa_mandate_document")
+        self._validate_upload_size(upload, "SEPA-Lastschriftmandat")
+        return upload

@@ -50,6 +50,7 @@
               {% endif %}
               <a href="{% url 'finance:dashboard' %}" class="nav-link{% if '/finance/' in request.path %} is-active{% endif %}">Finanzen</a>
               <a href="{% url 'members:profile' %}" class="nav-link{% if '/members/profile/' in request.path %} is-active{% endif %}">Profil</a>
+              <a href="{% url 'members:verification' %}" class="nav-link{% if '/members/verification/' in request.path %} is-active{% endif %}">Verifizierung</a>
               {% if not pending_member_limited_access %}
                 <a href="{% url 'participation:dashboard' %}" class="nav-link{% if '/participation/' in request.path %} is-active{% endif %}">Mitwirkung</a>
               {% endif %}
@@ -71,10 +72,18 @@
                   <a href="{% url 'finance:statistics' %}" class="nav-dropdown__item">Statistiken</a>
                   <a href="{% url 'core:documents_admin' %}" class="nav-dropdown__item">Dokumente</a>
                   <a href="{% url 'core:club_settings' %}" class="nav-dropdown__item">Clubdaten</a>
+                  <a href="{% url 'core:social_club_profile' %}" class="nav-dropdown__item">Social Club Profil</a>
+                  <a href="{% url 'members:import' %}" class="nav-dropdown__item">Mitglieder-Import</a>
+                  {% if user.is_superuser %}
+                    <a href="{% url 'core:social_club_admin' %}" class="nav-dropdown__item">Social Clubs</a>
+                  {% endif %}
                 </div>
               </details>
             {% endif %}
           {% else %}
+            <a href="{% url 'core:social_club_public_list' %}" class="nav-link{% if '/social-clubs/' in request.path and '/social-clubs/register/' not in request.path %} is-active{% endif %}">Social Clubs</a>
+            <a href="{% url 'core:social_club_regional_list' %}" class="nav-link{% if '/social-clubs/regionen/' in request.path %} is-active{% endif %}">Regionale Clubs</a>
+            <a href="{% url 'core:pricing' %}" class="nav-link{% if '/pricing/' in request.path %} is-active{% endif %}">Pricing</a>
             <a href="{% url 'accounts:login' %}" class="nav-link{% if '/accounts/login/' in request.path %} is-active{% endif %}">Anmelden</a>
             <a href="{% url 'members:register' %}" class="nav-link{% if '/members/register/' in request.path %} is-active{% endif %}">Registrieren</a>
           {% endif %}
@@ -126,6 +135,33 @@
       </div>
     </header>
 
+    {% if social_club_switch_options %}
+      <section class="container-shell" style="padding-top:.5rem;">
+        <form method="post" action="{% url 'core:social_club_switch' %}" class="panel" style="padding:.75rem; margin:0;">
+          {% csrf_token %}
+          <input type="hidden" name="next" value="{{ request.get_full_path }}">
+          <div class="inline-actions" style="justify-content:space-between; align-items:center; gap:1rem; flex-wrap:wrap;">
+            <div>
+              <strong>Aktiver Social Club</strong>
+              <div class="table-meta">Auswahl steuert Impressum, Datenschutz und oeffentliche Dokumente.</div>
+            </div>
+            <div class="inline-actions" style="gap:.5rem;">
+              <select name="social_club_id" class="form-input form-select" {% if user.is_authenticated and not user.is_superuser and user.social_club_id %}disabled{% endif %}>
+                {% for club in social_club_switch_options %}
+                  <option value="{{ club.id }}" {% if active_social_club and active_social_club.id == club.id %}selected{% endif %}>{{ club.name }} ({{ club.city }})</option>
+                {% endfor %}
+              </select>
+              {% if user.is_authenticated and not user.is_superuser and user.social_club_id %}
+                <button type="button" class="btn-ghost" disabled>Fest zugewiesen</button>
+              {% else %}
+                <button type="submit" class="btn-primary">Auswahl speichern</button>
+              {% endif %}
+            </div>
+          </div>
+        </form>
+      </section>
+    {% endif %}
+
     <main id="main-content" class="main-shell container-shell" tabindex="-1">
       {% if messages %}
         <section class="message-stack" aria-live="polite">
@@ -161,8 +197,10 @@
         </div>
         <div class="site-footer__links">
           <a href="{% url 'core:documents' %}">Dokumente</a>
+          <a href="{% url 'core:pricing' %}">Pricing</a>
           <a href="{% url 'core:privacy' %}">Datenschutz</a>
           <a href="{% url 'core:imprint' %}">Impressum</a>
+          <span>ATC Version {{ app_version }}</span>
         </div>
       </div>
     </footer>

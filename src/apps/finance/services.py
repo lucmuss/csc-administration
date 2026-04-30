@@ -187,19 +187,27 @@ def ensure_seed_credit(profile: Profile, amount: Decimal = Decimal("100.00")) ->
 
 def apply_monthly_membership_credits(today: date | None = None) -> int:
     today = today or timezone.localdate()
-    amount = _quantize_amount(getattr(settings, "MEMBER_MONTHLY_FEE", Decimal("24.00")))
     month_key = today.strftime("%Y-%m")
     credited = 0
     profiles = Profile.objects.filter(
         status__in=[Profile.STATUS_ACTIVE, Profile.STATUS_VERIFIED],
         is_verified=True,
-    ).select_related("user", "sepa_mandate")
+    ).select_related("user", "user__social_club", "sepa_mandate")
     for profile in profiles:
-        mandate = profile.sepa_mandate or profile.sepa_mandates.filter(is_active=True).first()
-        if not mandate or not mandate.is_active:
+        configured_fee = getattr(getattr(profile.user, "social_club", None), "monthly_membership_fee", None)
+        default_fee = getattr(settings, "MEMBER_MONTHLY_FEE", Decimal("24.00"))
+        amount = _quantize_amount(configured_fee if configured_fee is not None else default_fee)
+        if amount <= Decimal("0.00"):
             continue
         reference = f"membership-fee-{month_key}-{profile.id}"
         if BalanceTransaction.objects.filter(profile=profile, reference=reference).exists():
+            continue
+        if not _contribution_payment_succeeded(
+            profile=profile,
+            amount=amount,
+            reference=reference,
+            note=f"Mitgliedsbeitrag {month_key}",
+        ):
             continue
         add_balance_transaction(
             profile=profile,
@@ -210,6 +218,32 @@ def apply_monthly_membership_credits(today: date | None = None) -> int:
         )
         credited += 1
     return credited
+
+
+def apply_admission_fee_if_needed(profile: Profile) -> bool:
+    club = getattr(profile.user, "social_club", None)
+    if not club:
+        return False
+    if not profile.is_verified or profile.status != Profile.STATUS_ACTIVE:
+        return False
+    if not profile.onboarding_complete:
+        return False
+    amount = _quantize_amount(getattr(club, "admission_fee", Decimal("0.00")))
+    if amount <= Decimal("0.00"):
+        return False
+    reference = f"admission-fee-{profile.id}"
+    if BalanceTransaction.objects.filter(profile=profile, reference=reference).exists():
+        return False
+    if not _contribution_payment_succeeded(profile=profile, amount=amount, reference=reference, note="Aufnahmegebuehr"):
+        return False
+    add_balance_transaction(
+        profile=profile,
+        amount=amount,
+        kind=BalanceTransaction.KIND_MEMBERSHIP_FEE,
+        note="Aufnahmegebuehr",
+        reference=reference,
+    )
+    return True
 
 
 def credit_member_balance(*, email: str, amount: Decimal | str | float | int, note: str, kind: str = BalanceTransaction.KIND_TOPUP):
@@ -226,6 +260,50 @@ def credit_member_balance(*, email: str, amount: Decimal | str | float | int, no
 
 def _stripe_enabled() -> bool:
     return bool(getattr(settings, "STRIPE_SECRET_KEY", ""))
+
+
+def _stripe_offsession_charge(*, profile: Profile, amount: Decimal, reference: str, note: str) -> bool:
+    if not _stripe_enabled():
+        return False
+    if not profile.stripe_customer_id or not profile.stripe_payment_method_id:
+        return False
+    form_data = urllib.parse.urlencode(
+        {
+            "amount": str(int(_quantize_amount(amount) * 100)),
+            "currency": "eur",
+            "customer": profile.stripe_customer_id,
+            "payment_method": profile.stripe_payment_method_id,
+            "confirm": "true",
+            "off_session": "true",
+            "description": note,
+            "metadata[profile_id]": str(profile.id),
+            "metadata[reference]": reference,
+        }
+    ).encode("utf-8")
+    request = urllib.request.Request(
+        "https://api.stripe.com/v1/payment_intents",
+        data=form_data,
+        method="POST",
+        headers={
+            "Authorization": f"Bearer {settings.STRIPE_SECRET_KEY}",
+            "Content-Type": "application/x-www-form-urlencoded",
+        },
+    )
+    try:
+        with urllib.request.urlopen(request, timeout=20) as response:
+            payload = json.loads(response.read().decode("utf-8"))
+    except Exception:
+        return False
+    return payload.get("status") in {"succeeded", "requires_capture"}
+
+
+def _contribution_payment_succeeded(*, profile: Profile, amount: Decimal, reference: str, note: str) -> bool:
+    if amount <= Decimal("0.00"):
+        return False
+    if profile.payment_method_preference == Profile.PAYMENT_METHOD_STRIPE_CARD:
+        return _stripe_offsession_charge(profile=profile, amount=amount, reference=reference, note=note)
+    mandate = profile.sepa_mandate or profile.sepa_mandates.filter(is_active=True).first()
+    return bool(mandate and mandate.is_active)
 
 
 def render_invoice_pdf(invoice: Invoice) -> bytes:
@@ -388,6 +466,66 @@ def create_stripe_checkout_for_topup(*, user, amount: Decimal | str | float | in
     topup.checkout_url = payload.get("url", "")
     topup.save(update_fields=["checkout_session_id", "checkout_url", "updated_at"])
     return topup
+
+
+def create_stripe_setup_session_for_member(*, user, success_url: str, cancel_url: str) -> str:
+    if not _stripe_enabled():
+        return ""
+    form_data = urllib.parse.urlencode(
+        {
+            "mode": "setup",
+            "success_url": f"{success_url}?session_id={{CHECKOUT_SESSION_ID}}",
+            "cancel_url": cancel_url,
+            "customer_email": user.email,
+            "payment_method_types[0]": "card",
+            "payment_method_types[1]": "sepa_debit",
+            "metadata[user_email]": user.email,
+            "metadata[user_id]": str(user.id),
+        }
+    ).encode("utf-8")
+    request = urllib.request.Request(
+        "https://api.stripe.com/v1/checkout/sessions",
+        data=form_data,
+        method="POST",
+        headers={
+            "Authorization": f"Bearer {settings.STRIPE_SECRET_KEY}",
+            "Content-Type": "application/x-www-form-urlencoded",
+        },
+    )
+    try:
+        with urllib.request.urlopen(request, timeout=20) as response:
+            payload = json.loads(response.read().decode("utf-8"))
+    except Exception:
+        return ""
+    return payload.get("url", "")
+
+
+def finalize_stripe_setup_session_for_member(*, user, session_id: str) -> bool:
+    if not _stripe_enabled() or not session_id:
+        return False
+    request = urllib.request.Request(
+        f"https://api.stripe.com/v1/checkout/sessions/{session_id}?expand[]=setup_intent.payment_method",
+        headers={"Authorization": f"Bearer {settings.STRIPE_SECRET_KEY}"},
+    )
+    try:
+        with urllib.request.urlopen(request, timeout=20) as response:
+            payload = json.loads(response.read().decode("utf-8"))
+    except Exception:
+        return False
+    customer_id = payload.get("customer", "") or ""
+    setup_intent = payload.get("setup_intent") or {}
+    payment_method = setup_intent.get("payment_method") if isinstance(setup_intent, dict) else None
+    payment_method_id = payment_method.get("id", "") if isinstance(payment_method, dict) else ""
+    if not customer_id or not payment_method_id:
+        return False
+    profile = getattr(user, "profile", None)
+    if not profile:
+        return False
+    profile.stripe_customer_id = customer_id
+    profile.stripe_payment_method_id = payment_method_id
+    profile.payment_method_preference = Profile.PAYMENT_METHOD_STRIPE_CARD
+    profile.save(update_fields=["stripe_customer_id", "stripe_payment_method_id", "payment_method_preference", "updated_at"])
+    return True
 
 
 def finalize_stripe_topup(*, topup: BalanceTopUp, session_id: str | None = None) -> BalanceTopUp:
@@ -788,29 +926,97 @@ def _extract_uploaded_invoice_text(uploaded_invoice: UploadedInvoice) -> str:
         uploaded_invoice.document.close()
 
 
+def _best_invoice_reference(text: str) -> str:
+    patterns = [
+        r"\b(?:rechnungsnummer|rechnung\s*nr\.?|invoice\s*no\.?|beleg\s*nr\.?|ref\.?)[^A-Z0-9]{0,12}([A-Z0-9][A-Z0-9\-/]{2,})",
+        r"\b([A-Z]{1,4}-\d{3,})\b",
+        r"\b(\d{4,})\b",
+    ]
+    for pattern in patterns:
+        match = re.search(pattern, text, re.IGNORECASE)
+        if match:
+            return match.group(1).strip()
+    return ""
+
+
+def _best_issue_date(text: str):
+    date_match = re.search(r"\b(\d{2}[./]\d{2}[./]\d{4}|\d{4}-\d{2}-\d{2})\b", text)
+    if not date_match:
+        return None
+    return _parse_iso_date(date_match.group(1))
+
+
+def _best_total_amount(text: str) -> Decimal:
+    keyword_match = re.search(r"(?:gesamt|summe|brutto|zu\s+zahlen)\D{0,20}(\d{1,6}[.,]\d{2})", text, re.IGNORECASE)
+    if keyword_match:
+        return _safe_decimal(keyword_match.group(1))
+    generic_match = re.search(r"(\d{1,6}[.,]\d{2})\s*(?:EUR|€)", text, re.IGNORECASE)
+    return _safe_decimal(generic_match.group(1)) if generic_match else Decimal("0.00")
+
+
+def _candidate_vendor_name(text: str) -> str:
+    lines = [line.strip() for line in text.splitlines() if line.strip()]
+    banned = {"rechnung", "invoice", "beleg", "quittung", "gesamt", "summe"}
+    for line in lines[:8]:
+        normalized = re.sub(r"[^a-zA-ZäöüÄÖÜß ]", "", line).strip().lower()
+        if not normalized:
+            continue
+        if any(token in normalized for token in banned):
+            continue
+        if len(line) >= 3:
+            return line[:180]
+    return ""
+
+
+def _build_invoice_title(*, vendor: str, reference: str, issue_date, fallback_name: str) -> str:
+    date_label = issue_date.strftime("%d.%m.%Y") if issue_date else ""
+    if vendor and date_label:
+        return f"{vendor} · Rechnung {date_label}"
+    if vendor and reference:
+        return f"{vendor} · Ref {reference}"
+    if vendor:
+        return vendor
+    if reference and date_label:
+        return f"Rechnung {reference} · {date_label}"
+    if reference:
+        return f"Rechnung {reference}"
+    return fallback_name
+
+
+def _build_local_summary(text: str) -> str:
+    compact = " ".join(text.split())[:500]
+    if not compact:
+        return "Lokale Analyse ohne verwertbaren Textinhalt."
+    return f"Kurzinhalt: {compact}"
+
+
 def _local_invoice_fallback(uploaded_invoice: UploadedInvoice, extracted_text: str) -> UploadedInvoice:
     text = extracted_text or uploaded_invoice.title or Path(uploaded_invoice.document.name).stem
-    invoice_number_match = re.search(r"\b(?:rechnungsnummer|rechnung|invoice)[^A-Z0-9]{0,8}([A-Z0-9-]{3,})", text, re.IGNORECASE)
-    amount_match = re.search(r"(\d{1,6}[.,]\d{2})\s*(?:EUR|€)", text, re.IGNORECASE)
-    date_match = re.search(r"\b(\d{2}[./]\d{2}[./]\d{4}|\d{4}-\d{2}-\d{2})\b", text)
+    reference = _best_invoice_reference(text)
+    issue_date = _best_issue_date(text)
+    gross = _best_total_amount(text) if text else uploaded_invoice.amount_gross
+    vendor_name = _candidate_vendor_name(text)
 
-    uploaded_invoice.invoice_number = uploaded_invoice.invoice_number or (
-        invoice_number_match.group(1).strip() if invoice_number_match else ""
-    )
-    uploaded_invoice.issue_date = uploaded_invoice.issue_date or (
-        _parse_iso_date(date_match.group(1)) if date_match else None
-    )
-    gross = _safe_decimal(amount_match.group(1)) if amount_match else uploaded_invoice.amount_gross
+    uploaded_invoice.invoice_number = uploaded_invoice.invoice_number or reference
+    uploaded_invoice.issue_date = uploaded_invoice.issue_date or issue_date
+    uploaded_invoice.vendor_name = uploaded_invoice.vendor_name or vendor_name
     uploaded_invoice.amount_gross = gross
     uploaded_invoice.amount_net = uploaded_invoice.amount_net or gross
     uploaded_invoice.amount_tax = uploaded_invoice.amount_tax or Decimal("0.00")
-    uploaded_invoice.ai_summary = uploaded_invoice.ai_summary or "Lokale Analyse aus Dateitext/Filename erzeugt."
-    uploaded_invoice.title = uploaded_invoice.title or uploaded_invoice.invoice_number or Path(uploaded_invoice.document.name).stem
+    uploaded_invoice.ai_summary = uploaded_invoice.ai_summary or _build_local_summary(text)
+    uploaded_invoice.title = uploaded_invoice.title or _build_invoice_title(
+        vendor=uploaded_invoice.vendor_name,
+        reference=uploaded_invoice.invoice_number,
+        issue_date=uploaded_invoice.issue_date,
+        fallback_name=Path(uploaded_invoice.document.name).stem,
+    )
     uploaded_invoice.ai_payload = {
         "source": "local-fallback",
         "document_name": Path(uploaded_invoice.document.name).name,
         "title": uploaded_invoice.title,
+        "invoice_reference": uploaded_invoice.invoice_number,
         "invoice_number": uploaded_invoice.invoice_number,
+        "vendor_name": uploaded_invoice.vendor_name,
         "issue_date": uploaded_invoice.issue_date.isoformat() if uploaded_invoice.issue_date else "",
         "amount_gross": str(uploaded_invoice.amount_gross),
         "summary": uploaded_invoice.ai_summary,
@@ -822,6 +1028,7 @@ def _local_invoice_fallback(uploaded_invoice: UploadedInvoice, extracted_text: s
         update_fields=[
             "title",
             "invoice_number",
+            "vendor_name",
             "issue_date",
             "amount_net",
             "amount_tax",
@@ -917,9 +1124,13 @@ def analyze_uploaded_invoice(uploaded_invoice: UploadedInvoice) -> UploadedInvoi
         return uploaded_invoice
 
     prompt = (
-        "Extrahiere aus dieser Rechnung die wichtigsten Daten und antworte ausschliesslich als JSON mit den Schluesseln "
-        "title, invoice_number, vendor_name, customer_name, issue_date, due_date, amount_net, amount_tax, amount_gross, currency, summary. "
-        "Nutze ISO-Datumsformat YYYY-MM-DD. Wenn etwas fehlt, gib leere Strings oder 0 zurueck."
+        "Du bist ein Assistent fuer den Rechnungsupload im Finanzbereich eines Social Clubs. "
+        "Extrahiere die wichtigsten Daten robust und antworte AUSSCHLIESSLICH als JSON mit diesen Schluesseln: "
+        "title, invoice_reference, invoice_number, vendor_name, customer_name, issue_date, due_date, amount_net, amount_tax, amount_gross, currency, summary, concern, products. "
+        "Regeln: title ist eine kurze Ueberschrift fuer den Schatzmeister (z. B. Lieferant + Datum/Thema), "
+        "invoice_reference ist eine kurze Referenz/Rechnungsnummer, summary fasst Anliegen und Inhalt zusammen, "
+        "products listet stichpunktartig erkannte Produkte/Leistungspositionen (als Array von Strings). "
+        "Nutze ISO-Datumsformat YYYY-MM-DD. Wenn etwas fehlt, gib leere Strings, leeres Array oder 0 zurueck."
     )
     if extracted_text:
         prompt += f"\n\nBereits lokal extrahierter Text:\n{extracted_text[:12000]}"
@@ -965,17 +1176,33 @@ def analyze_uploaded_invoice(uploaded_invoice: UploadedInvoice) -> UploadedInvoi
         uploaded_invoice.save(update_fields=["extraction_status", "extraction_error", "ai_payload", "extracted_at", "updated_at"])
         return uploaded_invoice
 
-    uploaded_invoice.title = str(extracted.get("title", "")).strip() or uploaded_invoice.title or Path(uploaded_invoice.document.name).stem
-    uploaded_invoice.invoice_number = str(extracted.get("invoice_number", "")).strip()
+    extracted_reference = str(extracted.get("invoice_reference", "")).strip() or str(extracted.get("invoice_number", "")).strip()
+    extracted_title = str(extracted.get("title", "")).strip()
+    issue_date = _parse_iso_date(extracted.get("issue_date"))
+
+    uploaded_invoice.issue_date = issue_date
+    uploaded_invoice.invoice_number = extracted_reference
     uploaded_invoice.vendor_name = str(extracted.get("vendor_name", "")).strip()
     uploaded_invoice.customer_name = str(extracted.get("customer_name", "")).strip()
-    uploaded_invoice.issue_date = _parse_iso_date(extracted.get("issue_date"))
     uploaded_invoice.due_date = _parse_iso_date(extracted.get("due_date"))
     uploaded_invoice.amount_net = _safe_decimal(extracted.get("amount_net"))
     uploaded_invoice.amount_tax = _safe_decimal(extracted.get("amount_tax"))
     uploaded_invoice.amount_gross = _safe_decimal(extracted.get("amount_gross"))
     uploaded_invoice.currency = str(extracted.get("currency") or "EUR").strip().upper()[:8] or "EUR"
-    uploaded_invoice.ai_summary = str(extracted.get("summary", "")).strip()
+    concern = str(extracted.get("concern", "")).strip()
+    summary = str(extracted.get("summary", "")).strip()
+    products = extracted.get("products") if isinstance(extracted.get("products"), list) else []
+    product_text = ", ".join(str(item).strip() for item in products if str(item).strip())
+    summary_parts = [part for part in [summary, concern] if part]
+    if product_text:
+        summary_parts.append(f"Positionen: {product_text}")
+    uploaded_invoice.ai_summary = " | ".join(summary_parts).strip()
+    uploaded_invoice.title = extracted_title or _build_invoice_title(
+        vendor=uploaded_invoice.vendor_name,
+        reference=uploaded_invoice.invoice_number,
+        issue_date=uploaded_invoice.issue_date,
+        fallback_name=Path(uploaded_invoice.document.name).stem,
+    )
     uploaded_invoice.ai_payload = extracted
     uploaded_invoice.extraction_status = UploadedInvoice.EXTRACTION_SUCCESS
     uploaded_invoice.extraction_error = ""

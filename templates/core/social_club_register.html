@@ -1,0 +1,34 @@
+{% extends 'base.html' %}
+{% block title %}Social Club registrieren{% endblock %}
+{% block content %}
+<section class="auth-layout">
+  <div class="auth-copy panel">
+    <p class="eyebrow">Plattform-Onboarding</p>
+    <h1>Social Club und Club-Admin in zwei Schritten registrieren.</h1>
+    <p class="lede">Schritt 1 erfasst den Club. Schritt 2 legt den Admin-Account an. Freischaltung erfolgt durch Ueberadmin.</p>
+  </div>
+  <div class="auth-card panel">
+    {% if not pending_club %}
+      <div class="panel__header"><div><p class="panel__eyebrow">Schritt 1</p><h2>Social Club anlegen</h2></div></div>
+      <form method="post" class="form-stack">
+        {% csrf_token %}
+        <input type="hidden" name="step" value="club">
+        {% for field in club_form %}
+          <div class="field"><label for="{{ field.id_for_label }}">{{ field.label }}</label>{{ field }}{{ field.errors }}</div>
+        {% endfor %}
+        <button type="submit" class="btn-primary btn-block">Social Club registrieren</button>
+      </form>
+    {% else %}
+      <div class="panel__header"><div><p class="panel__eyebrow">Schritt 2</p><h2>Admin-Konto fuer {{ pending_club.name }}</h2></div></div>
+      <form method="post" class="form-stack">
+        {% csrf_token %}
+        <input type="hidden" name="step" value="admin">
+        {% for field in admin_form %}
+          <div class="field"><label for="{{ field.id_for_label }}">{{ field.label }}</label>{{ field }}{{ field.errors }}</div>
+        {% endfor %}
+        <button type="submit" class="btn-primary btn-block">Admin-Zugang anlegen</button>
+      </form>
+    {% endif %}
+  </div>
+</section>
+{% endblock %}

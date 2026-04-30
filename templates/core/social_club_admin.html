@@ -1,0 +1,47 @@
+{% extends 'base.html' %}
+{% block title %}Social Clubs verwalten{% endblock %}
+{% block content %}
+<section class="page-shell">
+  <div class="page-heading">
+    <div><p class="eyebrow">Ueberadmin</p><h1>Social Clubs freischalten und verwalten</h1></div>
+  </div>
+  <section class="kpi-grid">
+    <article class="kpi-card kpi-card--forest">
+      <span class="kpi-card__label">Mitglieder gesamt</span>
+      <strong class="kpi-card__value">{{ total_members }}</strong>
+      <small class="kpi-card__detail">ueber alle Social Clubs</small>
+    </article>
+    <article class="kpi-card kpi-card--ink">
+      <span class="kpi-card__label">Social Clubs gesamt</span>
+      <strong class="kpi-card__value">{{ total_social_clubs }}</strong>
+      <small class="kpi-card__detail">davon {{ approved_social_clubs }} freigeschaltet</small>
+    </article>
+  </section>
+  <section class="panel">
+    <div class="table-card">
+      <table class="table">
+        <thead><tr><th>Name</th><th>Kontakt</th><th>Status</th><th>Aktion</th></tr></thead>
+        <tbody>
+          {% for club in clubs %}
+            <tr>
+              <td><strong>{{ club.name }}</strong><div class="table-meta">{{ club.city }}{% if club.get_federal_state_display %} · {{ club.get_federal_state_display }}{% endif %}</div></td>
+              <td>{{ club.email }}<div class="table-meta">{{ club.phone }}</div></td>
+              <td>{% if club.is_approved %}Freigeschaltet{% else %}Ausstehend{% endif %}{% if not club.is_active %} · Deaktiviert{% endif %}</td>
+              <td>
+                <form method="post" class="inline-actions">
+                  {% csrf_token %}
+                  <input type="hidden" name="club_id" value="{{ club.id }}">
+                  {% if not club.is_approved %}<button type="submit" name="action" value="approve" class="btn-primary btn-ghost--small">Freischalten</button>{% endif %}
+                  {% if club.is_active %}<button type="submit" name="action" value="deactivate" class="btn-ghost btn-ghost--small">Deaktivieren</button>{% endif %}
+                </form>
+              </td>
+            </tr>
+          {% empty %}
+            <tr><td colspan="4">Keine Social Clubs vorhanden.</td></tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </section>
+</section>
+{% endblock %}

@@ -1,0 +1,8 @@
+Hallo {{ user.first_name|default:user.email }},
+
+bitte schliesse deine Verifizierung ab, damit alle Vereinsfunktionen freigeschaltet werden koennen.
+
+Direkt zur Verifizierung:
+{{ verification_url }}
+
+Sobald der Vorstand die Unterlagen bestaetigt hat, werden diese Erinnerungen automatisch beendet.

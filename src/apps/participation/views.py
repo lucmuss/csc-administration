@@ -19,6 +19,9 @@ def _is_staff_or_board(user: User) -> bool:
 @login_required
 def dashboard_view(request):
     profile = get_object_or_404(Profile, user=request.user)
+    if request.user.role == User.ROLE_MEMBER and (not profile.is_verified or profile.status != Profile.STATUS_ACTIVE):
+        messages.info(request, "Mitwirkung ist erst nach erfolgreicher Verifizierung verfuegbar.")
+        return redirect("core:dashboard")
     engagement, _ = MemberEngagement.objects.get_or_create(profile=profile)
     if request.method == "POST":
         form = WorkHoursEntryForm(request.POST)
@@ -52,6 +55,11 @@ def dashboard_view(request):
 
 @login_required
 def shift_calendar_view(request):
+    if request.user.role == User.ROLE_MEMBER:
+        profile = get_object_or_404(Profile, user=request.user)
+        if not profile.is_verified or profile.status != Profile.STATUS_ACTIVE:
+            messages.info(request, "Mitwirkung ist erst nach erfolgreicher Verifizierung verfuegbar.")
+            return redirect("core:dashboard")
     shifts = Shift.objects.all()
     return render(
         request,
@@ -65,6 +73,11 @@ def shift_calendar_view(request):
 
 @login_required
 def shift_detail_view(request, pk: int):
+    if request.user.role == User.ROLE_MEMBER:
+        profile = get_object_or_404(Profile, user=request.user)
+        if not profile.is_verified or profile.status != Profile.STATUS_ACTIVE:
+            messages.info(request, "Mitwirkung ist erst nach erfolgreicher Verifizierung verfuegbar.")
+            return redirect("core:dashboard")
     shift = get_object_or_404(Shift, pk=pk)
     return render(
         request,

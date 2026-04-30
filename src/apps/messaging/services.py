@@ -1,6 +1,7 @@
 # messaging/services.py
 """Messaging helper services."""
 from typing import Optional, Dict, Any
+from abc import ABC, abstractmethod
 from django.conf import settings
 from .models import EmailGroup, EmailGroupMember, SmsProviderConfig, SmsMessage
 
@@ -53,19 +54,19 @@ def sync_member_messaging_preferences(profile) -> None:
             EmailGroupMember.objects.filter(group=group, member=profile).delete()
 
 
-class SmsService:
+class SmsService(ABC):
     """Basis-Service für SMS-Versand"""
     
     def __init__(self, provider: SmsProviderConfig):
         self.provider = provider
     
+    @abstractmethod
     def send_sms(self, to: str, message: str) -> Dict[str, Any]:
-        """Sendet eine SMS - muss von Subklassen implementiert werden"""
-        raise NotImplementedError
+        """Sendet eine SMS."""
     
+    @abstractmethod
     def get_status(self, external_id: str) -> Dict[str, Any]:
-        """Holt den Status einer gesendeten SMS"""
-        raise NotImplementedError
+        """Holt den Status einer gesendeten SMS."""
 
 
 class TwilioService(SmsService):

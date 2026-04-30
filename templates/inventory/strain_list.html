@@ -46,7 +46,7 @@
               <th>Name</th>
               <th>Typ</th>
               <th>Qualitaet</th>
-              <th>THC / CBD</th>
+              <th>Cannabinoide</th>
               <th>Preis</th>
               <th>Bestand</th>
             </tr>
@@ -69,7 +69,13 @@
                   {% endif %}
                 </td>
                 <td><span class="status-pill status-pill--ink">{{ strain.quality_grade }}</span></td>
-                <td>{{ strain.thc }}% / {{ strain.cbd }}%</td>
+                <td>
+                  THC {{ strain.thc }}% / CBD {{ strain.cbd }}%
+                  {% if strain.cbg is not None %}<div class="table-meta">CBG {{ strain.cbg }}%</div>{% endif %}
+                  {% if strain.cbn is not None %}<div class="table-meta">CBN {{ strain.cbn }}%</div>{% endif %}
+                  {% if strain.cbc is not None %}<div class="table-meta">CBC {{ strain.cbc }}%</div>{% endif %}
+                  {% if strain.cbv is not None %}<div class="table-meta">CBV {{ strain.cbv }}%</div>{% endif %}
+                </td>
                 <td>{{ strain.price }} EUR {{ strain.unit_price_label }}</td>
                 <td>
                   {% if strain.stock <= 25 %}

@@ -1,6 +1,6 @@
 from django.contrib import admin
 
-from .models import Profile
+from .models import Profile, VerificationSubmission
 
 
 @admin.register(Profile)
@@ -19,3 +19,10 @@ class ProfileAdmin(admin.ModelAdmin):
     )
     search_fields = ("user__email", "member_number")
     list_filter = ("status", "is_verified", "is_locked_for_orders")
+
+
+@admin.register(VerificationSubmission)
+class VerificationSubmissionAdmin(admin.ModelAdmin):
+    list_display = ("profile", "status", "submitted_at", "approved_at", "approved_by")
+    search_fields = ("profile__user__email", "profile__member_number")
+    list_filter = ("status",)

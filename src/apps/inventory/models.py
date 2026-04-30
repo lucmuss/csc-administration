@@ -2,6 +2,8 @@ from decimal import Decimal
 
 from django.core.exceptions import ValidationError
 from django.db import models
+from django.db.models import Min, Max, Avg
+from django.db.models.functions import Coalesce
 
 
 class Strain(models.Model):
@@ -44,9 +46,14 @@ class Strain(models.Model):
         (QUALITY_C, "C"),
     ]
 
-    name = models.CharField(max_length=120, unique=True)
+    social_club = models.ForeignKey("core.SocialClub", on_delete=models.CASCADE, related_name="strains", null=True, blank=True)
+    name = models.CharField(max_length=120)
     thc = models.DecimalField(max_digits=5, decimal_places=2)
     cbd = models.DecimalField(max_digits=5, decimal_places=2, default=Decimal("0.00"))
+    cbg = models.DecimalField(max_digits=5, decimal_places=2, null=True, blank=True)
+    cbn = models.DecimalField(max_digits=5, decimal_places=2, null=True, blank=True)
+    cbc = models.DecimalField(max_digits=5, decimal_places=2, null=True, blank=True)
+    cbv = models.DecimalField(max_digits=5, decimal_places=2, null=True, blank=True)
     price = models.DecimalField(max_digits=8, decimal_places=2)
     stock = models.DecimalField(max_digits=10, decimal_places=2)
     product_type = models.CharField(max_length=16, choices=PRODUCT_TYPE_CHOICES, default=PRODUCT_TYPE_FLOWER)
@@ -58,9 +65,46 @@ class Strain(models.Model):
 
     class Meta:
         ordering = ["name"]
+        constraints = [
+            models.UniqueConstraint(fields=["social_club", "name"], name="uniq_strain_name_per_social_club"),
+        ]
 
     def __str__(self):
         return self.name
+
+    def save(self, *args, **kwargs):
+        previous_club_id = None
+        if self.pk:
+            previous_club_id = Strain.objects.filter(pk=self.pk).values_list("social_club_id", flat=True).first()
+        super().save(*args, **kwargs)
+        if self.social_club_id:
+            self._refresh_social_club_price_stats(self.social_club_id)
+        if previous_club_id and previous_club_id != self.social_club_id:
+            self._refresh_social_club_price_stats(previous_club_id)
+
+    def delete(self, *args, **kwargs):
+        club_id = self.social_club_id
+        super().delete(*args, **kwargs)
+        if club_id:
+            self._refresh_social_club_price_stats(club_id)
+
+    @staticmethod
+    def _refresh_social_club_price_stats(club_id: int) -> None:
+        from apps.core.models import SocialClub
+
+        aggregates = (
+            Strain.objects.filter(social_club_id=club_id, is_active=True)
+            .aggregate(
+                min_price=Coalesce(Min("price"), Decimal("0.00")),
+                max_price=Coalesce(Max("price"), Decimal("0.00")),
+                avg_price=Coalesce(Avg("price"), Decimal("0.00")),
+            )
+        )
+        SocialClub.objects.filter(pk=club_id).update(
+            min_strain_price=aggregates["min_price"],
+            max_strain_price=aggregates["max_price"],
+            avg_strain_price=aggregates["avg_price"],
+        )
 
     def reserve(self, grams: Decimal) -> None:
         if grams <= 0:

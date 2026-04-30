@@ -1,0 +1,85 @@
+{% extends 'base.html' %}
+{% block title %}Pricing{% endblock %}
+{% block content %}
+<section class="page-shell">
+  <div class="page-heading">
+    <div>
+      <p class="eyebrow">Social-Club Plattform</p>
+      <h1>Faire Preisgestaltung fuer Cannabis Social Clubs</h1>
+      <p class="lede">Klares, transparentes Modell ohne versteckte Kosten. Einstieg direkt ueber die Social-Club-Registrierung.</p>
+    </div>
+    <div class="hero-actions">
+      <a href="{% url 'core:social_club_register' %}" class="btn-primary">Social Club jetzt registrieren</a>
+      <a href="{% url 'accounts:login' %}" class="btn-ghost">Bereits Kunde? Einloggen</a>
+    </div>
+  </div>
+
+  <section class="kpi-grid">
+    <article class="kpi-card kpi-card--forest">
+      <span class="kpi-card__label">Mitglieder gesamt</span>
+      <strong class="kpi-card__value">{{ total_members }}</strong>
+      <small class="kpi-card__detail">plattformweit ueber alle Social Clubs</small>
+    </article>
+    <article class="kpi-card kpi-card--ink">
+      <span class="kpi-card__label">Social Clubs aktiv</span>
+      <strong class="kpi-card__value">{{ total_social_clubs }}</strong>
+      <small class="kpi-card__detail">bereits auf der Plattform registriert</small>
+    </article>
+  </section>
+
+  <section class="board-grid">
+    <article class="panel panel--span-2">
+      <div class="panel__header">
+        <div>
+          <p class="panel__eyebrow">Preisstruktur</p>
+          <h2>Einfaches nutzungsbasiertes Modell</h2>
+        </div>
+      </div>
+      <div class="split-cards">
+        <div class="mini-panel">
+          <h3>Monatlich pro aktivem Mitglied</h3>
+          <p><strong style="font-size:2rem;">{{ monthly_price_per_member }}</strong></p>
+          <p class="field-hint">Wird pro Mitglied und Monat berechnet.</p>
+        </div>
+        <div class="mini-panel">
+          <h3>Einmalig pro neuer Registrierung</h3>
+          <p><strong style="font-size:2rem;">{{ one_time_price_per_new_member }}</strong></p>
+          <p class="field-hint">Faellt einmalig an, wenn ein neues Mitglied im Club registriert wird.</p>
+        </div>
+      </div>
+    </article>
+
+    <article class="panel">
+      <div class="panel__header">
+        <div>
+          <p class="panel__eyebrow">Start</p>
+          <h2>Direkt loslegen</h2>
+        </div>
+      </div>
+      <p class="empty-copy">Registriere deinen Social Club in zwei Schritten und starte danach mit dem gewohnten Admin-Interface.</p>
+      <a href="{% url 'core:social_club_register' %}" class="btn-primary btn-block">Zum Social-Club-Onboarding</a>
+    </article>
+  </section>
+
+  <section class="panel">
+    <div class="panel__header">
+      <div>
+        <p class="panel__eyebrow">Funktionsumfang</p>
+        <h2>Die wichtigsten Software-Features</h2>
+      </div>
+    </div>
+    <ul class="stack-list">
+      <li class="stack-list__item"><div><strong>Mitglieder-Onboarding</strong><small>Mehrstufige Registrierung inkl. Profil, SEPA und Verifizierung.</small></div></li>
+      <li class="stack-list__item"><div><strong>Verifizierungsworkflow</strong><small>Dokument-Upload mit Admin-Freigabe und Status-Tracking.</small></div></li>
+      <li class="stack-list__item"><div><strong>Bestell- und Warenkorbmodul</strong><small>Mit Limits, Reservierung, Ausgabe und Storno-Prozess.</small></div></li>
+      <li class="stack-list__item"><div><strong>Mitwirkungsbereich</strong><small>Schichtplanung, Stunden-Nachweise und Freigaben.</small></div></li>
+      <li class="stack-list__item"><div><strong>Finanz- und Rechnungsverwaltung</strong><small>SEPA, Rechnungen, Zahlungen und Archivfunktionen.</small></div></li>
+      <li class="stack-list__item"><div><strong>Compliance-Dashboard</strong><small>Monitoring von Grenzwerten und Verdachtsmeldungen.</small></div></li>
+      <li class="stack-list__item"><div><strong>Anbau- und Seed-to-Sale Tools</strong><small>Grow-Cycles, Pflanzen und Harvest-Tracking.</small></div></li>
+      <li class="stack-list__item"><div><strong>Messaging und E-Mail-Workflows</strong><small>Gruppenkommunikation, Vorlagen und Erinnerungen.</small></div></li>
+      <li class="stack-list__item"><div><strong>Rollen- und Rechtekonzept</strong><small>Mitglied, Staff, Vorstand und Ueberadmin.</small></div></li>
+      <li class="stack-list__item"><div><strong>Multi-Club Mandantenfaehigkeit</strong><small>Social-Club-Zuordnung von Nutzern und Verwaltungsdaten.</small></div></li>
+    </ul>
+  </section>
+</section>
+{% endblock %}

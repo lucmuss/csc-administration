@@ -1,6 +1,7 @@
 from django import forms
+from django.contrib.auth.password_validation import validate_password
 
-from .models import ClubConfiguration, PublicDocument
+from .models import ClubConfiguration, PublicDocument, SocialClub, SocialClubOpeningHour, SocialClubReview
 
 
 class PublicDocumentForm(forms.ModelForm):
@@ -120,3 +121,155 @@ class ClubConfigurationForm(forms.ModelForm):
             if isinstance(field.widget, forms.Select):
                 suffix = " form-input form-select"
             field.widget.attrs["class"] = (field.widget.attrs.get("class", "") + suffix).strip()
+
+
+class SocialClubRegistrationForm(forms.ModelForm):
+    class Meta:
+        model = SocialClub
+        fields = ["name", "email", "street_address", "postal_code", "city", "federal_state", "max_verified_members", "phone", "website", "public_description"]
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        for field in self.fields.values():
+            field.widget.attrs["class"] = (field.widget.attrs.get("class", "") + " form-input").strip()
+
+
+class SocialClubSettingsForm(forms.ModelForm):
+    class Meta:
+        model = SocialClub
+        fields = [
+            "name",
+            "public_description",
+            "profile_image",
+            "banner_image",
+            "gallery_image_1",
+            "gallery_image_2",
+            "gallery_image_3",
+            "gallery_image_4",
+            "gallery_image_5",
+            "email",
+            "support_email",
+            "membership_email",
+            "prevention_email",
+            "finance_email",
+            "privacy_contact",
+            "data_protection_officer",
+            "phone",
+            "website",
+            "street_address",
+            "postal_code",
+            "city",
+            "federal_state",
+            "max_verified_members",
+            "admission_fee",
+            "monthly_membership_fee",
+            "club_iban",
+            "club_bic",
+            "stripe_account_id",
+            "stripe_dashboard_url",
+            "board_representatives",
+            "register_entry",
+            "register_court",
+            "tax_number",
+            "vat_id",
+            "supervisory_authority",
+            "content_responsible",
+            "responsible_person",
+            "language_notice",
+            "legal_basis_notice",
+            "retention_notice",
+            "external_services_text",
+            "prevention_officer_name",
+            "prevention_notice",
+            "instagram_url",
+            "telegram_url",
+            "whatsapp_url",
+        ]
+        widgets = {
+            "public_description": forms.Textarea(attrs={"rows": 5}),
+            "board_representatives": forms.Textarea(attrs={"rows": 3}),
+            "responsible_person": forms.Textarea(attrs={"rows": 3}),
+            "language_notice": forms.Textarea(attrs={"rows": 3}),
+            "legal_basis_notice": forms.Textarea(attrs={"rows": 3}),
+            "retention_notice": forms.Textarea(attrs={"rows": 3}),
+            "external_services_text": forms.Textarea(attrs={"rows": 3}),
+            "prevention_notice": forms.Textarea(attrs={"rows": 3}),
+        }
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        for field in self.fields.values():
+            suffix = " form-input form-select" if isinstance(field.widget, forms.Select) else " form-input"
+            field.widget.attrs["class"] = (field.widget.attrs.get("class", "") + suffix).strip()
+
+
+class SocialClubAdminRegistrationForm(forms.Form):
+    first_name = forms.CharField(max_length=150)
+    last_name = forms.CharField(max_length=150)
+    email = forms.EmailField()
+    birth_date = forms.DateField(widget=forms.DateInput(attrs={"type": "date"}))
+    password = forms.CharField(widget=forms.PasswordInput)
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        for field in self.fields.values():
+            field.widget.attrs["class"] = (field.widget.attrs.get("class", "") + " form-input").strip()
+
+    def clean_password(self):
+        password = self.cleaned_data["password"]
+        validate_password(password)
+        return password
+
+    def clean_email(self):
+        from apps.accounts.models import User
+
+        email = self.cleaned_data["email"].strip().lower()
+        if User.objects.filter(email=email).exists():
+            raise forms.ValidationError("Diese E-Mail-Adresse ist bereits vergeben.")
+        return email
+
+
+class SocialClubOpeningHourForm(forms.ModelForm):
+    class Meta:
+        model = SocialClubOpeningHour
+        fields = ["weekday", "starts_at", "ends_at"]
+        widgets = {
+            "starts_at": forms.TimeInput(attrs={"type": "time"}),
+            "ends_at": forms.TimeInput(attrs={"type": "time"}),
+        }
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        for field in self.fields.values():
+            suffix = " form-input form-select" if isinstance(field.widget, forms.Select) else " form-input"
+            field.widget.attrs["class"] = (field.widget.attrs.get("class", "") + suffix).strip()
+
+    def clean(self):
+        cleaned_data = super().clean()
+        starts_at = cleaned_data.get("starts_at")
+        ends_at = cleaned_data.get("ends_at")
+        if starts_at and ends_at and starts_at >= ends_at:
+            raise forms.ValidationError("Die Endzeit muss spaeter als die Startzeit sein.")
+        return cleaned_data
+
+
+class SocialClubReviewForm(forms.ModelForm):
+    class Meta:
+        model = SocialClubReview
+        fields = ["rating", "comment"]
+        widgets = {
+            "rating": forms.Select(choices=[(i, f"{i} Sterne") for i in range(5, 0, -1)]),
+            "comment": forms.Textarea(attrs={"rows": 4, "maxlength": 500}),
+        }
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.fields["rating"].label = "Sternebewertung"
+        self.fields["comment"].label = "Kurztext"
+        self.fields["comment"].required = False
+        for field in self.fields.values():
+            suffix = " form-input form-select" if isinstance(field.widget, forms.Select) else " form-input"
+            field.widget.attrs["class"] = (field.widget.attrs.get("class", "") + suffix).strip()
+
+    def clean_comment(self):
+        return (self.cleaned_data.get("comment") or "").strip()

@@ -149,12 +149,13 @@ document.addEventListener('DOMContentLoaded', function() {
     const previewBtn = document.getElementById('previewTemplate');
     const templateSelect = document.getElementById('id_template');
     const templatePreview = document.getElementById('templatePreview');
+    const renderTemplateUrl = "{% url 'messaging:api_render_sms_template' %}";
     
     previewBtn.addEventListener('click', function() {
         const templateId = templateSelect.value;
         if (!templateId) return;
         
-        fetch(`/messaging/api/sms/render-template/?template_id=${templateId}`)
+        fetch(`${renderTemplateUrl}?template_id=${templateId}`)
             .then(r => r.json())
             .then(data => {
                 if (data.success) {

@@ -3,7 +3,12 @@ from __future__ import annotations
 from django.conf import settings
 from django.db.utils import OperationalError, ProgrammingError
 
-from .models import ClubConfiguration
+from .models import ClubConfiguration, SocialClub
+
+ACTIVE_SOCIAL_CLUB_SESSION_KEY = "active_social_club_id"
+ACTIVE_SOCIAL_CLUB_COOKIE = "active_social_club_id"
+ACTIVE_FEDERAL_STATE_SESSION_KEY = "active_federal_state"
+ACTIVE_FEDERAL_STATE_COOKIE = "active_federal_state"
 
 
 def _normalized_services(value: str) -> list[str]:
@@ -36,7 +41,27 @@ def _build_default_signature(values: dict[str, object]) -> tuple[str, str]:
     return text_signature, html_signature
 
 
-def get_club_settings() -> dict[str, object]:
+def resolve_active_social_club(request=None):
+    if request is None:
+        return None
+    user = getattr(request, "user", None)
+    if getattr(user, "is_authenticated", False) and not getattr(user, "is_superuser", False) and getattr(user, "social_club_id", None):
+        return user.social_club
+    club_id = request.session.get(ACTIVE_SOCIAL_CLUB_SESSION_KEY) or request.COOKIES.get(ACTIVE_SOCIAL_CLUB_COOKIE)
+    if not club_id:
+        return SocialClub.objects.filter(is_active=True, is_approved=True).order_by("name").first()
+    return SocialClub.objects.filter(id=club_id, is_active=True, is_approved=True).first() or SocialClub.objects.filter(is_active=True, is_approved=True).order_by("name").first()
+
+
+def resolve_active_federal_state(request=None) -> str:
+    if request is None:
+        return ""
+    state = (request.session.get(ACTIVE_FEDERAL_STATE_SESSION_KEY) or request.COOKIES.get(ACTIVE_FEDERAL_STATE_COOKIE) or "").strip()
+    valid_codes = {code for code, _label in SocialClub.FEDERAL_STATE_CHOICES}
+    return state if state in valid_codes else ""
+
+
+def get_club_settings(*, social_club: SocialClub | None = None) -> dict[str, object]:
     try:
         config = ClubConfiguration.objects.first()
     except (OperationalError, ProgrammingError):
@@ -87,4 +112,41 @@ def get_club_settings() -> dict[str, object]:
     default_text, default_html = _build_default_signature(values)
     values["club_email_signature_text"] = getattr(config, "email_signature_text", "") if config and config.email_signature_text else default_text
     values["club_email_signature_html"] = getattr(config, "email_signature_html", "") if config and config.email_signature_html else default_html
+
+    if social_club:
+        club_address = f"{social_club.street_address}, {social_club.postal_code} {social_club.city}".strip(", " )
+        values.update(
+            {
+                "club_name": social_club.name or values["club_name"],
+                "club_contact_email": social_club.email or values["club_contact_email"],
+                "club_support_email": social_club.support_email or values["club_support_email"],
+                "club_membership_email": social_club.membership_email or values["club_membership_email"],
+                "club_prevention_email": social_club.prevention_email or values["club_prevention_email"],
+                "club_finance_email": social_club.finance_email or values["club_finance_email"],
+                "club_privacy_contact": social_club.privacy_contact or values["club_privacy_contact"],
+                "club_data_protection_officer": social_club.data_protection_officer or values["club_data_protection_officer"],
+                "club_contact_phone": social_club.phone or values["club_contact_phone"],
+                "club_contact_address": club_address or values["club_contact_address"],
+                "club_board_representatives": social_club.board_representatives or values["club_board_representatives"],
+                "club_register_entry": social_club.register_entry or values["club_register_entry"],
+                "club_register_court": social_club.register_court or values["club_register_court"],
+                "club_tax_number": social_club.tax_number or values["club_tax_number"],
+                "club_vat_id": social_club.vat_id or values["club_vat_id"],
+                "club_supervisory_authority": social_club.supervisory_authority or values["club_supervisory_authority"],
+                "club_content_responsible": social_club.content_responsible or values["club_content_responsible"],
+                "club_responsible_person": social_club.responsible_person or values["club_responsible_person"],
+                "club_language_notice": social_club.language_notice or values["club_language_notice"],
+                "club_legal_basis_notice": social_club.legal_basis_notice or values["club_legal_basis_notice"],
+                "club_retention_notice": social_club.retention_notice or values["club_retention_notice"],
+                "prevention_officer_name": social_club.prevention_officer_name or values["prevention_officer_name"],
+                "prevention_notice": social_club.prevention_notice or values["prevention_notice"],
+                "instagram_url": social_club.instagram_url or values["instagram_url"],
+                "telegram_url": social_club.telegram_url or values["telegram_url"],
+                "whatsapp_url": social_club.whatsapp_url or values["whatsapp_url"],
+                "club_external_services": _normalized_services(social_club.external_services_text)
+                if social_club.external_services_text
+                else values["club_external_services"],
+            }
+        )
+
     return values

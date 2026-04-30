@@ -89,6 +89,12 @@
                 <h2>SEPA und Bankverbindung</h2>
               </div>
             </div>
+            {% if admission_fee and admission_fee > 0 %}
+              <p class="field-hint">
+                Aufnahmegebuehr fuer deinen Social Club: <strong>{{ admission_fee }} EUR</strong>.
+                Die Abbuchung erfolgt erst nach Vorstandsfreigabe und erfolgreicher Verifizierung.
+              </p>
+            {% endif %}
             <div class="form-stack">
               <div class="field-grid">
                 <div class="field">
@@ -158,6 +164,9 @@
             <label for="{{ form.application_notes.id_for_label }}">Weitere Hinweise</label>
             {{ form.application_notes }}
             {{ form.application_notes.errors }}
+            <div class="inline-actions" style="margin-top:.75rem;">
+              <a href="{% url 'members:verification' %}" class="btn-ghost">Zur Verifizierung (optional)</a>
+            </div>
           </div>
 
           <button type="submit" class="btn-primary btn-block">Profil jetzt vervollstaendigen</button>

@@ -45,6 +45,8 @@ def create_reserved_order(*, user, cart_lines: list[CartLine]) -> Order:
         if line.quantity <= 0:
             raise ValidationError("Menge muss > 0 sein")
         strain = Strain.objects.select_for_update().get(id=line.strain_id, is_active=True)
+        if user.social_club_id and strain.social_club_id not in {user.social_club_id, None}:
+            raise ValidationError("Produkt gehoert zu einem anderen Social Club")
         if not strain.is_weight_based and line.quantity != line.quantity.to_integral_value():
             raise ValidationError(f"{strain.name} kann nur in ganzen Stueckzahlen bestellt werden")
         if strain.stock < line.quantity:

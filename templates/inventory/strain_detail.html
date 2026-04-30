@@ -43,6 +43,10 @@
           {% if strain.is_weight_based %}
             <li><span>THC</span><strong>{{ strain.thc }}%</strong></li>
             <li><span>CBD</span><strong>{{ strain.cbd }}%</strong></li>
+            {% if strain.cbg is not None %}<li><span>CBG</span><strong>{{ strain.cbg }}%</strong></li>{% endif %}
+            {% if strain.cbn is not None %}<li><span>CBN</span><strong>{{ strain.cbn }}%</strong></li>{% endif %}
+            {% if strain.cbc is not None %}<li><span>CBC</span><strong>{{ strain.cbc }}%</strong></li>{% endif %}
+            {% if strain.cbv is not None %}<li><span>CBV</span><strong>{{ strain.cbv }}%</strong></li>{% endif %}
           {% endif %}
           <li><span>Preis</span><strong>{{ strain.price }} EUR {{ strain.unit_price_label }}</strong></li>
           <li><span>Bestand</span><strong>{{ strain.stock_display }}</strong></li>

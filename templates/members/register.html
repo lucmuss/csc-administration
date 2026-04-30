@@ -50,6 +50,12 @@
           {{ form.email.errors }}
         </div>
         <div class="field">
+          <label for="{{ form.social_club.id_for_label }}">Social Club</label>
+          {{ form.social_club }}
+          {{ form.social_club.errors }}
+          <small class="field-hint">Waehle den Social Club, bei dem du Mitglied werden moechtest.</small>
+        </div>
+        <div class="field">
           <label for="{{ form.birth_date.id_for_label }}">Geburtsdatum</label>
           {{ form.birth_date }}
           {{ form.birth_date.errors }}
@@ -63,6 +69,10 @@
         </div>
         <button type="submit" class="btn-primary btn-block">Registrierung absenden</button>
       </form>
+      <div class="auth-card__footer">
+        <span>Social Club noch nicht dabei?</span>
+        <a href="{% url 'core:social_club_register' %}" class="text-link">Social Club registrieren</a>
+      </div>
     </div>
   </section>
 {% endblock %}

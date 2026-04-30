@@ -18,8 +18,10 @@ from .services import (
     analyze_uploaded_invoice,
     apply_monthly_membership_credits,
     balance_breakdown,
+    create_stripe_setup_session_for_member,
     create_sepa_mandate,
     create_stripe_checkout_for_topup,
+    finalize_stripe_setup_session_for_member,
     finalize_stripe_topup,
     invoice_archive_summary,
     render_invoice_pdf,
@@ -200,9 +202,35 @@ def dashboard(request):
             "balance_breakdown": breakdown,
             "topup_form": topup_form,
             "active_mandate": mandate,
+            "stripe_method_configured": bool(profile and profile.stripe_customer_id and profile.stripe_payment_method_id),
             "recent_balance_transactions": recent_balance_transactions,
         },
     )
+
+
+@login_required
+def stripe_method_create(request):
+    if request.user.role != User.ROLE_MEMBER:
+        raise Http404
+    success_url = request.build_absolute_uri(reverse("finance:stripe_method_success"))
+    cancel_url = request.build_absolute_uri(reverse("finance:dashboard"))
+    checkout_url = create_stripe_setup_session_for_member(user=request.user, success_url=success_url, cancel_url=cancel_url)
+    if checkout_url:
+        return redirect(checkout_url)
+    messages.error(request, "Stripe-Zahlungsmittel ist aktuell nicht verfuegbar.")
+    return redirect("finance:dashboard")
+
+
+@login_required
+def stripe_method_success(request):
+    if request.user.role != User.ROLE_MEMBER:
+        raise Http404
+    session_id = request.GET.get("session_id", "")
+    if finalize_stripe_setup_session_for_member(user=request.user, session_id=session_id):
+        messages.success(request, "Stripe-Zahlungsmittel erfolgreich hinterlegt.")
+    else:
+        messages.warning(request, "Stripe-Zahlungsmittel konnte nicht bestaetigt werden.")
+    return redirect("finance:dashboard")
 
 
 @login_required

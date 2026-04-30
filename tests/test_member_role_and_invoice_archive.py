@@ -180,6 +180,37 @@ def test_board_can_upload_invoice_without_manual_title(client, board_user, setti
 
 
 @pytest.mark.django_db
+def test_invoice_upload_extracts_reference_and_summary_for_treasurer(client, board_user, settings):
+    from apps.finance.models import UploadedInvoice
+
+    client.force_login(board_user)
+    settings.OPENROUTER_API_KEY = ""
+    upload = SimpleUploadedFile(
+        "supplier_bill.txt",
+        b"Muster Lieferant GmbH\nRechnungsnummer: RE-2026-0042\nDatum 12.04.2026\nGesamt 129,90 EUR\nArtikel: Duenger, Erde, Toepfe",
+        content_type="text/plain",
+    )
+
+    response = client.post(
+        reverse("finance:archive"),
+        {
+            "title": "",
+            "direction": "incoming",
+            "payment_status": "open",
+            "assigned_to": board_user.id,
+            "notes": "",
+            "document": upload,
+        },
+    )
+
+    invoice = UploadedInvoice.objects.latest("id")
+    assert response.status_code == 302
+    assert invoice.invoice_number == "RE-2026-0042"
+    assert invoice.ai_summary
+    assert "Duenger" in invoice.ai_summary or "Artikel" in invoice.ai_summary
+
+
+@pytest.mark.django_db
 def test_archive_list_links_title_to_detail_view(client, board_user):
     from apps.finance.models import UploadedInvoice
 

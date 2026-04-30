@@ -1,0 +1,64 @@
+{% extends 'base.html' %}
+{% block title %}Social Club bewerten{% endblock %}
+{% block content %}
+<section class="page-shell">
+  <div class="page-heading">
+    <div>
+      <p class="eyebrow">Club-Bewertung</p>
+      <h1>{{ club.name }} bewerten</h1>
+      <p class="lede">Nur aktive und verifizierte Mitglieder des Clubs koennen eine Bewertung abgeben.</p>
+    </div>
+  </div>
+
+  <section class="panel">
+    <div class="panel__header">
+      <div>
+        <p class="panel__eyebrow">Deine Bewertung</p>
+        <h2>Sterne und Kurztext</h2>
+      </div>
+    </div>
+    <form method="post" class="form-stack">
+      {% csrf_token %}
+      <div class="field">
+        <label for="{{ form.rating.id_for_label }}">{{ form.rating.label }}</label>
+        {{ form.rating }}
+        {{ form.rating.errors }}
+      </div>
+      <div class="field">
+        <label for="{{ form.comment.id_for_label }}">{{ form.comment.label }}</label>
+        {{ form.comment }}
+        {{ form.comment.errors }}
+      </div>
+      <button type="submit" class="btn-primary">Bewertung speichern</button>
+    </form>
+  </section>
+
+  <section class="panel">
+    <div class="panel__header">
+      <div>
+        <p class="panel__eyebrow">Uebersicht</p>
+        <h2>Aktuelle Club-Bewertungen</h2>
+      </div>
+    </div>
+    <div class="info-strip">
+      <span>Durchschnitt: {% if avg_rating %}{{ avg_rating }} / 5{% else %}-{% endif %}</span>
+      <span>{{ recent_reviews|length }} letzte Eintraege</span>
+    </div>
+    {% if recent_reviews %}
+      <ul class="stack-list">
+        {% for review in recent_reviews %}
+          <li class="stack-list__item">
+            <div>
+              <strong>{{ review.rating }} / 5 Sterne</strong>
+              <small>{{ review.user.first_name|default:review.user.email }} · {{ review.updated_at|date:"d.m.Y" }}</small>
+              {% if review.comment %}<div class="table-meta">{{ review.comment }}</div>{% endif %}
+            </div>
+          </li>
+        {% endfor %}
+      </ul>
+    {% else %}
+      <p class="empty-copy">Noch keine Bewertungen vorhanden.</p>
+    {% endif %}
+  </section>
+</section>
+{% endblock %}

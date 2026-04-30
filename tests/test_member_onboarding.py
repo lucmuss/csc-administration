@@ -1,7 +1,10 @@
+from datetime import timedelta
+
 import pytest
 from django.core import mail
 from django.test import override_settings
 from django.urls import reverse
+from django.utils import timezone
 
 from apps.members.forms import MemberOnboardingForm, MemberProfileEditForm, MemberRegistrationForm
 
@@ -149,10 +152,11 @@ def test_onboarding_form_saves_profile_and_mandate(client, member_user):
     member_user.profile.save(update_fields=["registration_completed_at", "sepa_mandate", "updated_at"])
     client.force_login(member_user)
 
+    desired_join_date = (timezone.localdate() + timedelta(days=7)).isoformat()
     response = client.post(
         reverse("members:onboarding"),
         data={
-            "desired_join_date": "2026-04-01",
+            "desired_join_date": desired_join_date,
             "street_address": "Karl-Liebknecht-Strasse 9",
             "postal_code": "04107",
             "city": "Leipzig",
@@ -225,10 +229,11 @@ def test_onboarding_form_allows_board_without_membership_documents(client):
     MemberEngagement.objects.update_or_create(profile=profile, defaults={"registration_completed": False})
     client.force_login(user)
 
+    desired_join_date = (timezone.localdate() + timedelta(days=7)).isoformat()
     response = client.post(
         reverse("members:onboarding"),
         data={
-            "desired_join_date": "2026-04-01",
+            "desired_join_date": desired_join_date,
             "street_address": "Karl-Liebknecht-Strasse 9",
             "postal_code": "04107",
             "city": "Leipzig",

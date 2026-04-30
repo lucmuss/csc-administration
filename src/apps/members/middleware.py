@@ -14,7 +14,7 @@ class MemberOnboardingMiddleware:
                 profile = request.user.profile
             except ObjectDoesNotExist:
                 profile = None
-            onboarding_required = bool(profile and request.user.role == "member" and not profile.onboarding_complete)
+            onboarding_required = bool(profile and request.user.role in {"member", "staff"} and not profile.onboarding_complete)
             if onboarding_required:
                 onboarding_path = reverse("members:onboarding")
                 allowed_prefixes = (
@@ -30,13 +30,14 @@ class MemberOnboardingMiddleware:
             pending_member_limited_access = bool(
                 profile
                 and request.user.role == "member"
-                and profile.status == "pending"
+                and not profile.is_verified
                 and profile.onboarding_complete
             )
             if pending_member_limited_access:
                 allowed_prefixes = (
                     reverse("core:dashboard"),
                     reverse("members:profile"),
+                    reverse("members:verification"),
                     reverse("finance:dashboard"),
                     reverse("finance:invoice_list"),
                     reverse("finance:payment_list"),

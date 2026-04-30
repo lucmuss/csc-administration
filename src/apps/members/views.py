@@ -9,6 +9,8 @@ from django.db.models import Count, Q
 from django.http import HttpResponse
 from django.shortcuts import get_object_or_404, redirect, render
 from django.core.paginator import Paginator
+from django.utils import timezone
+from django.utils import translation
 
 from apps.accounts.emails import (
     send_membership_documents_email,
@@ -16,6 +18,7 @@ from apps.accounts.emails import (
     send_registration_received_email,
 )
 from apps.accounts.models import User
+from apps.core.club import resolve_active_federal_state, resolve_active_social_club
 from apps.core.authz import board_required, staff_or_board_required
 from apps.finance.models import SepaMandate
 from apps.finance.models import Invoice
@@ -23,11 +26,13 @@ from apps.messaging.services import sync_member_messaging_preferences
 from apps.orders.models import Order
 from apps.participation.models import MemberEngagement
 
-from .forms import MemberOnboardingForm, MemberProfileEditForm, MemberRegistrationForm
-from .models import Profile
+from .forms import MemberOnboardingForm, MemberProfileEditForm, MemberRegistrationForm, VerificationSubmissionForm
+from .models import Profile, VerificationSubmission
 
 _SEARCH_SANITIZE_RE = re.compile(r"[^0-9A-Za-zÄÖÜäöüß@._+\-\s]")
+LANGUAGE_SESSION_KEY = "django_language"
 MEMBER_IMPORT_SESSION_KEY = "member_import_payload"
+MEMBER_IMPORT_RESULT_SESSION_KEY = "member_import_result_payload"
 IMPORT_FIELD_CHOICES = [
     ("", "Nicht importieren"),
     ("email", "E-Mail-Adresse"),
@@ -100,6 +105,19 @@ def _is_staff_or_board(user: User) -> bool:
     return user.is_authenticated and user.role in {User.ROLE_STAFF, User.ROLE_BOARD}
 
 
+def _club_verified_capacity_reached(profile: Profile) -> bool:
+    club = getattr(profile.user, "social_club", None)
+    if not club or not club.max_verified_members:
+        return False
+    verified_count = Profile.objects.filter(
+        user__social_club=club,
+        user__role=User.ROLE_MEMBER,
+        is_verified=True,
+        status=Profile.STATUS_ACTIVE,
+    ).exclude(pk=profile.pk).count()
+    return verified_count >= club.max_verified_members
+
+
 def _sanitize_search_query(raw: str) -> str:
     compact = " ".join(raw.split()).strip()
     sanitized = _SEARCH_SANITIZE_RE.sub("", compact)
@@ -167,8 +185,9 @@ def _normalize_directory_query(request):
 
 
 def register(request):
+    active_state = resolve_active_federal_state(request)
     if request.method == "POST":
-        form = MemberRegistrationForm(request.POST)
+        form = MemberRegistrationForm(request.POST, federal_state=active_state)
         if form.is_valid():
             user = form.save()
             send_registration_received_email(
@@ -188,7 +207,11 @@ def register(request):
                 )
             return redirect("accounts:login")
     else:
-        form = MemberRegistrationForm()
+        active_club = resolve_active_social_club(request)
+        form = MemberRegistrationForm(
+            initial={"social_club": active_club.id} if active_club else None,
+            federal_state=active_state,
+        )
     return render(request, "members/register.html", {"form": form, "is_bootstrap": not User.objects.exists()})
 
 
@@ -196,6 +219,8 @@ def register(request):
 def onboarding_view(request):
     profile = get_object_or_404(Profile.objects.select_related("user"), user=request.user)
     engagement = getattr(profile, "engagement", None)
+    social_club = getattr(request.user, "social_club", None)
+    admission_fee = getattr(social_club, "admission_fee", None)
     if profile.onboarding_complete:
         return redirect("core:dashboard")
 
@@ -203,6 +228,9 @@ def onboarding_view(request):
         form = MemberOnboardingForm(request.POST, profile=profile)
         if form.is_valid():
             form.save()
+            from apps.finance.services import apply_admission_fee_if_needed
+
+            apply_admission_fee_if_needed(profile)
             if request.user.role == User.ROLE_MEMBER:
                 send_membership_documents_email(profile, request)
             messages.success(request, "Deine Registrierungsdaten wurden vervollstaendigt.")
@@ -217,6 +245,8 @@ def onboarding_view(request):
             "form": form,
             "profile": profile,
             "engagement": engagement,
+            "admission_fee": admission_fee,
+            "verification_submission": getattr(profile, "verification_submission", None),
         },
     )
 
@@ -228,10 +258,15 @@ def profile_view(request):
         form = MemberProfileEditForm(request.POST, profile=profile)
         if form.is_valid():
             form.save()
+            selected_language = form.cleaned_data.get("preferred_language") or Profile.LANGUAGE_DE
+            translation.activate(selected_language)
+            request.session[LANGUAGE_SESSION_KEY] = selected_language
             messages.success(request, "Deine Profildaten wurden aktualisiert.")
             return redirect("members:profile")
     else:
         form = MemberProfileEditForm(profile=profile)
+        translation.activate(profile.preferred_language or Profile.LANGUAGE_DE)
+        request.session[LANGUAGE_SESSION_KEY] = profile.preferred_language or Profile.LANGUAGE_DE
     recent_orders = Order.objects.filter(member=request.user).prefetch_related("items__strain").order_by("-created_at")[:8]
     invoices = profile.invoices.order_by("-created_at")[:8]
     payments = profile.payments.select_related("invoice").order_by("-created_at")[:8]
@@ -253,6 +288,7 @@ def profile_view(request):
             "show_public_directory_link": True,
             "show_profile_edit_callout": True,
             "pending_member_limited_access": profile.status == Profile.STATUS_PENDING,
+            "verification_submission": getattr(profile, "verification_submission", None),
         },
     )
 
@@ -263,6 +299,9 @@ def member_detail(request, profile_id: int):
     viewer = request.user
     is_admin_view = viewer.role in {User.ROLE_STAFF, User.ROLE_BOARD}
     is_self_view = viewer.id == profile.user_id
+    if not viewer.is_superuser and viewer.social_club_id and profile.user.social_club_id != viewer.social_club_id:
+        messages.info(request, "Dieses Mitgliederprofil gehoert zu einem anderen Social Club.")
+        return redirect("core:dashboard")
     if viewer.role == User.ROLE_MEMBER and not is_self_view:
         messages.info(request, "Mitgliederprofile sind nur fuer Administration und Vorstand verfuegbar.")
         return redirect("core:dashboard")
@@ -292,6 +331,87 @@ def member_detail(request, profile_id: int):
             "show_public_directory_link": True,
             "show_profile_edit_callout": False,
             "pending_member_limited_access": False,
+            "verification_submission": getattr(profile, "verification_submission", None),
+        },
+    )
+
+
+@login_required
+def verification_view(request):
+    profile = get_object_or_404(Profile.objects.select_related("user"), user=request.user)
+    submission, _ = VerificationSubmission.objects.get_or_create(profile=profile)
+
+    if request.method == "POST":
+        form = VerificationSubmissionForm(request.POST, request.FILES, instance=submission)
+        if form.is_valid():
+            submission = form.save(commit=False)
+            submission.status = VerificationSubmission.STATUS_SUBMITTED
+            submission.submitted_at = timezone.now()
+            submission.save()
+            messages.success(request, "Verifizierungsunterlagen wurden eingereicht und an die Administration uebergeben.")
+            return redirect("members:verification")
+    else:
+        form = VerificationSubmissionForm(instance=submission)
+
+    return render(
+        request,
+        "members/verification.html",
+        {
+            "profile": profile,
+            "submission": submission,
+            "form": form,
+            "is_admin_view": False,
+        },
+    )
+
+
+@staff_or_board_required(_is_staff_or_board)
+def verification_detail(request, profile_id: int):
+    profile = get_object_or_404(Profile.objects.select_related("user"), id=profile_id)
+    submission, _ = VerificationSubmission.objects.get_or_create(profile=profile)
+
+    if request.method == "POST" and request.user.role == User.ROLE_BOARD:
+        action = request.POST.get("action")
+        admin_notes = request.POST.get("admin_notes", "").strip()
+        submission.admin_notes = admin_notes
+        if action == "approve":
+            if _club_verified_capacity_reached(profile):
+                messages.error(
+                    request,
+                    "Verifizierung nicht moeglich: Die maximale Anzahl verifizierter Mitglieder fuer diesen Social Club ist erreicht.",
+                )
+                return redirect("members:verification_detail", profile_id=profile.id)
+            submission.status = VerificationSubmission.STATUS_APPROVED
+            submission.approved_at = timezone.now()
+            submission.approved_by = request.user
+            submission.save(update_fields=["status", "approved_at", "approved_by", "admin_notes", "updated_at"])
+            profile.is_verified = True
+            profile.status = Profile.STATUS_ACTIVE
+            profile.allocate_member_number()
+            profile.save(update_fields=["is_verified", "status", "updated_at"])
+            from apps.finance.services import apply_admission_fee_if_needed
+
+            apply_admission_fee_if_needed(profile)
+            messages.success(request, f"Verifizierung fuer {profile.user.email} bestaetigt.")
+        elif action == "reject":
+            submission.status = VerificationSubmission.STATUS_REJECTED
+            submission.approved_at = None
+            submission.approved_by = None
+            submission.save(update_fields=["status", "approved_at", "approved_by", "admin_notes", "updated_at"])
+            profile.is_verified = False
+            profile.status = Profile.STATUS_PENDING
+            profile.save(update_fields=["is_verified", "status", "updated_at"])
+            messages.warning(request, f"Verifizierung fuer {profile.user.email} wurde abgelehnt.")
+        return redirect("members:verification_detail", profile_id=profile.id)
+
+    return render(
+        request,
+        "members/verification.html",
+        {
+            "profile": profile,
+            "submission": submission,
+            "form": None,
+            "is_admin_view": True,
         },
     )
 
@@ -313,7 +433,7 @@ def _staff_directory(request):
     locked_filter = request.GET.get("locked", "").strip()
 
     profiles = (
-        Profile.objects.select_related("user")
+        Profile.objects.select_related("user", "verification_submission")
         .annotate(
             open_invoice_count=Count(
                 "invoices",
@@ -328,6 +448,8 @@ def _staff_directory(request):
         )
         .order_by("status", "member_number", "user__last_name", "user__first_name")
     )
+    if not request.user.is_superuser and request.user.social_club_id:
+        profiles = profiles.filter(user__social_club_id=request.user.social_club_id)
 
     if query:
         query_filter = (
@@ -372,8 +494,9 @@ def _member_directory(request):
         return redirect("core:dashboard")
     query = _sanitize_search_query(request.GET.get("q", ""))
     profiles = (
-        Profile.objects.select_related("user")
+        Profile.objects.select_related("user", "verification_submission")
         .filter(status__in=[Profile.STATUS_ACTIVE, Profile.STATUS_VERIFIED])
+        .filter(user__social_club_id=request.user.social_club_id)
         .exclude(user=request.user)
         .order_by("user__first_name", "user__last_name")
     )
@@ -445,6 +568,7 @@ def import_members_csv(request):
     import_data = _session_import_data(request)
     headers = import_data.get("headers", [])
     preview_rows = import_data.get("preview_rows", [])
+    import_result = request.session.get(MEMBER_IMPORT_RESULT_SESSION_KEY) or {}
 
     if request.method == "POST":
         action = request.POST.get("action")
@@ -495,6 +619,7 @@ def import_members_csv(request):
             created_count = 0
             updated_count = 0
             skipped_rows = []
+            imported_entries = []
 
             for row_index, row in enumerate(reader, start=2):
                 mapped = {}
@@ -507,14 +632,13 @@ def import_members_csv(request):
                     skipped_rows.append(f"Zeile {row_index}: E-Mail oder Geburtsdatum fehlt.")
                     continue
 
-                accepted = _parse_import_bool(mapped.get("accepted", ""))
-                verified = _parse_import_bool(mapped.get("verified", ""))
                 user, created = User.objects.get_or_create(
                     email=email,
                     defaults={
                         "first_name": mapped.get("first_name", ""),
                         "last_name": mapped.get("last_name", ""),
                         "role": User.ROLE_MEMBER,
+                        "social_club": request.user.social_club,
                     },
                 )
                 if created:
@@ -530,13 +654,14 @@ def import_members_csv(request):
                     if changed_fields:
                         user.save(update_fields=changed_fields)
 
-                target_status = Profile.STATUS_ACTIVE if (accepted or verified) else Profile.STATUS_PENDING
+                # Importierte Mitglieder starten grundsaetzlich als noch nicht anerkannt.
+                target_status = Profile.STATUS_PENDING
                 profile, _ = Profile.objects.get_or_create(
                     user=user,
                     defaults={
                         "birth_date": birth_date,
                         "status": target_status,
-                        "is_verified": verified,
+                        "is_verified": False,
                         "monthly_counter_key": datetime.now().strftime("%Y-%m"),
                     },
                 )
@@ -556,15 +681,14 @@ def import_members_csv(request):
                 profile.id_document_confirmed = _parse_import_bool(mapped.get("id_document_confirmed", "")) or profile.id_document_confirmed
                 profile.important_newsletter_opt_in = _parse_import_bool(mapped.get("important_newsletter_opt_in", "")) or profile.important_newsletter_opt_in
                 profile.optional_newsletter_opt_in = _parse_import_bool(mapped.get("optional_newsletter_opt_in", "")) or profile.optional_newsletter_opt_in
-                profile.is_verified = verified or profile.is_verified
+                profile.is_verified = False
                 profile.status = target_status
                 if mapped.get("member_number", "").isdigit():
                     desired_number = int(mapped["member_number"])
                     conflict = Profile.objects.exclude(pk=profile.pk).filter(member_number=desired_number).exists()
                     if not conflict:
                         profile.member_number = desired_number
-                if accepted and not profile.registration_completed_at:
-                    profile.registration_completed_at = profile.created_at
+                profile.registration_completed_at = None
                 profile.save()
 
                 iban = mapped.get("iban", "").replace(" ", "").upper()
@@ -597,12 +721,28 @@ def import_members_csv(request):
                     engagement.save(update_fields=["registration_completed", "registration_deadline", "updated_at"])
 
                 sync_member_messaging_preferences(profile)
+                imported_entries.append(
+                    {
+                        "email": user.email,
+                        "first_name": user.first_name,
+                        "last_name": user.last_name,
+                        "status": profile.get_status_display(),
+                        "verified": profile.is_verified,
+                        "created": created,
+                    }
+                )
                 if created:
                     created_count += 1
                 else:
                     updated_count += 1
 
             request.session.pop(MEMBER_IMPORT_SESSION_KEY, None)
+            request.session[MEMBER_IMPORT_RESULT_SESSION_KEY] = {
+                "created_count": created_count,
+                "updated_count": updated_count,
+                "skipped_count": len(skipped_rows),
+                "imported_entries": imported_entries[:200],
+            }
             request.session.modified = True
             if skipped_rows:
                 for item in skipped_rows[:5]:
@@ -611,7 +751,7 @@ def import_members_csv(request):
                 request,
                 f"Import abgeschlossen: {created_count} neu, {updated_count} aktualisiert, {len(skipped_rows)} uebersprungen.",
             )
-            return redirect("members:directory")
+            return redirect("members:import")
 
     suggested_mappings = [
         {"header": header, "value": _suggest_import_mapping(header), "choices": IMPORT_FIELD_CHOICES}
@@ -624,6 +764,7 @@ def import_members_csv(request):
             "import_data": import_data,
             "suggested_mappings": suggested_mappings,
             "preview_rows": preview_rows,
+            "import_result": import_result,
         },
     )
 
@@ -631,6 +772,9 @@ def import_members_csv(request):
 @board_required(_is_board)
 def member_action(request, profile_id: int):
     profile = get_object_or_404(Profile.objects.select_related("user"), id=profile_id)
+    if not request.user.is_superuser and request.user.social_club_id and profile.user.social_club_id != request.user.social_club_id:
+        messages.error(request, "Aktion nicht erlaubt: anderes Social-Club-Mandat.")
+        return redirect("members:directory")
     action = request.POST.get("action")
     audit_summary = ""
     next_target = request.POST.get("next") or "members:directory"
@@ -661,10 +805,19 @@ def member_action(request, profile_id: int):
         return redirect(next_target)
 
     if action == "verify":
+        if _club_verified_capacity_reached(profile):
+            messages.error(
+                request,
+                "Verifizierung nicht moeglich: Die maximale Anzahl verifizierter Mitglieder fuer diesen Social Club ist erreicht.",
+            )
+            return redirect(next_target)
         profile.is_verified = True
         profile.status = Profile.STATUS_ACTIVE
         profile.allocate_member_number()
         profile.save(update_fields=["is_verified", "status", "updated_at"])
+        from apps.finance.services import apply_admission_fee_if_needed
+
+        apply_admission_fee_if_needed(profile)
         sync_member_messaging_preferences(profile)
         send_membership_status_email(
             profile.user,
@@ -679,10 +832,19 @@ def member_action(request, profile_id: int):
         messages.success(request, f"Mitglied {profile.user.email} verifiziert und aktiviert.")
         audit_summary = f"Mitglied {profile.user.email} verifiziert."
     elif action == "activate":
+        if _club_verified_capacity_reached(profile):
+            messages.error(
+                request,
+                "Aktivierung nicht moeglich: Die maximale Anzahl verifizierter Mitglieder fuer diesen Social Club ist erreicht.",
+            )
+            return redirect(next_target)
         profile.is_verified = True
         profile.status = Profile.STATUS_ACTIVE
         profile.allocate_member_number()
         profile.save(update_fields=["is_verified", "status", "updated_at"])
+        from apps.finance.services import apply_admission_fee_if_needed
+
+        apply_admission_fee_if_needed(profile)
         sync_member_messaging_preferences(profile)
         send_membership_status_email(
             profile.user,

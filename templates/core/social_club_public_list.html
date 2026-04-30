@@ -1,0 +1,61 @@
+{% extends 'base.html' %}
+{% block title %}Social Clubs{% endblock %}
+{% block content %}
+<section class="page-shell">
+  <div class="page-heading">
+    <div>
+      <p class="eyebrow">Community</p>
+      <h1>Social Clubs auf der Plattform</h1>
+      <p class="lede">Finde zugelassene Clubs, informiere dich über Profil, Satzung und Mitgliederbewertungen.</p>
+    </div>
+  </div>
+  <section class="panel">
+    <form method="get" class="filter-grid">
+      <div class="field">
+        <label for="federal_state">Bundesland</label>
+        <select id="federal_state" name="federal_state" class="form-input form-select">
+          <option value="">Alle Bundeslaender</option>
+          {% for code, label in state_options %}
+            <option value="{{ code }}" {% if state_filter == code %}selected{% endif %}>{{ label }}</option>
+          {% endfor %}
+        </select>
+      </div>
+      <div class="field">
+        <label for="q">Suche</label>
+        <input id="q" name="q" type="text" value="{{ query }}" class="form-input" placeholder="z. B. Leipzig oder Clubname">
+      </div>
+      <div class="field">
+        <label for="price_min">Min Ø Preis (EUR)</label>
+        <input id="price_min" name="price_min" type="number" step="0.01" min="0" value="{{ price_min }}" class="form-input" placeholder="z. B. 6.50">
+      </div>
+      <div class="field">
+        <label for="price_max">Max Ø Preis (EUR)</label>
+        <input id="price_max" name="price_max" type="number" step="0.01" min="0" value="{{ price_max }}" class="form-input" placeholder="z. B. 11.00">
+      </div>
+      <div class="field field--actions"><button type="submit" class="btn-primary btn-block">Suchen</button></div>
+      <div class="field field--actions"><a href="{% url 'core:social_club_public_list' %}" class="btn-ghost btn-block">Zuruecksetzen</a></div>
+    </form>
+  </section>
+  <section class="panel">
+    {% if clubs %}
+      <ul class="stack-list">
+        {% for club in clubs %}
+          <li class="stack-list__item">
+            <div>
+              <strong><a class="text-link" href="{% url 'core:social_club_public_detail' club.slug %}">{{ club.name }}</a></strong>
+              <small>{{ club.city }}{% if club.get_federal_state_display %} · {{ club.get_federal_state_display }}{% endif %} · {{ club.website|default:"keine Website" }}</small>
+              <div class="table-meta">Ø Preis {{ club.avg_strain_price }} EUR · Min {{ club.min_strain_price }} EUR · Max {{ club.max_strain_price }} EUR</div>
+              {% if club.public_description %}<div class="table-meta">{{ club.public_description|truncatechars:180 }}</div>{% endif %}
+            </div>
+            {% if club.profile_image %}
+              <img src="{{ club.profile_image.url }}" alt="Logo {{ club.name }}" style="width:56px; height:56px; border-radius:999px; object-fit:cover;">
+            {% endif %}
+          </li>
+        {% endfor %}
+      </ul>
+    {% else %}
+      <p class="empty-copy">Keine Social Clubs fuer diese Suche gefunden.</p>
+    {% endif %}
+  </section>
+</section>
+{% endblock %}

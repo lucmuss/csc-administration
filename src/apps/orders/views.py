@@ -10,6 +10,7 @@ from django.views.decorators.http import require_POST
 
 from apps.accounts.emails import send_order_completed_email, send_order_reserved_email
 from apps.accounts.models import User
+from apps.core.club import resolve_active_social_club
 from apps.core.authz import staff_or_board_required
 from apps.finance.services import balance_breakdown
 from apps.governance.services import record_audit_event
@@ -39,11 +40,17 @@ def _member_may_order(user) -> tuple[bool, str]:
     profile = getattr(user, "profile", None)
     if not profile:
         return False, "Kein Mitgliederprofil vorhanden."
-    if profile.status == "pending":
-        return False, "Shop, Bestellungen und Warenkorb werden erst nach Freigabe durch den Vorstand freigeschaltet."
+    if not profile.is_verified or profile.status != "active":
+        return False, "Shop, Bestellungen und Warenkorb werden erst nach erfolgreicher Verifizierung durch den Vorstand freigeschaltet."
     if profile.is_locked_for_orders:
         return False, "Deine Bestellungen sind aktuell gesperrt."
     return True, ""
+
+
+def _active_club(request):
+    if getattr(request.user, "is_superuser", False):
+        return resolve_active_social_club(request)
+    return getattr(request.user, "social_club", None)
 
 
 @login_required
@@ -54,6 +61,9 @@ def shop(request):
         return redirect("core:dashboard")
     active_type = request.GET.get("type", "all")
     strains = Strain.objects.filter(is_active=True)
+    club = _active_club(request)
+    if club:
+        strains = strains.filter(Q(social_club=club) | Q(social_club__isnull=True))
     if active_type in {
         Strain.PRODUCT_TYPE_FLOWER,
         Strain.PRODUCT_TYPE_CUTTING,
@@ -86,6 +96,10 @@ def add_to_cart(request):
     except Exception:
         messages.error(request, "Ungueltige Menge")
         return redirect("orders:shop")
+    club = _active_club(request)
+    if not Strain.objects.filter(id=strain_id, is_active=True).filter(Q(social_club=club) | Q(social_club__isnull=True)).exists():
+        messages.error(request, "Produkt nicht verfuegbar.")
+        return redirect("orders:shop")
 
     cart = _load_cart(request)
     existing = Decimal(cart.get(str(strain_id), "0"))
@@ -109,9 +123,12 @@ def cart(request):
     total_pieces = Decimal("0.00")
     profile = getattr(request.user, "profile", None)
 
+    club = _active_club(request)
     for strain_id, quantity in raw_cart.items():
         try:
             strain = Strain.objects.get(id=int(strain_id), is_active=True)
+            if club and strain.social_club_id not in {club.id, None}:
+                continue
             quantity_decimal = Decimal(quantity)
         except Exception:
             continue
@@ -137,7 +154,7 @@ def cart(request):
     )
 
 
-def _cart_rows(raw_cart):
+def _cart_rows(raw_cart, club):
     rows = []
     total = Decimal("0.00")
     total_grams = Decimal("0.00")
@@ -146,6 +163,8 @@ def _cart_rows(raw_cart):
     for strain_id, quantity in raw_cart.items():
         try:
             strain = Strain.objects.get(id=int(strain_id), is_active=True)
+            if club and strain.social_club_id not in {club.id, None}:
+                continue
             quantity_decimal = Decimal(quantity)
         except Exception:
             continue
@@ -182,7 +201,8 @@ def checkout(request):
         return redirect("orders:cart")
 
     raw_cart = _load_cart(request)
-    rows, total, total_grams, total_pieces = _cart_rows(raw_cart)
+    club = _active_club(request)
+    rows, total, total_grams, total_pieces = _cart_rows(raw_cart, club)
     if not rows:
         messages.error(request, "Dein Warenkorb ist leer.")
         return redirect("orders:cart")

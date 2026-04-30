@@ -19,6 +19,8 @@
           {% if show_profile_edit_callout %}
             <a href="#profilpflege" class="btn-primary">Profil bearbeiten</a>
           {% endif %}
+          <a href="{% url 'members:verification' %}" class="btn-ghost">Verifizierung</a>
+          <a href="{% url 'core:social_club_review' %}" class="btn-ghost">Club bewerten</a>
           {% if show_public_directory_link and not pending_member_limited_access %}
             <a href="{% url 'members:directory' %}" class="btn-ghost">Mitglieder</a>
           {% endif %}
@@ -35,6 +37,11 @@
         <span class="kpi-card__label">Status</span>
         <strong class="kpi-card__value">{{ profile.get_status_display }}</strong>
         <small class="kpi-card__detail">Mitgliedsnummer {{ profile.member_number|default:"wird vergeben" }}</small>
+      </article>
+      <article class="kpi-card kpi-card--ink">
+        <span class="kpi-card__label">Verifizierung</span>
+        <strong class="kpi-card__value">{% if profile.is_verified %}Verifiziert{% else %}Nicht verifiziert{% endif %}</strong>
+        <small class="kpi-card__detail">{% if verification_submission %}{{ verification_submission.get_status_display }}{% else %}Noch nicht gestartet{% endif %}</small>
       </article>
       {% if show_private_profile_details %}
         <article class="kpi-card kpi-card--sand">
@@ -75,6 +82,8 @@
           <li><span>Rolle</span><strong><span class="role-pill role-pill--{{ profile.user.role }}">{{ profile.user.get_role_display }}</span></strong></li>
           <li><span>Aufnahmedatum</span><strong>{{ profile.desired_join_date|date:'d.m.Y'|default:'-' }}</strong></li>
           <li><span>Verifiziert</span><strong>{{ profile.is_verified|yesno:'Ja,Nein' }}</strong></li>
+          <li><span>Interface-Sprache</span><strong>{{ profile.get_preferred_language_display|default:'Deutsch' }}</strong></li>
+          <li><span>Verifizierungsantrag</span><strong>{% if verification_submission %}{{ verification_submission.get_status_display }}{% else %}-{% endif %}</strong></li>
           <li><span>Registriert seit</span><strong>{{ profile.user.date_joined|date:'d.m.Y H:i' }}</strong></li>
           <li><span>Letzte Aktivitaet</span><strong>{{ profile.last_activity|date:'d.m.Y H:i'|default:'-' }}</strong></li>
         </ul>
@@ -129,6 +138,7 @@
           {% csrf_token %}
           <input type="hidden" name="next" value="{{ request.get_full_path }}">
           <a href="{% url 'messaging:mass_email_create' %}?member={{ profile.id }}&subject=Rueckfrage%20zu%20deinem%20Mitgliedsprofil" class="btn-ghost">Mitglied kontaktieren</a>
+          <a href="{% url 'members:verification_detail' profile.id %}" class="btn-ghost">Verifizierung ansehen</a>
           {% if profile.user.role != 'staff' %}
             <button type="submit" name="action" value="promote_staff" class="btn-ghost">Als Mitarbeiter speichern</button>
           {% endif %}
@@ -139,7 +149,6 @@
             <button type="submit" name="action" value="demote_member" class="btn-ghost">Auf Mitglied zuruecksetzen</button>
           {% endif %}
           {% if profile.status == 'pending' %}
-            <button type="submit" name="action" value="verify" class="btn-primary">Mitglied freischalten</button>
             <button type="submit" name="action" value="reject" class="btn-ghost">Ablehnen</button>
           {% endif %}
           {% if profile.is_locked_for_orders %}
@@ -282,6 +291,26 @@
             </div>
             {{ profile_form.optional_newsletter_opt_in }}
             {{ profile_form.optional_newsletter_opt_in.errors }}
+          </div>
+          <div class="panel">
+            <div class="panel__header">
+              <div>
+                <p class="panel__eyebrow">Sprache</p>
+                <h2>Benutzeroberflaeche</h2>
+              </div>
+            </div>
+            <div class="field">
+              <label for="{{ profile_form.preferred_language.id_for_label }}">Interface-Sprache</label>
+              {{ profile_form.preferred_language }}
+              {{ profile_form.preferred_language.errors }}
+              <small class="field-hint">Aktuell ist Englisch nur vorbereitet und wird noch auf Deutsch abgebildet.</small>
+            </div>
+            <div class="field">
+              <label for="{{ profile_form.payment_method_preference.id_for_label }}">Beitrags-Zahlungsart</label>
+              {{ profile_form.payment_method_preference }}
+              {{ profile_form.payment_method_preference.errors }}
+              <small class="field-hint">Fuer Stripe-Karte bitte im Finanzbereich ein Stripe-Zahlungsmittel hinterlegen.</small>
+            </div>
           </div>
           <div class="field">
             <label for="{{ profile_form.application_notes.id_for_label }}">Weitere Hinweise</label>

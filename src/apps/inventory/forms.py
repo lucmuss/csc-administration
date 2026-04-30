@@ -15,6 +15,10 @@ class StrainForm(forms.ModelForm):
             "image",
             "thc",
             "cbd",
+            "cbg",
+            "cbn",
+            "cbc",
+            "cbv",
             "price",
             "stock",
             "quality_grade",
@@ -27,6 +31,10 @@ class StrainForm(forms.ModelForm):
             "image": "Shop-Bild",
             "thc": "THC in %",
             "cbd": "CBD in %",
+            "cbg": "CBG in %",
+            "cbn": "CBN in %",
+            "cbc": "CBC in %",
+            "cbv": "CBV in %",
             "price": "Preis in EUR",
             "stock": "Bestand",
             "quality_grade": "Qualitaetsstufe",
@@ -43,7 +51,7 @@ class StrainForm(forms.ModelForm):
                 continue
             control_class = "form-input form-select" if isinstance(widget, forms.Select) else "form-input"
             widget.attrs["class"] = control_class
-            if name in {"thc", "cbd", "price", "stock"}:
+            if name in {"thc", "cbd", "cbg", "cbn", "cbc", "cbv", "price", "stock"}:
                 widget.attrs.setdefault("step", "0.01")
         self.fields["stock"].help_text = "Blueten werden in Gramm, Stecklinge und Edibles in Stueck gefuehrt."
 

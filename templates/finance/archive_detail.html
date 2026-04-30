@@ -29,7 +29,7 @@
         </div>
         <ul class="detail-list">
           <li><span>Bezeichnung</span><strong>{{ uploaded_invoice.title|default:"-" }}</strong></li>
-          <li><span>Rechnungsnummer</span><strong>{{ uploaded_invoice.invoice_number|default:"-" }}</strong></li>
+          <li><span>Referenz / Rechnungsnummer</span><strong>{{ uploaded_invoice.invoice_number|default:"-" }}</strong></li>
           <li><span>Aussteller</span><strong>{{ uploaded_invoice.vendor_name|default:"-" }}</strong></li>
           <li><span>Empfaenger</span><strong>{{ uploaded_invoice.customer_name|default:"-" }}</strong></li>
           <li><span>Rechnungsdatum</span><strong>{{ uploaded_invoice.issue_date|date:"d.m.Y"|default:"-" }}</strong></li>
@@ -38,7 +38,10 @@
           <li><span>Bearbeiter</span><strong>{{ uploaded_invoice.assigned_to.full_name|default:uploaded_invoice.assigned_to.email|default:"-" }}</strong></li>
         </ul>
         {% if uploaded_invoice.ai_summary %}
-          <p class="empty-copy">{{ uploaded_invoice.ai_summary }}</p>
+          <div class="panel panel--subtle">
+            <h3>Inhalt / Anlass (KI-Zusammenfassung)</h3>
+            <p class="empty-copy">{{ uploaded_invoice.ai_summary }}</p>
+          </div>
         {% endif %}
         {% if uploaded_invoice.ai_payload %}
           <details class="panel panel--subtle">

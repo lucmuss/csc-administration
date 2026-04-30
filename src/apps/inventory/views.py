@@ -5,10 +5,12 @@ from django.contrib.auth.decorators import login_required
 from django.contrib import messages
 from django.core.exceptions import ValidationError
 from django.forms import formset_factory
+from django.db.models import Q
 from django.shortcuts import redirect
 from django.shortcuts import render
 from django.shortcuts import get_object_or_404
 
+from apps.core.club import resolve_active_social_club
 from apps.core.authz import staff_or_board_required
 
 from .forms import InventoryCountValueField, InventoryLocationForm, StrainForm
@@ -20,10 +22,19 @@ def _is_staff_or_board(user) -> bool:
     return user.is_authenticated and getattr(user, "role", "") in {"staff", "board"}
 
 
+def _active_club(request):
+    if getattr(request.user, "is_superuser", False):
+        return resolve_active_social_club(request)
+    return getattr(request.user, "social_club", None)
+
+
 @login_required
 def strain_list(request):
     active_type = request.GET.get("type", "all")
     strains = Strain.objects.filter(is_active=True)
+    club = _active_club(request)
+    if club:
+        strains = strains.filter(Q(social_club=club) | Q(social_club__isnull=True))
     if active_type in {
         Strain.PRODUCT_TYPE_FLOWER,
         Strain.PRODUCT_TYPE_CUTTING,
@@ -107,7 +118,9 @@ def strain_create(request):
     if request.method == "POST":
         form = StrainForm(request.POST, request.FILES)
         if form.is_valid():
-            strain = form.save()
+            strain = form.save(commit=False)
+            strain.social_club = _active_club(request)
+            strain.save()
             messages.success(request, f"Produkt {strain.name} wurde angelegt.")
             return redirect("inventory:strain_edit", pk=strain.pk)
     else:
@@ -118,6 +131,10 @@ def strain_create(request):
 @login_required
 def strain_detail(request, pk: int):
     strain = get_object_or_404(Strain, pk=pk, is_active=True)
+    club = _active_club(request)
+    if club and strain.social_club_id != club.id:
+        messages.error(request, "Dieses Produkt gehoert zu einem anderen Social Club.")
+        return redirect("inventory:strain_list")
     return render(
         request,
         "inventory/strain_detail.html",
@@ -131,6 +148,10 @@ def strain_detail(request, pk: int):
 @staff_or_board_required(_is_staff_or_board)
 def strain_edit(request, pk: int):
     strain = get_object_or_404(Strain, pk=pk)
+    club = _active_club(request)
+    if club and strain.social_club_id != club.id:
+        messages.error(request, "Dieses Produkt gehoert zu einem anderen Social Club.")
+        return redirect("inventory:strain_list")
     if request.method == "POST":
         form = StrainForm(request.POST, request.FILES, instance=strain)
         if form.is_valid():

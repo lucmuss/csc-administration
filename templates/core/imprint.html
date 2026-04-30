@@ -9,6 +9,9 @@
         Diese Installation von {{ app_name }} wird fuer den Betrieb eines Cannabis Social Clubs
         oder eines vergleichbaren Vereinskontexts bereitgestellt.
       </p>
+      {% if active_social_club %}
+        <p class="field-hint">Aktiver Social Club: <strong>{{ active_social_club.name }}</strong></p>
+      {% endif %}
       {% if not legal_setup_complete %}
         <div class="flash flash--warning">
           <strong>Konfiguration unvollstaendig.</strong>

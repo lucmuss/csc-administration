@@ -31,6 +31,22 @@
       "hours": "3.00",
       "approved": false,
       "notes": "Wartet auf Freigabe."
+    },
+    {
+      "member": "member_bayern_a",
+      "shift": "Mitgliederausgabe Freitag",
+      "date": "2026-03-29",
+      "hours": "2.50",
+      "approved": true,
+      "notes": "Bayern-Seed: Ausgabe und Dokumentation."
+    },
+    {
+      "member": "member_bw_a",
+      "shift": "Tresor- und Regalcheck",
+      "date": "2026-03-30",
+      "hours": "2.00",
+      "approved": true,
+      "notes": "BW-Seed: Kontrolle der Bestandsliste."
     }
   ],
   "inventory_counts": [
@@ -167,6 +183,86 @@
           "quantity_grams": "1.00",
           "unit_price": "9.00",
           "total_price": "9.00"
+        }
+      ]
+    },
+    {
+      "member": "member_bayern_a",
+      "status": "reserved",
+      "reserved_until": "2026-04-06T19:00:00+02:00",
+      "paid_with_balance": "10.00",
+      "total": "23.00",
+      "total_grams": "3.00",
+      "invoice": {
+        "invoice_number": "SEED-INV-2004",
+        "amount": "23.00",
+        "due_date": "2026-04-06",
+        "status": "open",
+        "reminder_level": 0,
+        "blocked_member": false,
+        "payments": [
+          {
+            "amount": "13.00",
+            "method": "sepa",
+            "status": "pending",
+            "scheduled_for": "2026-04-08"
+          }
+        ]
+      },
+      "items": [
+        {
+          "strain": "blue_dream",
+          "batch": "batch_blue_dream",
+          "quantity_grams": "2.00",
+          "unit_price": "8.00",
+          "total_price": "16.00"
+        },
+        {
+          "strain": "channel",
+          "batch": "batch_channel",
+          "quantity_grams": "1.00",
+          "unit_price": "7.00",
+          "total_price": "7.00"
+        }
+      ]
+    },
+    {
+      "member": "member_bw_a",
+      "status": "completed",
+      "reserved_until": "2026-04-02T18:00:00+02:00",
+      "paid_with_balance": "0.00",
+      "total": "36.00",
+      "total_grams": "4.00",
+      "invoice": {
+        "invoice_number": "SEED-INV-2005",
+        "amount": "36.00",
+        "due_date": "2026-04-03",
+        "status": "paid",
+        "reminder_level": 0,
+        "blocked_member": false,
+        "payments": [
+          {
+            "amount": "36.00",
+            "method": "sepa",
+            "status": "collected",
+            "scheduled_for": "2026-04-03"
+          }
+        ]
+      },
+      "items": [
+        {
+          "strain": "orange_sherbert",
+          "batch": "batch_orange_sherbert",
+          "quantity_grams": "2.00",
+          "unit_price": "9.00",
+          "total_price": "18.00"
+        },
+        {
+          "strain": "wappa",
+          "batch": "batch_wappa",
+          "quantity_grams": "2.00",
+          "unit_price": "8.00",
+          "total_price": "16.00"
         }
       ]
     }

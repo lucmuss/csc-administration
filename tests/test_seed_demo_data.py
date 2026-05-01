@@ -6,8 +6,10 @@ from django.core.management import call_command
 
 @pytest.mark.django_db
 def test_seed_demo_data_is_idempotent():
+    from apps.core.models import SocialClub
     from apps.finance.models import Invoice
     from apps.inventory.models import Strain
+    from apps.messaging.models import EmailGroup
     from apps.orders.models import Order
 
     call_command("seed_demo_data")
@@ -22,5 +24,8 @@ def test_seed_demo_data_is_idempotent():
     assert Strain.objects.get(name="Steckling: Orange Bud").stock == Decimal("12.00")
     assert Strain.objects.get(name="Steckling: Orange Bud").product_type == Strain.PRODUCT_TYPE_CUTTING
     assert Strain.objects.get(name="Steckling: Orange Bud").card_tone == Strain.CARD_TONE_MINT
-    assert Order.objects.count() == 3
-    assert Invoice.objects.count() == 3
+    assert Order.objects.count() == 5
+    assert Invoice.objects.count() == 5
+    assert SocialClub.objects.filter(name="Cannabis Social Club Muenchen Isar e.V.").exists()
+    assert SocialClub.objects.filter(name="Cannabis Social Club Stuttgart Foehre").exists()
+    assert EmailGroup.objects.filter(name="Regional Bayern").exists()

@@ -20,8 +20,9 @@
             <a href="#profilpflege" class="btn-primary">Profil bearbeiten</a>
           {% endif %}
           {% if profile.is_verified %}
-            <a href="{% url 'members:member_card_pdf' %}" class="btn-ghost">Mitgliederausweis (PDF)</a>
+            <a href="{% url 'members:member_card_pdf' %}" class="btn-ghost">Mitgliedsausweis</a>
           {% endif %}
+          <a href="{% url 'accounts:password_change' %}" class="btn-ghost">Passwort aendern</a>
           <a href="{% url 'members:verification' %}" class="btn-ghost">Verifizierung</a>
           <a href="{% url 'core:social_club_review' %}" class="btn-ghost">Club bewerten</a>
           {% if show_public_directory_link and not pending_member_limited_access %}

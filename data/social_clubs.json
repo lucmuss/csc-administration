@@ -1,0 +1,76 @@
+{
+  "social_clubs": [
+    {
+      "key": "leipzig_sued",
+      "name": "Cannabis Social Club Leipzig Sued",
+      "email": "kontakt@csc-leipzig-sued.example",
+      "membership_email": "mitgliedschaft@csc-leipzig-sued.example",
+      "support_email": "support@csc-leipzig-sued.example",
+      "prevention_email": "praevention@csc-leipzig-sued.example",
+      "finance_email": "finanzen@csc-leipzig-sued.example",
+      "privacy_contact": "datenschutz@csc-leipzig-sued.example",
+      "data_protection_officer": "DSB Leipzig Sued",
+      "street_address": "Karl-Liebknecht-Strasse 120",
+      "postal_code": "04275",
+      "city": "Leipzig",
+      "federal_state": "SN",
+      "phone": "+49 341 990011",
+      "website": "https://leipzig-sued.csc.local",
+      "public_description": "Pilot-Club fuer Seed-Daten und Standardprozesse.",
+      "is_active": true,
+      "is_approved": true,
+      "opening_hours": [
+        {"weekday": 1, "starts_at": "17:00", "ends_at": "20:00"},
+        {"weekday": 4, "starts_at": "16:30", "ends_at": "20:30"}
+      ]
+    },
+    {
+      "key": "muenchen_isar",
+      "name": "Cannabis Social Club Muenchen Isar e.V.",
+      "email": "kontakt@csc-muenchen-isar.example",
+      "membership_email": "mitgliedschaft@csc-muenchen-isar.example",
+      "support_email": "support@csc-muenchen-isar.example",
+      "prevention_email": "praevention@csc-muenchen-isar.example",
+      "finance_email": "finanzen@csc-muenchen-isar.example",
+      "privacy_contact": "datenschutz@csc-muenchen-isar.example",
+      "data_protection_officer": "DSB Muenchen Isar",
+      "street_address": "Isarstrasse 44",
+      "postal_code": "81675",
+      "city": "Muenchen",
+      "federal_state": "BY",
+      "phone": "+49 89 441122",
+      "website": "https://muenchen-isar.csc.local",
+      "public_description": "Test-Club Bayern mit Fokus auf Mitgliederfluss und Finanzen.",
+      "is_active": true,
+      "is_approved": true,
+      "opening_hours": [
+        {"weekday": 2, "starts_at": "18:00", "ends_at": "21:00"},
+        {"weekday": 5, "starts_at": "15:00", "ends_at": "19:00"}
+      ]
+    },
+    {
+      "key": "stuttgart_foehre",
+      "name": "Cannabis Social Club Stuttgart Foehre",
+      "email": "kontakt@csc-stuttgart-foehre.example",
+      "membership_email": "mitgliedschaft@csc-stuttgart-foehre.example",
+      "support_email": "support@csc-stuttgart-foehre.example",
+      "prevention_email": "praevention@csc-stuttgart-foehre.example",
+      "finance_email": "finanzen@csc-stuttgart-foehre.example",
+      "privacy_contact": "datenschutz@csc-stuttgart-foehre.example",
+      "data_protection_officer": "DSB Stuttgart Foehre",
+      "street_address": "Foehrichstrasse 18",
+      "postal_code": "70469",
+      "city": "Stuttgart",
+      "federal_state": "BW",
+      "phone": "+49 711 550099",
+      "website": "https://stuttgart-foehre.csc.local",
+      "public_description": "Test-Club Baden-Wuerttemberg fuer regionale Vergleichsfaelle.",
+      "is_active": true,
+      "is_approved": true,
+      "opening_hours": [
+        {"weekday": 0, "starts_at": "17:30", "ends_at": "20:30"},
+        {"weekday": 3, "starts_at": "17:30", "ends_at": "20:30"}
+      ]
+    }
+  ]
+}

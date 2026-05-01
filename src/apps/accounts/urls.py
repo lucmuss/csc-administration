@@ -2,6 +2,8 @@ from django.urls import path
 
 from .views import (
     EmailLoginView,
+    MemberPasswordChangeDoneView,
+    MemberPasswordChangeView,
     MemberPasswordResetCompleteView,
     MemberPasswordResetConfirmView,
     MemberPasswordResetDoneView,
@@ -18,6 +20,8 @@ urlpatterns = [
     path("register/", legacy_register, name="register"),
     path("logout/", UserLogoutView.as_view(), name="logout"),
     path("password-reset/", MemberPasswordResetView.as_view(), name="password_reset"),
+    path("password/change/", MemberPasswordChangeView.as_view(), name="password_change"),
+    path("password/change/done/", MemberPasswordChangeDoneView.as_view(), name="password_change_done"),
     path("password-reset/done/", MemberPasswordResetDoneView.as_view(), name="password_reset_done"),
     path(
         "reset/<uidb64>/<token>/",

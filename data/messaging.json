@@ -1,0 +1,53 @@
+{
+  "email_groups": [
+    {
+      "key": "group_important",
+      "name": "Wichtige Vereinsinfos",
+      "description": "Pflichtkommunikation fuer alle aktiven Mitglieder.",
+      "is_active": true,
+      "created_by": "capture_admin",
+      "members": [
+        "member_active_a",
+        "member_active_b",
+        "member_bayern_a",
+        "member_bw_a"
+      ]
+    },
+    {
+      "key": "group_bayern",
+      "name": "Regional Bayern",
+      "description": "Regionale Updates fuer den Standort Bayern.",
+      "is_active": true,
+      "created_by": "board_bayern",
+      "members": [
+        "board_bayern",
+        "member_bayern_a"
+      ]
+    },
+    {
+      "key": "group_bw",
+      "name": "Regional Baden-Wuerttemberg",
+      "description": "Regionale Updates fuer den Standort Baden-Wuerttemberg.",
+      "is_active": true,
+      "created_by": "board_bw",
+      "members": [
+        "board_bw",
+        "member_bw_a"
+      ]
+    }
+  ],
+  "email_templates": [
+    {
+      "slug": "club-update-monthly",
+      "name": "Monatliches Club-Update",
+      "subject": "Monatsupdate {{ month }}",
+      "body": "Hallo {{ user_name }},\\n\\nhier ist das Monatsupdate deines Social Clubs."
+    },
+    {
+      "slug": "verification-followup",
+      "name": "Nachfrage Verifizierung",
+      "subject": "Rueckfrage zu deinen Verifizierungsunterlagen",
+      "body": "Hallo {{ user_name }},\\n\\nbitte pruefe die offenen Felder in deinem Profil."
+    }
+  ]
+}

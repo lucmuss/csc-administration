@@ -8,15 +8,17 @@ from django.core.management.base import BaseCommand
 from django.db import connection
 from django.db import transaction
 from django.utils import timezone
-from django.utils.dateparse import parse_date, parse_datetime
+from django.utils.dateparse import parse_date, parse_datetime, parse_time
 
 from apps.accounts.models import User
 from apps.compliance.models import PreventionInfo
+from apps.core.models import SocialClub, SocialClubOpeningHour
 from apps.finance.models import BalanceTopUp, BalanceTransaction, Invoice, Payment, Reminder, SepaMandate, UploadedInvoice
 from apps.finance.services import add_balance_transaction, ensure_seed_credit, import_uploaded_invoices_from_directory, sync_profile_balance
-from apps.governance.models import MemberCard
+from apps.governance.models import BoardMeeting, BoardTask, MeetingAgendaItem, MeetingResolution, MemberCard
 from apps.inventory.models import Batch, InventoryCount, InventoryItem, InventoryLocation, Strain
 from apps.members.models import Profile
+from apps.messaging.models import EmailGroup, EmailGroupMember, EmailTemplate
 from apps.orders.models import Order, OrderItem
 from apps.participation.models import MemberEngagement, Shift, WorkHours
 
@@ -47,6 +49,15 @@ def _parse_datetime(value):
     return parsed
 
 
+def _parse_time(value):
+    if not value:
+        return None
+    parsed = parse_time(value)
+    if parsed is None:
+        raise ValueError(f"Invalid time value: {value}")
+    return parsed
+
+
 class Command(BaseCommand):
     help = "Seeds reproducible demo data for dashboard, catalog, orders and finance."
 
@@ -63,11 +74,17 @@ class Command(BaseCommand):
             users_data = self._read_json(data_dir / "users.json")
             catalog_data = self._read_json(data_dir / "catalog.json")
             activity_data = self._read_json(data_dir / "activity.json")
+            social_clubs_data = self._read_json(data_dir / "social_clubs.json")
+            governance_data = self._read_json(data_dir / "governance.json")
+            messaging_data = self._read_json(data_dir / "messaging.json")
 
             refs = {}
+            self._seed_social_clubs(social_clubs_data, refs)
             self._seed_users(users_data, refs)
             self._seed_catalog(catalog_data, refs)
             self._seed_activity(activity_data, refs)
+            self._seed_governance(governance_data, refs)
+            self._seed_messaging(messaging_data, refs)
             self._seed_invoice_archive(data_dir / "invoices", refs)
 
         self.stdout.write(
@@ -133,6 +150,7 @@ class Command(BaseCommand):
                     "is_staff": entry.get("is_staff", False),
                     "is_superuser": entry.get("is_superuser", False),
                     "is_active": entry.get("is_active", True),
+                    "social_club": refs.get(f"club:{entry.get('social_club')}") if entry.get("social_club") else None,
                 },
             )
             user.first_name = entry["first_name"]
@@ -141,6 +159,8 @@ class Command(BaseCommand):
             user.is_staff = entry.get("is_staff", False)
             user.is_superuser = entry.get("is_superuser", False)
             user.is_active = entry.get("is_active", True)
+            if entry.get("social_club"):
+                user.social_club = refs.get(f"club:{entry['social_club']}")
             user.set_password(entry.get("password") or default_password)
             user.save()
 
@@ -223,6 +243,40 @@ class Command(BaseCommand):
                 "user": user,
                 "profile": profile,
             }
+
+    def _seed_social_clubs(self, data, refs):
+        for entry in data.get("social_clubs", []):
+            club, _ = SocialClub.objects.update_or_create(
+                name=entry["name"],
+                defaults={
+                    "email": entry["email"],
+                    "street_address": entry["street_address"],
+                    "postal_code": entry["postal_code"],
+                    "city": entry["city"],
+                    "federal_state": entry.get("federal_state", ""),
+                    "phone": entry["phone"],
+                    "website": entry.get("website", ""),
+                    "public_description": entry.get("public_description", ""),
+                    "membership_email": entry.get("membership_email", ""),
+                    "support_email": entry.get("support_email", ""),
+                    "prevention_email": entry.get("prevention_email", ""),
+                    "finance_email": entry.get("finance_email", ""),
+                    "privacy_contact": entry.get("privacy_contact", ""),
+                    "data_protection_officer": entry.get("data_protection_officer", ""),
+                    "is_active": entry.get("is_active", True),
+                    "is_approved": entry.get("is_approved", True),
+                },
+            )
+            refs[f"club:{entry['key']}"] = club
+
+            SocialClubOpeningHour.objects.filter(social_club=club).delete()
+            for slot in entry.get("opening_hours", []):
+                SocialClubOpeningHour.objects.create(
+                    social_club=club,
+                    weekday=slot["weekday"],
+                    starts_at=_parse_time(slot["starts_at"]),
+                    ends_at=_parse_time(slot["ends_at"]),
+                )
 
     def _seed_catalog(self, data, refs):
         for entry in data.get("locations", []):
@@ -342,6 +396,103 @@ class Command(BaseCommand):
             assigned_to=seed_user,
             analyze=True,
         )
+
+    def _seed_governance(self, data, refs):
+        for entry in data.get("meetings", []):
+            chair = refs.get(entry.get("chair"), {}).get("user") if entry.get("chair") else None
+            creator = refs.get(entry.get("created_by"), {}).get("user") if entry.get("created_by") else None
+            meeting, _ = BoardMeeting.objects.update_or_create(
+                title=entry["title"],
+                scheduled_for=_parse_datetime(entry["scheduled_for"]),
+                defaults={
+                    "meeting_type": entry.get("meeting_type", BoardMeeting.TYPE_BOARD),
+                    "status": entry.get("status", BoardMeeting.STATUS_PLANNED),
+                    "location": entry.get("location", ""),
+                    "minutes_summary": entry.get("minutes_summary", ""),
+                    "chairperson": chair,
+                    "created_by": creator,
+                },
+            )
+            refs[f"meeting:{entry['key']}"] = meeting
+
+            for item in entry.get("agenda_items", []):
+                owner = refs.get(item.get("owner"), {}).get("user") if item.get("owner") else None
+                agenda_item, _ = MeetingAgendaItem.objects.update_or_create(
+                    meeting=meeting,
+                    order=item["order"],
+                    defaults={
+                        "title": item["title"],
+                        "description": item.get("description", ""),
+                        "status": item.get("status", MeetingAgendaItem.STATUS_OPEN),
+                        "owner": owner,
+                    },
+                )
+                refs[f"agenda:{entry['key']}:{item['order']}"] = agenda_item
+
+            for resolution in entry.get("resolutions", []):
+                agenda_ref = f"agenda:{entry['key']}:{resolution.get('agenda_order')}"
+                meeting_agenda = refs.get(agenda_ref)
+                resolution_creator = refs.get(resolution.get("created_by"), {}).get("user") if resolution.get("created_by") else None
+                MeetingResolution.objects.update_or_create(
+                    meeting=meeting,
+                    title=resolution["title"],
+                    defaults={
+                        "agenda_item": meeting_agenda,
+                        "decision_text": resolution["decision_text"],
+                        "status": resolution.get("status", MeetingResolution.STATUS_DRAFT),
+                        "vote_result": resolution.get("vote_result", ""),
+                        "created_by": resolution_creator,
+                    },
+                )
+
+        for entry in data.get("tasks", []):
+            owner = refs.get(entry.get("owner"), {}).get("user") if entry.get("owner") else None
+            creator = refs.get(entry.get("created_by"), {}).get("user") if entry.get("created_by") else None
+            related_meeting = refs.get(f"meeting:{entry.get('meeting')}") if entry.get("meeting") else None
+            BoardTask.objects.update_or_create(
+                title=entry["title"],
+                defaults={
+                    "description": entry.get("description", ""),
+                    "status": entry.get("status", BoardTask.STATUS_TODO),
+                    "priority": entry.get("priority", BoardTask.PRIORITY_MEDIUM),
+                    "due_date": _parse_date(entry.get("due_date")),
+                    "owner": owner,
+                    "created_by": creator,
+                    "related_meeting": related_meeting,
+                },
+            )
+
+    def _seed_messaging(self, data, refs):
+        for entry in data.get("email_groups", []):
+            creator = refs.get(entry.get("created_by"), {}).get("user") if entry.get("created_by") else None
+            group, _ = EmailGroup.objects.update_or_create(
+                name=entry["name"],
+                defaults={
+                    "description": entry.get("description", ""),
+                    "is_active": entry.get("is_active", True),
+                    "created_by": creator,
+                },
+            )
+            refs[f"email_group:{entry['key']}"] = group
+
+            for member_key in entry.get("members", []):
+                member_ref = refs.get(member_key)
+                if member_ref:
+                    EmailGroupMember.objects.get_or_create(
+                        group=group,
+                        member=member_ref["profile"],
+                        defaults={"added_by": creator},
+                    )
+
+        for entry in data.get("email_templates", []):
+            EmailTemplate.objects.update_or_create(
+                slug=entry["slug"],
+                defaults={
+                    "name": entry["name"],
+                    "subject": entry["subject"],
+                    "body": entry["body"],
+                },
+            )
 
     def _upsert_order(self, entry, refs):
         member = refs[entry["member"]]["user"]

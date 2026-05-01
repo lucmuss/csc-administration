@@ -564,8 +564,8 @@ hr {
 .page-title {
   margin: 0;
   font-family: var(--font-display);
-  font-size: clamp(1.8rem, 3vw, 3rem);
-  line-height: 1.04;
+  font-size: clamp(1.6rem, 2.5vw, 2.65rem);
+  line-height: 1.1;
 }
 
 .panel h2,
@@ -594,7 +594,7 @@ hr {
 .hero-panel,
 .auth-layout {
   display: grid;
-  grid-template-columns: minmax(0, 2fr) minmax(18rem, 1fr);
+  grid-template-columns: minmax(0, 1.2fr) minmax(21rem, 1fr);
   gap: 1.1rem;
   margin-bottom: 1.1rem;
 }
@@ -800,8 +800,8 @@ hr {
 }
 
 .table--compact td {
-  padding-top: 0.72rem;
-  padding-bottom: 0.72rem;
+  padding-top: 0.95rem;
+  padding-bottom: 0.95rem;
 }
 
 .table--compact .table-meta {
@@ -827,6 +827,14 @@ hr {
 
 .table-row-status--reserved {
   background: rgba(250, 239, 201, 0.34);
+}
+
+.table-actions {
+  gap: 0.5rem;
+}
+
+.table-actions .btn-ghost--small {
+  min-height: 2.2rem;
 }
 
 .stack-list,
@@ -1231,6 +1239,10 @@ select.form-input {
 
 .inline-actions--stacked {
   align-items: flex-start;
+}
+
+.table-meta br {
+  content: "";
 }
 
 .errorlist {

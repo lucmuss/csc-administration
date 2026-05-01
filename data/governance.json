@@ -1,0 +1,61 @@
+{
+  "meetings": [
+    {
+      "key": "q2_board_leipzig",
+      "title": "Vorstandssitzung Q2 Leipzig",
+      "meeting_type": "board",
+      "status": "planned",
+      "scheduled_for": "2026-05-12T19:00:00+02:00",
+      "location": "Leipzig Vereinsraum",
+      "chair": "capture_admin",
+      "created_by": "capture_admin",
+      "agenda_items": [
+        {
+          "order": 1,
+          "title": "Mitgliederstand und Verifizierungen",
+          "description": "Review der offenen Prueffaelle.",
+          "status": "open",
+          "owner": "board_ops"
+        },
+        {
+          "order": 2,
+          "title": "Finanzlage und offene Forderungen",
+          "description": "SEPA Ruecklaeufer und Mahnlogik.",
+          "status": "open",
+          "owner": "staff_finance"
+        }
+      ],
+      "resolutions": [
+        {
+          "agenda_order": 1,
+          "title": "Beschluss Verifizierungsprozess",
+          "decision_text": "Offene Verifizierungen werden binnen 7 Tagen abgeschlossen.",
+          "status": "draft",
+          "vote_result": "offen",
+          "created_by": "capture_admin"
+        }
+      ]
+    }
+  ],
+  "tasks": [
+    {
+      "title": "Monatsabschluss Finanzdaten",
+      "description": "Zahlungsstatus pruefen und Dashboard aktualisieren.",
+      "status": "in_progress",
+      "priority": "high",
+      "due_date": "2026-05-05",
+      "owner": "staff_finance",
+      "created_by": "board_ops",
+      "meeting": "q2_board_leipzig"
+    },
+    {
+      "title": "Mitgliederfeedback BW auswerten",
+      "description": "Rueckmeldungen aus Stuttgart aufbereiten.",
+      "status": "todo",
+      "priority": "medium",
+      "due_date": "2026-05-10",
+      "owner": "board_bw",
+      "created_by": "capture_admin"
+    }
+  ]
+}

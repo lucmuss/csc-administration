@@ -111,7 +111,7 @@
                 </td>
                 <td>
                   {% if order.status == 'reserved' %}
-                    <form method="post" action="{% url 'orders:admin_action' order.id %}" class="inline-actions inline-actions--stacked">
+                    <form method="post" action="{% url 'orders:admin_action' order.id %}" class="inline-actions inline-actions--stacked table-actions">
                       {% csrf_token %}
                       <input type="hidden" name="next" value="{{ request.get_full_path }}">
                       <a href="{% url 'orders:detail' order.id %}" class="btn-ghost btn-ghost--small">Details</a>

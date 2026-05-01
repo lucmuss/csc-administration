@@ -1,12 +1,15 @@
 from django.contrib.auth.views import (
     LoginView,
     LogoutView,
+    PasswordChangeDoneView,
+    PasswordChangeView,
     PasswordResetCompleteView,
     PasswordResetConfirmView,
     PasswordResetDoneView,
     PasswordResetView,
 )
 from django.contrib.auth import login
+from django.contrib.auth.forms import PasswordChangeForm
 from django.contrib import messages
 from django.core.cache import cache
 from django.http import HttpRequest
@@ -200,6 +203,27 @@ class MemberPasswordResetConfirmView(PasswordResetConfirmView):
 @method_decorator(never_cache, name="dispatch")
 class MemberPasswordResetCompleteView(PasswordResetCompleteView):
     template_name = "accounts/password_reset_complete.html"
+
+
+@method_decorator(never_cache, name="dispatch")
+class MemberPasswordChangeView(PasswordChangeView):
+    template_name = "accounts/password_change_form.html"
+    form_class = PasswordChangeForm
+    success_url = reverse_lazy("accounts:password_change_done")
+
+    def get_form(self, form_class=None):
+        form = super().get_form(form_class)
+        for field in form.fields.values():
+            field.widget.attrs.setdefault("class", "form-input")
+            field.widget.attrs.setdefault("autocomplete", "current-password")
+        form.fields["new_password1"].widget.attrs["autocomplete"] = "new-password"
+        form.fields["new_password2"].widget.attrs["autocomplete"] = "new-password"
+        return form
+
+
+@method_decorator(never_cache, name="dispatch")
+class MemberPasswordChangeDoneView(PasswordChangeDoneView):
+    template_name = "accounts/password_change_done.html"
 
 
 def legacy_register(request):

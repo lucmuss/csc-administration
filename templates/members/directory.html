@@ -9,10 +9,11 @@
       </div>
       <div class="hero-actions">
         {% if not is_member_directory %}
+          <a href="{% url 'members:register' %}" class="btn-primary">Neues Mitglied anlegen</a>
           <a href="{% url 'members:export' %}" class="btn-ghost">CSV-Export</a>
           <a href="{% url 'members:import' %}" class="btn-ghost">CSV-Import</a>
         {% endif %}
-        <a href="{% url 'core:dashboard' %}" class="btn-primary">Zurueck zum Cockpit</a>
+        <a href="{% url 'core:dashboard' %}" class="btn-ghost">Zurueck zum Cockpit</a>
       </div>
     </div>
 
@@ -106,9 +107,9 @@
                     {% if is_member_directory %}
                       Verifiziert: {{ profile.is_verified|yesno:"Ja,Nein" }}
                     {% else %}
-                      Rolle: {{ profile.user.get_role_display }} ·
-                      Verifizierung: {% if profile.verification_submission %}{{ profile.verification_submission.get_status_display }}{% else %}Nicht gestartet{% endif %} ·
-                      {% if profile.is_locked_for_orders %}Bestellungen gesperrt · {% endif %}
+                      Rolle: {{ profile.user.get_role_display }}<br>
+                      Verifizierung: {% if profile.verification_submission %}{{ profile.verification_submission.get_status_display }}{% else %}Nicht gestartet{% endif %}<br>
+                      {% if profile.is_locked_for_orders %}Bestellungen gesperrt<br>{% endif %}
                       {{ profile.open_invoice_count }} offene Rechnungen · {{ profile.suspicious_count }} Risiken
                     {% endif %}
                   </div>

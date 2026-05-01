@@ -18,11 +18,13 @@ def test_social_club_registration_creates_pending_admin(client):
             "email": "club@test.de",
             "street_address": "Testweg 1",
             "postal_code": "04109",
-            "city": "Leipzig",
-            "max_verified_members": "500",
-            "phone": "+4917000000",
-            "website": "https://example.org",
-        },
+                "city": "Leipzig",
+                "federal_state": "SN",
+                "minimum_age": "21",
+                "max_verified_members": "500",
+                "phone": "+4917000000",
+                "website": "https://example.org",
+            },
         follow=True,
     )
     assert response.status_code == 200

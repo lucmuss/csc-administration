@@ -11,10 +11,12 @@ from django.utils import timezone
 from django.utils.dateparse import parse_date, parse_datetime, parse_time
 
 from apps.accounts.models import User
+from apps.audit.models import AuditLog as SystemAuditLog
 from apps.compliance.models import PreventionInfo
 from apps.core.models import SocialClub, SocialClubOpeningHour
 from apps.finance.models import BalanceTopUp, BalanceTransaction, Invoice, Payment, Reminder, SepaMandate, UploadedInvoice
 from apps.finance.services import add_balance_transaction, ensure_seed_credit, import_uploaded_invoices_from_directory, sync_profile_balance
+from apps.governance.models import AuditLog as GovernanceAuditLog
 from apps.governance.models import BoardMeeting, BoardTask, MeetingAgendaItem, MeetingResolution, MemberCard
 from apps.inventory.models import Batch, InventoryCount, InventoryItem, InventoryLocation, Strain
 from apps.members.models import Profile, VerificationSubmission
@@ -107,6 +109,8 @@ class Command(BaseCommand):
         self._safe_delete(MeetingAgendaItem)
         self._safe_delete(BoardTask)
         self._safe_delete(BoardMeeting)
+        self._safe_delete(SystemAuditLog)
+        self._safe_delete(GovernanceAuditLog)
         self._safe_delete(EmailGroupMember)
         self._safe_delete(EmailTemplate)
         self._safe_delete(EmailGroup)

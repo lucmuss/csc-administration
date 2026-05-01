@@ -124,6 +124,9 @@ class Profile(models.Model):
 
     def clean(self):
         minimum_age = getattr(settings, "MEMBER_MINIMUM_AGE", 21)
+        social_club = getattr(self.user, "social_club", None)
+        if social_club and getattr(social_club, "minimum_age", None):
+            minimum_age = social_club.minimum_age
         if self.birth_date and self.age < minimum_age:
             raise ValidationError(f"Mitglied muss mindestens {minimum_age} Jahre alt sein.")
 

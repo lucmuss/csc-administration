@@ -76,8 +76,25 @@ def test_password_reset_request_sends_reset_email(client, member_user):
     assert response.url == reverse("accounts:password_reset_done")
     assert len(mail.outbox) == 1
     assert member_user.email in mail.outbox[0].to
+    assert "/accounts/reset/" in mail.outbox[0].body
 
 
+@pytest.mark.django_db
+@override_settings(EMAIL_BACKEND="django.core.mail.backends.locmem.EmailBackend")
+def test_login_success_sends_login_alert_email(client, member_user):
+    response = client.post(
+        reverse("accounts:login"),
+        data={"username": member_user.email, "password": "StrongPass123!"},
+    )
+
+    assert response.status_code == 302
+    assert response.url == reverse("core:dashboard")
+    assert len(mail.outbox) == 1
+    assert member_user.email in mail.outbox[0].to
+    assert "login" in mail.outbox[0].subject.lower()
+
+
+@pytest.mark.django_db
 def test_login_template_links_to_password_reset(client):
     response = client.get(reverse("accounts:login"))
 
@@ -88,6 +105,40 @@ def test_login_template_links_to_password_reset(client):
     assert reverse("core:documents") in html
     assert reverse("core:imprint") in html
     assert reverse("core:health") not in html
+
+
+@pytest.mark.django_db
+def test_login_template_shows_platform_stats(client):
+    SocialClub.objects.create(
+        name="CSC Statistik A",
+        email="stats-a@example.com",
+        street_address="A",
+        postal_code="04109",
+        city="Leipzig",
+        phone="+49111",
+        is_approved=True,
+        is_active=True,
+    )
+    SocialClub.objects.create(
+        name="CSC Statistik B",
+        email="stats-b@example.com",
+        street_address="B",
+        postal_code="80331",
+        city="Muenchen",
+        phone="+49222",
+        is_approved=False,
+        is_active=True,
+    )
+
+    response = client.get(reverse("accounts:login"))
+    html = response.content.decode("utf-8")
+    active_club_count = SocialClub.objects.filter(is_active=True, is_approved=True).count()
+
+    assert response.status_code == 200
+    assert "Plattform in Zahlen" in html
+    assert "Mitglieder insgesamt" in html
+    assert "aktive Social Clubs" in html
+    assert f">{active_club_count}</strong> aktive Social Clubs" in html
 
 
 @pytest.mark.django_db

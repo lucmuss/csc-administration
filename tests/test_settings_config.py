@@ -56,3 +56,40 @@ def test_branding_and_health_defaults_can_be_configured(monkeypatch):
     assert settings.APP_NAME == "Club Suite"
     assert settings.APP_TAGLINE == "Mitglieder und Betrieb"
     assert settings.HEALTH_ALLOWED_IPS == ["10.0.0.1", "127.0.0.1"]
+
+
+def test_email_delivery_mode_file_uses_file_backend(monkeypatch, tmp_path):
+    monkeypatch.setenv("DJANGO_DEBUG", "0")
+    monkeypatch.setenv("DJANGO_SECRET_KEY", "test-secret")
+    monkeypatch.setenv("ALLOWED_HOSTS", "club.example")
+    monkeypatch.setenv("EMAIL_DELIVERY_MODE", "file")
+    monkeypatch.setenv("EMAIL_FILE_PATH", str(tmp_path / "mail-out"))
+
+    settings = reload_settings()
+
+    assert settings.EMAIL_BACKEND == "django.core.mail.backends.filebased.EmailBackend"
+    assert str(settings.EMAIL_FILE_PATH).endswith("mail-out")
+
+
+def test_app_version_can_be_set_via_env(monkeypatch):
+    monkeypatch.setenv("DJANGO_DEBUG", "0")
+    monkeypatch.setenv("DJANGO_SECRET_KEY", "test-secret")
+    monkeypatch.setenv("ALLOWED_HOSTS", "club.example")
+    monkeypatch.setenv("APP_VERSION", "0.1")
+
+    settings = reload_settings()
+
+    assert settings.APP_VERSION == "0.1"
+
+
+def test_app_version_defaults_to_pyproject_version(monkeypatch):
+    monkeypatch.setenv("DJANGO_DEBUG", "0")
+    monkeypatch.setenv("DJANGO_SECRET_KEY", "test-secret")
+    monkeypatch.setenv("ALLOWED_HOSTS", "club.example")
+    monkeypatch.delenv("APP_VERSION", raising=False)
+    monkeypatch.delenv("RELEASE_VERSION", raising=False)
+
+    settings = reload_settings()
+
+    assert settings.APP_VERSION
+    assert settings.APP_VERSION != "dev"

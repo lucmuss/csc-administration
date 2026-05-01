@@ -7,7 +7,7 @@ from django.core.exceptions import ValidationError
 from django.db import IntegrityError
 
 from apps.accounts.models import User
-from apps.core.forms import SocialClubOpeningHourForm
+from apps.core.forms import SocialClubOpeningHourForm, SocialClubSettingsForm
 from apps.core.models import SocialClub, SocialClubOpeningHour, SocialClubReview
 from apps.members.models import Profile
 
@@ -84,3 +84,71 @@ def test_social_club_review_unique_per_user_and_club():
 
     with pytest.raises(IntegrityError):
         SocialClubReview.objects.create(social_club=club, user=user, rating=4)
+
+
+@pytest.mark.django_db
+def test_social_club_settings_form_splits_and_recombines_street_and_number():
+    club = SocialClub.objects.create(
+        name="CSC Adresse",
+        email="adresse@example.com",
+        street_address="Mannheimer Strasse 132a",
+        postal_code="04109",
+        city="Leipzig",
+        phone="+49444",
+        is_active=True,
+        is_approved=True,
+    )
+
+    form = SocialClubSettingsForm(instance=club)
+    assert form.initial.get("street_address") == "Mannheimer Strasse"
+    assert form.initial.get("street_address_number") == "132a"
+
+    form = SocialClubSettingsForm(
+        data={
+            "name": club.name,
+            "public_description": "",
+            "email": club.email,
+            "phone": club.phone,
+            "street_address": "Mannheimer Strasse",
+            "street_address_number": "132",
+            "postal_code": club.postal_code,
+            "city": club.city,
+            "federal_state": club.federal_state,
+            "minimum_age": 21,
+            "max_verified_members": 500,
+            "admission_fee": "0.00",
+            "monthly_membership_fee": "24.00",
+            "club_iban": "",
+            "club_bic": "",
+            "stripe_account_id": "",
+            "stripe_dashboard_url": "",
+            "board_representatives": "",
+            "register_entry": "",
+            "register_court": "",
+            "tax_number": "",
+            "vat_id": "",
+            "supervisory_authority": "",
+            "content_responsible": "",
+            "responsible_person": "",
+            "language_notice": "",
+            "legal_basis_notice": "",
+            "retention_notice": "",
+            "external_services_text": "",
+            "prevention_officer_name": "",
+            "prevention_notice": "",
+            "instagram_url": "",
+            "telegram_url": "",
+            "whatsapp_url": "",
+            "website": "",
+            "support_email": "",
+            "membership_email": "",
+            "prevention_email": "",
+            "finance_email": "",
+            "privacy_contact": "",
+            "data_protection_officer": "",
+        },
+        instance=club,
+    )
+    assert form.is_valid(), form.errors
+    updated = form.save()
+    assert updated.street_address == "Mannheimer Strasse 132"

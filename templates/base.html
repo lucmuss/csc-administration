@@ -197,10 +197,19 @@
         <div>
           <p class="site-footer__title">{{ app_name }}</p>
           <p class="site-footer__copy">{{ app_description }}</p>
+          {% if active_social_club or active_federal_state %}
+            <p class="site-footer__copy">
+              Aktive Auswahl:
+              {% if active_federal_state_label %}Bundesland {{ active_federal_state_label }}{% endif %}
+              {% if active_federal_state_label and active_social_club %} · {% endif %}
+              {% if active_social_club %}Social Club {{ active_social_club.name }}{% endif %}
+            </p>
+          {% endif %}
         </div>
         <div class="site-footer__links">
           <a href="{% url 'core:documents' %}">Dokumente</a>
           <a href="{% url 'core:pricing' %}">Pricing</a>
+          <a href="{% url 'core:public_preferences' %}">Website-Einstellungen</a>
           <a href="{% url 'core:privacy' %}">Datenschutz</a>
           <a href="{% url 'core:imprint' %}">Impressum</a>
           <span>ATC Version {{ app_version }}</span>

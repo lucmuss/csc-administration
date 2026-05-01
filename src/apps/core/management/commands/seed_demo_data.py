@@ -267,6 +267,7 @@ class Command(BaseCommand):
                     "postal_code": entry["postal_code"],
                     "city": entry["city"],
                     "federal_state": entry.get("federal_state", ""),
+                    "minimum_age": entry.get("minimum_age", 21),
                     "phone": entry["phone"],
                     "website": entry.get("website", ""),
                     "public_description": entry.get("public_description", ""),

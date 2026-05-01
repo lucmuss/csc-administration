@@ -1,6 +1,7 @@
 from pathlib import Path
 import os
 import sys
+import tomllib
 from urllib.parse import urlparse
 
 BASE_DIR = Path(__file__).resolve().parent.parent.parent
@@ -27,6 +28,16 @@ def _env_csv(*names: str) -> list[str]:
         return []
     return [item.strip() for item in raw.split(",") if item.strip()]
 
+
+def _read_pyproject_version() -> str:
+    pyproject_path = BASE_DIR / "pyproject.toml"
+    try:
+        with pyproject_path.open("rb") as handle:
+            payload = tomllib.load(handle)
+        return str(payload.get("project", {}).get("version", "")).strip()
+    except Exception:
+        return ""
+
 # SECURITY WARNING: keep the secret key used in production secret!
 # In production, DJANGO_SECRET_KEY must be set and DJANGO_DEBUG must be "0"
 SECRET_KEY = os.getenv("DJANGO_SECRET_KEY")
@@ -44,6 +55,7 @@ APP_DESCRIPTION = _env_first(
     "APP_DESCRIPTION",
     default="Verwaltungssoftware fuer Social Clubs mit Mitglieder-, Finanz-, Governance- und Compliance-Modulen.",
 )
+APP_VERSION = _env_first("APP_VERSION", "RELEASE_VERSION", default="").strip() or _read_pyproject_version() or "dev"
 
 # SECURITY WARNING: don't run with debug turned on in production!
 if DEBUG:
@@ -214,7 +226,7 @@ if SITE_URL.startswith(("http://", "https://")):
 
 # E-Mail-Versand
 DEFAULT_FROM_EMAIL = _env_first("DEFAULT_FROM_EMAIL", "DJANGO_DEFAULT_FROM_EMAIL", default="noreply@localhost")
-EMAIL_DELIVERY_MODE = _env_first("EMAIL_DELIVERY_MODE", default="console")  # console | smtp | resend
+EMAIL_DELIVERY_MODE = _env_first("EMAIL_DELIVERY_MODE", default="console")  # console | smtp | resend | file
 USE_RESEND = _env_bool("USE_RESEND", default=False)
 
 if EMAIL_DELIVERY_MODE == "smtp" or USE_RESEND:
@@ -228,6 +240,16 @@ if EMAIL_DELIVERY_MODE == "smtp" or USE_RESEND:
     EMAIL_HOST_USER = _env_first("EMAIL_HOST_USER", "DJANGO_EMAIL_HOST_USER", default="")
     EMAIL_HOST_PASSWORD = _env_first("EMAIL_HOST_PASSWORD", "DJANGO_EMAIL_HOST_PASSWORD", default="")
     EMAIL_TIMEOUT = int(_env_first("EMAIL_TIMEOUT", "DJANGO_EMAIL_TIMEOUT", default="10"))
+elif EMAIL_DELIVERY_MODE == "file":
+    EMAIL_BACKEND = "django.core.mail.backends.filebased.EmailBackend"
+    EMAIL_FILE_PATH = Path(
+        _env_first(
+            "EMAIL_FILE_PATH",
+            "DJANGO_EMAIL_FILE_PATH",
+            default=str(BASE_DIR / "tmp" / "sent-emails"),
+        )
+    )
+    EMAIL_FILE_PATH.mkdir(parents=True, exist_ok=True)
 else:
     EMAIL_BACKEND = "django.core.mail.backends.console.EmailBackend"
 
@@ -235,6 +257,10 @@ else:
 MEMBER_CAPACITY = int(os.getenv("MEMBER_CAPACITY", "500"))  # Maximale Mitgliederzahl
 LOW_STOCK_THRESHOLD_EUR = os.getenv("LOW_STOCK_THRESHOLD_EUR", "25.00")  # Mindestbestand in EUR
 MEMBER_MINIMUM_AGE = int(_env_first("MEMBER_MINIMUM_AGE", "DJANGO_MEMBER_MINIMUM_AGE", default="21"))
+CLUB_REGISTRATION_VALIDATE_WEBSITE_REACHABILITY = _env_bool(
+    "CLUB_REGISTRATION_VALIDATE_WEBSITE_REACHABILITY",
+    default=True,
+)
 MEMBER_MONTHLY_FEE = _env_first("MEMBER_MONTHLY_FEE", default="24.00")
 BALANCE_TOPUP_MIN_AMOUNT = _env_first("BALANCE_TOPUP_MIN_AMOUNT", default="1.00")
 BALANCE_TOPUP_MAX_AMOUNT = _env_first("BALANCE_TOPUP_MAX_AMOUNT", default="500.00")

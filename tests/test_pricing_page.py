@@ -44,4 +44,8 @@ def test_pricing_page_shows_platform_counts(client):
     assert "Mitglieder gesamt" in html
     assert "Social Clubs aktiv" in html
     assert "0,50 EUR" in html
+    assert "0,25 EUR" in html
+    assert "50,00 EUR" in html
+    assert "Pro erfolgreicher Bestellung" in html
+    assert "Einmalig pro neuem Social Club" in html
     assert reverse("core:social_club_register") in html

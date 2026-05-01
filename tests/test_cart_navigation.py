@@ -67,3 +67,42 @@ def test_checkout_sends_reserved_order_email(client, member_user):
     assert len(mail.outbox) == 1
     assert "reserviert" in mail.outbox[0].subject.lower()
     assert member_user.email in mail.outbox[0].to
+
+
+@pytest.mark.django_db
+@override_settings(EMAIL_BACKEND="django.core.mail.backends.locmem.EmailBackend")
+def test_admin_completion_sends_notification_with_invoice_attachment(client, member_user, admin_user):
+    from apps.inventory.models import Strain
+    from apps.orders.models import Order
+
+    strain = Strain.objects.create(
+        name="Northern Lights",
+        thc="19.00",
+        cbd="0.30",
+        price="9.00",
+        stock="80.00",
+    )
+
+    client.force_login(member_user)
+    session = client.session
+    session["cart"] = {str(strain.id): "2"}
+    session.save()
+    reserve_response = client.post(reverse("orders:checkout"), {"confirm": "yes"})
+    assert reserve_response.status_code == 302
+
+    order = Order.objects.latest("id")
+
+    client.force_login(admin_user)
+    complete_response = client.post(
+        reverse("orders:admin_action", args=[order.id]),
+        {"action": "complete", "confirm": "yes"},
+    )
+    assert complete_response.status_code == 302
+
+    subjects = [message.subject.lower() for message in mail.outbox]
+    assert any("reserviert" in subject for subject in subjects)
+    assert any("aktualisiert" in subject for subject in subjects)
+
+    completed_mail = next(msg for msg in mail.outbox if "aktualisiert" in msg.subject.lower())
+    attachment_names = {attachment[0] for attachment in completed_mail.attachments}
+    assert any(name.endswith(".pdf") and name.startswith("INV-") for name in attachment_names)

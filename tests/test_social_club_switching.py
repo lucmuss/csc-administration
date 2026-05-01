@@ -77,3 +77,85 @@ def test_imprint_uses_selected_social_club_data(client):
     assert "CSC Legal" in html
     assert "legal@example.com" in html
     assert "Amtsgericht Leipzig" in html
+
+
+@pytest.mark.django_db
+def test_imprint_hides_optional_lines_when_values_are_missing(client):
+    club = SocialClub.objects.create(
+        name="CSC Ohne Optional",
+        email="ohne@example.com",
+        street_address="Legalstr. 1",
+        postal_code="04109",
+        city="Leipzig",
+        phone="+49341234",
+        board_representatives="Max Legal",
+        register_court="Amtsgericht Leipzig",
+        tax_number="123/456",
+        vat_id="",
+        whatsapp_url="",
+        is_approved=True,
+        is_active=True,
+    )
+    client.post(reverse("core:social_club_switch"), data={"social_club_id": club.id, "next": reverse("core:imprint")})
+    response = client.get(reverse("core:imprint"))
+
+    assert response.status_code == 200
+    html = response.content.decode("utf-8")
+    assert "WhatsApp:" not in html
+    assert "USt-ID / Wirtschafts-ID:" not in html
+
+
+@pytest.mark.django_db
+def test_public_preferences_page_is_accessible_and_shows_controls(client):
+    SocialClub.objects.create(
+        name="CSC Public",
+        email="public@example.com",
+        street_address="P",
+        postal_code="04109",
+        city="Leipzig",
+        phone="+49100",
+        federal_state=SocialClub.BUNDESLAND_SN,
+        is_approved=True,
+        is_active=True,
+    )
+
+    response = client.get(reverse("core:public_preferences"))
+
+    assert response.status_code == 200
+    html = response.content.decode("utf-8")
+    assert "Website-Einstellungen" in html
+    assert "name=\"federal_state\"" in html
+    assert "name=\"social_club_id\"" in html
+    assert reverse("core:social_club_switch") in html
+
+
+@pytest.mark.django_db
+def test_footer_shows_active_selection_after_switch(client):
+    club = SocialClub.objects.create(
+        name="CSC Footer",
+        email="footer@example.com",
+        street_address="F",
+        postal_code="04109",
+        city="Leipzig",
+        phone="+49101",
+        federal_state=SocialClub.BUNDESLAND_SN,
+        is_approved=True,
+        is_active=True,
+    )
+
+    client.post(
+        reverse("core:social_club_switch"),
+        data={
+            "social_club_id": club.id,
+            "federal_state": SocialClub.BUNDESLAND_SN,
+            "next": reverse("core:documents"),
+        },
+    )
+    response = client.get(reverse("core:documents"))
+
+    assert response.status_code == 200
+    html = response.content.decode("utf-8")
+    assert "Aktive Auswahl:" in html
+    assert "Baden" not in html
+    assert "Sachsen" in html
+    assert "CSC Footer" in html

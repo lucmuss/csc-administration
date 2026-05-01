@@ -64,6 +64,37 @@ def test_member_registration_form_rejects_underage(settings):
 
 
 @pytest.mark.django_db
+def test_member_registration_form_uses_social_club_specific_minimum_age(settings):
+    from apps.core.models import SocialClub
+
+    settings.MEMBER_MINIMUM_AGE = 21
+    club = SocialClub.objects.create(
+        name="CSC Berlin 18+",
+        email="berlin18@example.com",
+        street_address="Teststrasse 1",
+        postal_code="10115",
+        city="Berlin",
+        phone="+4930",
+        federal_state="BE",
+        minimum_age=18,
+        is_active=True,
+        is_approved=True,
+    )
+
+    form = MemberRegistrationForm(
+        data={
+            "social_club": str(club.id),
+            "email": "young-adult@example.com",
+            "first_name": "Jana",
+            "last_name": "Beispiel",
+            "birth_date": (date.today() - timedelta(days=365 * 19)).isoformat(),
+            "password": "StrongPass123!",
+        }
+    )
+    assert form.is_valid(), form.errors
+
+
+@pytest.mark.django_db
 def test_member_onboarding_form_rejects_future_join_date_for_today_guard(member_user):
     form = MemberOnboardingForm(
         profile=member_user.profile,

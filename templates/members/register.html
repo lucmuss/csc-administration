@@ -61,7 +61,9 @@
           <label for="{{ form.birth_date.id_for_label }}">Geburtsdatum{% if form.birth_date.field.required %} *{% endif %}</label>
           {{ form.birth_date }}
           {{ form.birth_date.errors }}
-          <small class="field-hint">Die aktuelle Validierung setzt ein Mindestalter von 21 Jahren voraus.</small>
+          {% if form.birth_date.help_text %}
+            <small class="field-hint">{{ form.birth_date.help_text }}</small>
+          {% endif %}
         </div>
         <div class="field field--password">
           <label for="{{ form.password.id_for_label }}">Passwort{% if form.password.field.required %} *{% endif %}</label>

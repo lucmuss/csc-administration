@@ -24,13 +24,23 @@
         </div>
         <form method="post" class="form-stack">
           {% csrf_token %}
-          {% for field in form %}
-            <div class="field">
-              <label for="{{ field.id_for_label }}">{{ field.label }}{% if not field.field.required %} <small>(optional)</small>{% endif %}</label>
-              {{ field }}
-              {% if field.help_text %}<small>{{ field.help_text }}</small>{% endif %}
-              {{ field.errors }}
-            </div>
+          {% for section_title, section_fields in settings_sections %}
+            <section class="panel" style="margin-bottom:1rem;">
+              <div class="panel__header">
+                <div>
+                  <p class="panel__eyebrow">Abschnitt</p>
+                  <h2>{{ section_title }}</h2>
+                </div>
+              </div>
+              {% for field_name in section_fields %}
+                <div class="field">
+                  <label for="{{ form[field_name].id_for_label }}">{{ form[field_name].label }}{% if not form[field_name].field.required %} <small>(optional)</small>{% endif %}</label>
+                  {{ form[field_name] }}
+                  {% if form[field_name].help_text %}<small>{{ form[field_name].help_text }}</small>{% endif %}
+                  {{ form[field_name].errors }}
+                </div>
+              {% endfor %}
+            </section>
           {% endfor %}
           <button type="submit" class="btn-primary">Clubdaten speichern</button>
         </form>

@@ -350,13 +350,30 @@ def pricing(request):
             "total_social_clubs": total_social_clubs,
             "monthly_price_per_member": "0,25 EUR",
             "one_time_price_per_new_member": "0,50 EUR",
+            "price_per_successful_order": "0,25 EUR",
+            "one_time_price_per_new_social_club": "50,00 EUR",
+        },
+    )
+
+
+def public_preferences(request):
+    club_options = SocialClub.objects.filter(is_active=True, is_approved=True).order_by("name")
+    return render(
+        request,
+        "core/public_preferences.html",
+        {
+            "club_options": club_options,
+            "federal_state_options": SocialClub.FEDERAL_STATE_CHOICES,
         },
     )
 
 
 def social_club_public_list(request):
     query = " ".join((request.GET.get("q") or "").split()).strip()
-    state_filter = (request.GET.get("federal_state") or resolve_active_federal_state(request) or "").strip()
+    if "federal_state" in request.GET:
+        state_filter = (request.GET.get("federal_state") or "").strip()
+    else:
+        state_filter = (resolve_active_federal_state(request) or "").strip()
     price_min = (request.GET.get("price_min") or "").strip()
     price_max = (request.GET.get("price_max") or "").strip()
     valid_states = {code for code, _label in SocialClub.FEDERAL_STATE_CHOICES}
@@ -365,7 +382,23 @@ def social_club_public_list(request):
     clubs_qs = SocialClub.objects.filter(is_active=True, is_approved=True).order_by("name")
     for club in clubs_qs.filter(slug=""):
         club.save(update_fields=["slug", "updated_at"])
-    clubs = SocialClub.objects.filter(is_active=True, is_approved=True).exclude(slug="").order_by("name")
+    clubs = (
+        SocialClub.objects.filter(is_active=True, is_approved=True)
+        .exclude(slug="")
+        .annotate(
+            verified_member_count=Count(
+                "users__profile",
+                filter=Q(
+                    users__role=User.ROLE_MEMBER,
+                    users__profile__is_verified=True,
+                    users__profile__status=Profile.STATUS_ACTIVE,
+                ),
+                distinct=True,
+            ),
+            shop_strain_count=Count("strains", filter=Q(strains__is_active=True), distinct=True),
+        )
+        .order_by("name")
+    )
     if state_filter:
         clubs = clubs.filter(federal_state=state_filter)
     if price_min:
@@ -397,7 +430,10 @@ def social_club_public_list(request):
 def social_club_regional_list(request):
     if request.headers.get("x-requested-with") == "XMLHttpRequest":
         query = " ".join((request.GET.get("q") or "").split()).strip()
-        state_filter = (request.GET.get("federal_state") or resolve_active_federal_state(request) or "").strip()
+        if "federal_state" in request.GET:
+            state_filter = (request.GET.get("federal_state") or "").strip()
+        else:
+            state_filter = (resolve_active_federal_state(request) or "").strip()
         valid_states = {code for code, _label in SocialClub.FEDERAL_STATE_CHOICES}
         if state_filter not in valid_states:
             state_filter = ""
@@ -561,12 +597,63 @@ def club_settings_admin(request):
             return redirect("core:club_settings")
     else:
         form = ClubConfigurationForm(instance=configuration)
+    settings_sections = [
+        ("Basis", ["app_name", "app_tagline", "app_description", "club_name", "club_slogan"]),
+        (
+            "Kontaktdaten",
+            [
+                "club_contact_email",
+                "club_support_email",
+                "club_contact_phone",
+                "club_contact_address",
+                "instagram_url",
+                "telegram_url",
+                "whatsapp_url",
+            ],
+        ),
+        (
+            "Datenschutz",
+            [
+                "club_privacy_contact",
+                "club_data_protection_officer",
+                "club_language_notice",
+                "club_legal_basis_notice",
+                "club_retention_notice",
+                "club_external_services_text",
+            ],
+        ),
+        (
+            "Register und Steuern",
+            [
+                "club_board_representatives",
+                "club_register_entry",
+                "club_register_court",
+                "club_tax_number",
+                "club_vat_id",
+                "club_supervisory_authority",
+                "club_content_responsible",
+                "club_responsible_person",
+            ],
+        ),
+        (
+            "Praevention und Fachbereiche",
+            [
+                "prevention_officer_name",
+                "prevention_notice",
+                "club_membership_email",
+                "club_prevention_email",
+                "club_finance_email",
+            ],
+        ),
+        ("E-Mail-Signatur", ["email_signature_text", "email_signature_html"]),
+    ]
     return render(
         request,
         "core/club_settings.html",
         {
             "form": form,
             "effective_settings": get_club_settings(),
+            "settings_sections": settings_sections,
         },
     )
 

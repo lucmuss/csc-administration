@@ -27,6 +27,9 @@ def ga_tracking_id(request):
 def _resolve_app_version() -> str:
     configured = (getattr(settings, "APP_VERSION", "") or "").strip()
     if configured:
+        parts = configured.split(".")
+        if len(parts) == 3 and parts[2] == "0" and all(part.isdigit() for part in parts):
+            return ".".join(parts[:2])
         return configured
     try:
         tag = subprocess.check_output(
@@ -72,6 +75,7 @@ def club_info(request):
     )
     active_social_club = resolve_active_social_club(request)
     active_federal_state = resolve_active_federal_state(request)
+    active_federal_state_label = dict(SocialClub.FEDERAL_STATE_CHOICES).get(active_federal_state, "")
     try:
         if (
             getattr(user, "is_authenticated", False)
@@ -105,6 +109,7 @@ def club_info(request):
         "pending_member_limited_access": pending_member_limited_access,
         "active_social_club": active_social_club,
         "active_federal_state": active_federal_state,
+        "active_federal_state_label": active_federal_state_label,
         "federal_state_options": SocialClub.FEDERAL_STATE_CHOICES,
         "social_club_switch_options": social_club_options,
         "show_social_club_switcher": show_social_club_switcher,

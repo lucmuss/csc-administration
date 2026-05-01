@@ -1,0 +1,43 @@
+{% extends 'base.html' %}
+{% block title %}Website-Einstellungen{% endblock %}
+{% block content %}
+  <section class="auth-layout">
+    <div class="auth-copy panel">
+      <p class="eyebrow">Website-Einstellungen</p>
+      <h1>Bundesland und Social Club jederzeit aendern.</h1>
+      <p class="lede">
+        Diese Auswahl steuert oeffentliche Inhalte wie Dokumente, Impressum und Datenschutz fuer deinen Kontext.
+      </p>
+    </div>
+    <div class="auth-card panel">
+      <div class="panel__header">
+        <div>
+          <p class="panel__eyebrow">Auswahl</p>
+          <h2>Kontext speichern</h2>
+        </div>
+      </div>
+      <form method="post" action="{% url 'core:social_club_switch' %}" class="form-stack">
+        {% csrf_token %}
+        <input type="hidden" name="next" value="{% url 'core:public_preferences' %}">
+        <div class="field">
+          <label for="preferences-state">Bundesland</label>
+          <select id="preferences-state" name="federal_state" class="form-input form-select">
+            <option value="">Bundesland auswaehlen</option>
+            {% for code, label in federal_state_options %}
+              <option value="{{ code }}" {% if active_federal_state == code %}selected{% endif %}>{{ label }}</option>
+            {% endfor %}
+          </select>
+        </div>
+        <div class="field">
+          <label for="preferences-club">Social Club</label>
+          <select id="preferences-club" name="social_club_id" class="form-input form-select">
+            {% for club in club_options %}
+              <option value="{{ club.id }}" {% if active_social_club and active_social_club.id == club.id %}selected{% endif %}>{{ club.name }} ({{ club.city }})</option>
+            {% endfor %}
+          </select>
+        </div>
+        <button type="submit" class="btn-primary btn-block">Auswahl speichern</button>
+      </form>
+    </div>
+  </section>
+{% endblock %}

@@ -55,6 +55,7 @@ class SocialClub(models.Model):
     postal_code = models.CharField(max_length=10)
     city = models.CharField(max_length=120)
     federal_state = models.CharField(max_length=2, choices=FEDERAL_STATE_CHOICES, blank=True)
+    minimum_age = models.PositiveSmallIntegerField(default=21)
     max_verified_members = models.PositiveIntegerField(default=500)
     admission_fee = models.DecimalField(max_digits=8, decimal_places=2, default=Decimal("0.00"))
     monthly_membership_fee = models.DecimalField(max_digits=8, decimal_places=2, default=Decimal("24.00"))

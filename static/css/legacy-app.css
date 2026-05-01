@@ -430,13 +430,14 @@ hr {
 
 .mobile-toggle {
   display: none;
+  flex-direction: column;
   align-items: center;
   justify-content: center;
   width: 3rem;
   height: 3rem;
   border: 1px solid var(--line);
   border-radius: 999px;
-  background: rgba(255, 255, 255, 0.96);
+  background: #fff;
 }
 
 .mobile-toggle__bar {
@@ -908,6 +909,23 @@ hr {
   gap: 0.55rem;
 }
 
+.feature-list__item {
+  align-items: flex-start;
+}
+
+.feature-list__title {
+  margin: 0 0 0.3rem;
+  font-size: 1rem;
+  font-weight: 700;
+  line-height: 1.25;
+}
+
+.feature-list__text {
+  margin: 0;
+  color: var(--text-muted);
+  line-height: 1.4;
+}
+
 .detail-list {
   display: grid;
   gap: 0.8rem;
@@ -1317,6 +1335,27 @@ select.form-input {
   margin-bottom: 0.55rem;
 }
 
+.privacy-panel {
+  line-height: 1.45;
+}
+
+.privacy-panel h2 {
+  margin-top: 1.45rem;
+  margin-bottom: 0.55rem;
+}
+
+.privacy-panel p {
+  margin-bottom: 0.7rem;
+}
+
+.privacy-panel ul {
+  margin-bottom: 0.85rem;
+}
+
+.privacy-panel li {
+  margin-bottom: 0.4rem;
+}
+
 .meter {
   width: 100%;
   height: 0.6rem;
@@ -1706,9 +1745,9 @@ select.form-input {
     flex-direction: column;
     align-items: stretch;
     justify-content: flex-start;
-    border: 1px solid rgba(255, 255, 255, 0.72);
+    border: 1px solid var(--line);
     border-radius: var(--radius-lg);
-    background: rgba(255, 255, 255, 0.94);
+    background: #fff;
     box-shadow: var(--shadow-lg);
     padding: 0.7rem;
   }

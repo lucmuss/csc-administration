@@ -119,6 +119,25 @@ class MemberRegistrationForm(forms.Form):
     birth_date = forms.DateField(widget=forms.DateInput(attrs={"type": "date"}))
     password = forms.CharField(widget=forms.PasswordInput)
 
+    def _resolve_minimum_age(self) -> int:
+        default_age = int(getattr(settings, "MEMBER_MINIMUM_AGE", 21))
+        selected_club = None
+        if self.is_bound and "social_club" in self.fields:
+            bound_club = str(self.data.get("social_club") or "").strip()
+            if bound_club:
+                selected_club = self.fields["social_club"].queryset.filter(pk=bound_club).first()
+        elif self.request is not None:
+            selected_club = resolve_active_social_club(self.request)
+        if not selected_club and "social_club" in self.fields:
+            initial_club = self.initial.get("social_club")
+            if hasattr(initial_club, "minimum_age"):
+                selected_club = initial_club
+            elif initial_club:
+                selected_club = self.fields["social_club"].queryset.filter(pk=initial_club).first()
+        if selected_club and getattr(selected_club, "minimum_age", None):
+            return int(selected_club.minimum_age)
+        return default_age
+
     def __init__(self, *args, federal_state: str = "", request=None, **kwargs):
         super().__init__(*args, **kwargs)
         self.request = request
@@ -145,7 +164,8 @@ class MemberRegistrationForm(forms.Form):
         self.fields["first_name"].widget.attrs.setdefault("autocomplete", "given-name")
         self.fields["last_name"].widget.attrs.setdefault("autocomplete", "family-name")
         self.fields["birth_date"].widget.attrs.setdefault("autocomplete", "bday")
-        minimum_age = getattr(settings, "MEMBER_MINIMUM_AGE", 21)
+        minimum_age = self._resolve_minimum_age()
+        self.fields["birth_date"].help_text = f"Mindestens {minimum_age} Jahre erforderlich."
         max_birth_date = timezone.localdate() - timedelta(days=minimum_age * 365)
         self.fields["birth_date"].widget.attrs.setdefault("min", "1920-01-01")
         self.fields["birth_date"].widget.attrs.setdefault("max", max_birth_date.isoformat())
@@ -171,7 +191,7 @@ class MemberRegistrationForm(forms.Form):
         age = today.year - birth_date.year
         if (today.month, today.day) < (birth_date.month, birth_date.day):
             age -= 1
-        minimum_age = getattr(settings, "MEMBER_MINIMUM_AGE", 21)
+        minimum_age = self._resolve_minimum_age()
         if age < minimum_age:
             raise forms.ValidationError(f"Mindestens {minimum_age} Jahre erforderlich")
         return birth_date

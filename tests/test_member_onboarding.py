@@ -369,6 +369,8 @@ def test_registration_respects_configured_minimum_age():
             is_active=True,
             is_approved=True,
         )
+    club.minimum_age = 18
+    club.save(update_fields=["minimum_age", "updated_at"])
     form = MemberRegistrationForm(
         data={
             "first_name": "Erika",

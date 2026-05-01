@@ -5,6 +5,7 @@ from django.core.files.uploadedfile import SimpleUploadedFile
 from django.urls import reverse
 
 from apps.accounts.models import User
+from apps.core.club import ACTIVE_FEDERAL_STATE_SESSION_KEY
 from apps.core.models import PublicDocument, SocialClub, SocialClubOpeningHour, SocialClubReview
 from apps.inventory.models import Strain
 from apps.members.models import Profile
@@ -127,3 +128,93 @@ def test_public_social_club_list_supports_average_price_filter(client):
     assert response.status_code == 200
     assert reverse("core:social_club_public_detail", args=[high.slug]) in html
     assert reverse("core:social_club_public_detail", args=[low.slug]) not in html
+
+
+@pytest.mark.django_db
+def test_public_social_club_list_shows_contact_and_capacity_details(client):
+    club = SocialClub.objects.create(
+        name="CSC Liste Leipzig",
+        email="liste@example.com",
+        street_address="Mannheimer Strasse 132",
+        postal_code="04209",
+        city="Leipzig",
+        federal_state=SocialClub.BUNDESLAND_SN,
+        phone="+49111",
+        website="https://club-leipzig.example.com",
+        max_verified_members=500,
+        is_active=True,
+        is_approved=True,
+    )
+    member = User.objects.create_user(
+        email="verified-list@example.com",
+        password="StrongPass123!",
+        first_name="Veri",
+        last_name="Fied",
+        role=User.ROLE_MEMBER,
+        social_club=club,
+    )
+    Profile.objects.create(
+        user=member,
+        birth_date=date(1990, 1, 1),
+        status=Profile.STATUS_ACTIVE,
+        is_verified=True,
+        member_number=880001,
+        monthly_counter_key="2026-05",
+    )
+    Strain.objects.create(
+        name="Blue Dream",
+        social_club=club,
+        thc=21,
+        cbd=1,
+        price=9.9,
+        stock=100,
+        is_active=True,
+    )
+
+    response = client.get(reverse("core:social_club_public_list"))
+    html = response.content.decode("utf-8")
+
+    assert response.status_code == 200
+    assert "Mannheimer Strasse 132, 04209 Leipzig" in html
+    assert "mailto:liste@example.com" in html
+    assert "https://club-leipzig.example.com" in html
+    assert "Verifiziert:" in html
+    assert "Sorten im Shop:" in html
+
+
+@pytest.mark.django_db
+def test_public_social_club_list_explicit_empty_state_does_not_use_saved_state(client):
+    saxony = SocialClub.objects.create(
+        name="CSC Leipzig Sued",
+        email="sn@example.com",
+        street_address="Mannheimer Str. 132",
+        postal_code="04209",
+        city="Leipzig",
+        federal_state="SN",
+        phone="+49111",
+        is_active=True,
+        is_approved=True,
+    )
+    bavaria = SocialClub.objects.create(
+        name="CSC Muenchen West",
+        email="by@example.com",
+        street_address="Teststr. 1",
+        postal_code="80331",
+        city="Muenchen",
+        federal_state="BY",
+        phone="+49222",
+        is_active=True,
+        is_approved=True,
+    )
+    session = client.session
+    session[ACTIVE_FEDERAL_STATE_SESSION_KEY] = "BW"
+    session.save()
+
+    response = client.get(
+        reverse("core:social_club_public_list"),
+        {"federal_state": "", "q": "", "price_min": "", "price_max": ""},
+    )
+    html = response.content.decode("utf-8")
+    assert response.status_code == 200
+    assert reverse("core:social_club_public_detail", args=[saxony.slug]) in html
+    assert reverse("core:social_club_public_detail", args=[bavaria.slug]) in html

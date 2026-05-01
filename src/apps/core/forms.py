@@ -1,5 +1,10 @@
 from django import forms
+from django.conf import settings
 from django.contrib.auth.password_validation import validate_password
+from django.core.validators import URLValidator
+from django.core.exceptions import ValidationError
+import re
+from urllib.request import Request, urlopen
 
 from .models import ClubConfiguration, PublicDocument, SocialClub, SocialClubOpeningHour, SocialClubReview
 
@@ -124,16 +129,94 @@ class ClubConfigurationForm(forms.ModelForm):
 
 
 class SocialClubRegistrationForm(forms.ModelForm):
-    street_address_number = forms.CharField(max_length=20, required=False, label="Street Address Number")
+    street_address_number = forms.CharField(max_length=20, required=False, label="Hausnummer")
 
     class Meta:
         model = SocialClub
-        fields = ["name", "email", "phone", "street_address", "street_address_number", "postal_code", "city", "federal_state", "website"]
+        fields = [
+            "name",
+            "email",
+            "phone",
+            "street_address",
+            "street_address_number",
+            "postal_code",
+            "city",
+            "federal_state",
+            "minimum_age",
+            "website",
+        ]
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         for field in self.fields.values():
             field.widget.attrs["class"] = (field.widget.attrs.get("class", "") + " form-input").strip()
+        self.fields["federal_state"].required = True
+        self.fields["federal_state"].widget.attrs["required"] = True
+        self.fields["city"].help_text = "Mindestens 3 Buchstaben."
+        self.fields["postal_code"].help_text = "PLZ im DACH-Raum (4-5 Ziffern)."
+        self.fields["street_address_number"].help_text = "z. B. 132, 132B, 23."
+
+    def clean_name(self):
+        name = (self.cleaned_data.get("name") or "").strip()
+        if len(name) < 3:
+            raise forms.ValidationError("Der Clubname muss mindestens 3 Zeichen enthalten.")
+        return name
+
+    def clean_phone(self):
+        phone = (self.cleaned_data.get("phone") or "").strip()
+        if not re.fullmatch(r"^\+?[\d\s()\-\/]{6,25}$", phone):
+            raise forms.ValidationError("Bitte gib eine gueltige Telefonnummer ein.")
+        digits = re.sub(r"\D", "", phone)
+        if len(digits) < 6:
+            raise forms.ValidationError("Die Telefonnummer ist zu kurz.")
+        return phone
+
+    def clean_street_address_number(self):
+        number = (self.cleaned_data.get("street_address_number") or "").strip()
+        if number and not re.fullmatch(r"^\d{1,5}[A-Za-z]?$", number):
+            raise forms.ValidationError("Die Hausnummer muss z. B. 23 oder 132B sein.")
+        return number
+
+    def clean_postal_code(self):
+        postal_code = (self.cleaned_data.get("postal_code") or "").strip()
+        if not re.fullmatch(r"^\d{4,5}$", postal_code):
+            raise forms.ValidationError("Bitte gib eine gueltige Postleitzahl (4-5 Ziffern) ein.")
+        return postal_code
+
+    def clean_city(self):
+        city = (self.cleaned_data.get("city") or "").strip()
+        if len(city) < 3:
+            raise forms.ValidationError("Der Ortsname muss mindestens 3 Buchstaben enthalten.")
+        if not re.fullmatch(r"^[A-Za-zÄÖÜäöüß\-\s'.]{3,}$", city):
+            raise forms.ValidationError("Bitte gib einen gueltigen Ortsnamen ein.")
+        return city
+
+    def clean_federal_state(self):
+        federal_state = (self.cleaned_data.get("federal_state") or "").strip()
+        valid_states = {code for code, _label in SocialClub.FEDERAL_STATE_CHOICES}
+        if federal_state not in valid_states:
+            raise forms.ValidationError("Bitte waehle ein gueltiges Bundesland aus.")
+        return federal_state
+
+    def clean_website(self):
+        website = (self.cleaned_data.get("website") or "").strip()
+        if not website:
+            return website
+
+        URLValidator(schemes=["http", "https"])(website)
+
+        if getattr(settings, "CLUB_REGISTRATION_VALIDATE_WEBSITE_REACHABILITY", True):
+            try:
+                request = Request(website, method="HEAD", headers={"User-Agent": "CSC-Club-Validation/1.0"})
+                with urlopen(request, timeout=4) as response:
+                    status_code = getattr(response, "status", 200)
+                if status_code >= 400:
+                    raise forms.ValidationError("Die Website ist aktuell nicht erreichbar (HTTP-Fehler).")
+            except ValidationError:
+                raise
+            except Exception:
+                raise forms.ValidationError("Die Website konnte nicht erreicht werden. Bitte pruefe die URL.")
+        return website
 
     def clean(self):
         cleaned_data = super().clean()
@@ -147,6 +230,8 @@ class SocialClubRegistrationForm(forms.ModelForm):
 
 
 class SocialClubSettingsForm(forms.ModelForm):
+    street_address_number = forms.CharField(max_length=20, required=False, label="Hausnummer")
+
     class Meta:
         model = SocialClub
         fields = [
@@ -169,9 +254,11 @@ class SocialClubSettingsForm(forms.ModelForm):
             "phone",
             "website",
             "street_address",
+            "street_address_number",
             "postal_code",
             "city",
             "federal_state",
+            "minimum_age",
             "max_verified_members",
             "admission_fee",
             "monthly_membership_fee",
@@ -210,9 +297,22 @@ class SocialClubSettingsForm(forms.ModelForm):
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
+        if self.instance and self.instance.pk:
+            address = (self.instance.street_address or "").strip()
+            match = re.match(r"^(?P<street>.*\D)\s+(?P<number>\d+[A-Za-z0-9\-\/]*)$", address)
+            if match:
+                self.initial["street_address"] = match.group("street").strip()
+                self.initial["street_address_number"] = match.group("number").strip()
         for field in self.fields.values():
             suffix = " form-input form-select" if isinstance(field.widget, forms.Select) else " form-input"
             field.widget.attrs["class"] = (field.widget.attrs.get("class", "") + suffix).strip()
+
+    def clean(self):
+        cleaned_data = super().clean()
+        street = (cleaned_data.get("street_address") or "").strip()
+        number = (cleaned_data.get("street_address_number") or "").strip()
+        cleaned_data["street_address"] = f"{street} {number}".strip() if street else street
+        return cleaned_data
 
 
 class SocialClubAdminRegistrationForm(forms.Form):

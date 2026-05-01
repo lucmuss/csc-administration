@@ -106,6 +106,8 @@ class EmailLoginView(LoginView):
                     self.request,
                     "Aktuell sind keine freigegebenen Social Clubs in der Auswahl. Bitte zuerst ein anderes Bundesland waehlen oder den Support kontaktieren.",
                 )
+        context["total_members"] = User.objects.filter(role=User.ROLE_MEMBER).count()
+        context["active_social_club_count"] = SocialClub.objects.filter(is_active=True, is_approved=True).count()
         return context
 
     def form_valid(self, form):

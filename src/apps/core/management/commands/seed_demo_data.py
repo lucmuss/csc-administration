@@ -103,6 +103,13 @@ class Command(BaseCommand):
             return json.load(handle)
 
     def _reset(self):
+        self._safe_delete(MeetingResolution)
+        self._safe_delete(MeetingAgendaItem)
+        self._safe_delete(BoardTask)
+        self._safe_delete(BoardMeeting)
+        self._safe_delete(EmailGroupMember)
+        self._safe_delete(EmailTemplate)
+        self._safe_delete(EmailGroup)
         self._safe_delete(OrderItem)
         self._safe_delete(PreventionInfo)
         self._safe_delete(Payment)

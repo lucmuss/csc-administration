@@ -82,7 +82,6 @@
             {% endif %}
           {% else %}
             <a href="{% url 'core:social_club_public_list' %}" class="nav-link{% if '/social-clubs/' in request.path and '/social-clubs/register/' not in request.path %} is-active{% endif %}">Social Clubs</a>
-            <a href="{% url 'core:social_club_regional_list' %}" class="nav-link{% if '/social-clubs/regionen/' in request.path %} is-active{% endif %}">Regionale Clubs</a>
             <a href="{% url 'core:pricing' %}" class="nav-link{% if '/pricing/' in request.path %} is-active{% endif %}">Pricing</a>
             <a href="{% url 'accounts:login' %}" class="nav-link{% if '/accounts/login/' in request.path %} is-active{% endif %}">Anmelden</a>
             <a href="{% url 'members:register' %}" class="nav-link{% if '/members/register/' in request.path %} is-active{% endif %}">Registrieren</a>
@@ -135,7 +134,7 @@
       </div>
     </header>
 
-    {% if social_club_switch_options %}
+    {% if show_social_club_switcher %}
       <section class="container-shell" style="padding-top:.5rem;">
         <form method="post" action="{% url 'core:social_club_switch' %}" class="panel" style="padding:.75rem; margin:0;">
           {% csrf_token %}
@@ -146,16 +145,20 @@
               <div class="table-meta">Auswahl steuert Impressum, Datenschutz und oeffentliche Dokumente.</div>
             </div>
             <div class="inline-actions" style="gap:.5rem;">
-              <select name="social_club_id" class="form-input form-select" {% if user.is_authenticated and not user.is_superuser and user.social_club_id %}disabled{% endif %}>
+              <label for="social-club-switch" class="sr-only">Aktiven Social Club auswaehlen</label>
+              <select id="social-club-switch" name="social_club_id" class="form-input form-select" {% if user.is_authenticated and not user.is_superuser and user.social_club_id %}disabled{% endif %}>
                 {% for club in social_club_switch_options %}
                   <option value="{{ club.id }}" {% if active_social_club and active_social_club.id == club.id %}selected{% endif %}>{{ club.name }} ({{ club.city }})</option>
                 {% endfor %}
               </select>
-              {% if user.is_authenticated and not user.is_superuser and user.social_club_id %}
-                <button type="button" class="btn-ghost" disabled>Fest zugewiesen</button>
-              {% else %}
-                <button type="submit" class="btn-primary">Auswahl speichern</button>
-              {% endif %}
+              <label for="federal-state-switch" class="sr-only">Aktives Bundesland auswaehlen</label>
+              <select id="federal-state-switch" name="federal_state" class="form-input form-select">
+                <option value="">Bundesland auswaehlen</option>
+                {% for code, label in federal_state_options %}
+                  <option value="{{ code }}" {% if active_federal_state == code %}selected{% endif %}>{{ label }}</option>
+                {% endfor %}
+              </select>
+              <button type="submit" class="btn-primary">Auswahl speichern</button>
             </div>
           </div>
         </form>
@@ -163,8 +166,8 @@
     {% endif %}
 
     <main id="main-content" class="main-shell container-shell" tabindex="-1">
-      {% if messages %}
-        <section class="message-stack" aria-live="polite">
+      <section class="message-stack" aria-live="polite">
+        {% if messages %}
           {% for message in messages %}
             <article class="flash flash--{{ message.tags|default:'info' }}">
               <strong>
@@ -183,8 +186,8 @@
               <span>{{ message }}</span>
             </article>
           {% endfor %}
-        </section>
-      {% endif %}
+        {% endif %}
+      </section>
 
       {% block content %}{% endblock %}
     </main>

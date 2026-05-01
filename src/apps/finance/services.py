@@ -624,6 +624,8 @@ def schedule_sepa_payment(*, invoice: Invoice, scheduled_for: date | None = None
     mandate = invoice.profile.sepa_mandate
     if not mandate:
         mandate = SepaMandate.objects.filter(active_for_profile__id=invoice.profile_id, is_active=True).first()
+    if not mandate:
+        mandate = invoice.profile.sepa_mandates.filter(is_active=True).order_by("-created_at").first()
     if not mandate or not mandate.is_active:
         return None
 
@@ -764,7 +766,8 @@ def _maybe_lock_member(invoice: Invoice, level: int) -> None:
         return
     profile = invoice.profile
     profile.is_locked_for_orders = True
-    profile.save(update_fields=["is_locked_for_orders", "updated_at"])
+    profile.status = Profile.STATUS_SUSPENDED
+    profile.save(update_fields=["is_locked_for_orders", "status", "updated_at"])
     invoice.blocked_member = True
 
 
@@ -929,7 +932,7 @@ def _extract_uploaded_invoice_text(uploaded_invoice: UploadedInvoice) -> str:
 def _best_invoice_reference(text: str) -> str:
     patterns = [
         r"\b(?:rechnungsnummer|rechnung\s*nr\.?|invoice\s*no\.?|beleg\s*nr\.?|ref\.?)[^A-Z0-9]{0,12}([A-Z0-9][A-Z0-9\-/]{2,})",
-        r"\b([A-Z]{1,4}-\d{3,})\b",
+        r"\b([A-Z]{1,4}-\d{3,}(?:-\d+)*)\b",
         r"\b(\d{4,})\b",
     ]
     for pattern in patterns:

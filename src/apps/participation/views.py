@@ -2,6 +2,7 @@ from django.contrib import messages
 from django.contrib.auth.decorators import login_required
 from django.db.models import Sum
 from django.shortcuts import get_object_or_404, redirect, render
+from django.utils import timezone
 
 from apps.accounts.models import User
 from apps.core.authz import staff_or_board_required
@@ -37,7 +38,7 @@ def dashboard_view(request):
     total_hours = profile.work_hours.filter(approved=True).aggregate(total=Sum("hours"))["total"] or 0
     pending_hours = profile.work_hours.filter(approved=False).aggregate(total=Sum("hours"))["total"] or 0
     entries = profile.work_hours.select_related("shift")[:20]
-    upcoming_shifts = Shift.objects.order_by("starts_at")[:8]
+    upcoming_shifts = Shift.objects.filter(starts_at__gte=timezone.now()).order_by("starts_at")[:8]
     return render(
         request,
         "participation/dashboard.html",

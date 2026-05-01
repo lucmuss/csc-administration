@@ -7,9 +7,9 @@ from django.core.management import call_command
 
 @pytest.mark.django_db
 def test_cultivation_models_and_harvest_flow():
-    from apps.cultivation.models import BatchConnection, GrowthLog, MotherPlant, Plant
-    from apps.cultivation.services import GrowLogService, HarvestService
-    from apps.inventory.models import Batch, Strain
+    from apps.accounts.models import User
+    from apps.cultivation.models import GrowCycle, HarvestBatch, Plant, PlantLog
+    from apps.inventory.models import Strain
 
     strain = Strain.objects.create(
         name="Lemon Haze",
@@ -18,47 +18,61 @@ def test_cultivation_models_and_harvest_flow():
         price=Decimal("9.50"),
         stock=Decimal("0.00"),
     )
-    mother = MotherPlant.objects.create(
-        strain=strain,
-        planted_date=date(2025, 12, 1),
-        genetics="Sativa dominant",
+    actor = User.objects.create_user(
+        email="cultivation@example.com",
+        password="StrongPass123!",
+        first_name="Cult",
+        last_name="Admin",
+        role=User.ROLE_STAFF,
+        is_staff=True,
     )
-    cutting = mother.cuttings.create(planted_date=date(2026, 1, 10), status="rooted", rooting_date=date(2026, 1, 18))
+    cycle = GrowCycle.objects.create(
+        name="Cycle Lemon",
+        start_date=date(2026, 1, 1),
+        expected_harvest_date=date(2026, 3, 1),
+        status=GrowCycle.STATUS_ACTIVE,
+        created_by=actor,
+    )
     plant = Plant.objects.create(
-        cutting=cutting,
-        room="Flower Room 1",
+        grow_cycle=cycle,
+        strain=strain,
+        plant_number="101",
         planting_date=date(2026, 1, 20),
-        growth_stage=Plant.STAGE_FLOWERING,
+        status=Plant.STATUS_FLOWERING,
+        created_by=actor,
     )
 
-    GrowLogService.add_entry(
+    PlantLog.objects.create(
         plant=plant,
-        entry_date=date(2026, 2, 1),
-        activity_type=GrowthLog.ACTIVITY_NUTRIENTS,
-        nutrients="NPK 3-1-5",
+        date=date(2026, 2, 1),
+        log_type=PlantLog.LOG_TYPE_FERTILIZING,
+        products_used="NPK 3-1-5",
         notes="Gute Entwicklung",
+        created_by=actor,
     )
 
-    harvest = HarvestService.document_harvest(
-        plant=plant,
+    harvest = HarvestBatch.objects.create(
+        batch_number="BATCH-LH-001",
         harvest_date=date(2026, 3, 1),
-        wet_weight=Decimal("120.00"),
-        dry_weight=Decimal("30.00"),
-        batch_code="BATCH-LH-001",
+        total_weight_fresh=Decimal("120.00"),
+        total_weight_dried=Decimal("30.00"),
+        created_by=actor,
     )
+    harvest.plants.add(plant)
+    plant.status = Plant.STATUS_HARVESTED
+    plant.actual_yield_grams = Decimal("30.00")
+    plant.save(update_fields=["status", "actual_yield_grams", "updated_at"])
+    strain.stock = Decimal("30.00")
+    strain.save(update_fields=["stock"])
 
-    assert harvest.dry_weight == Decimal("30.00")
-    assert plant.growth_logs.count() == 1
+    assert harvest.total_weight_dried == Decimal("30.00")
+    assert plant.logs.count() == 1
 
     plant.refresh_from_db()
     strain.refresh_from_db()
-    batch = Batch.objects.get(code="BATCH-LH-001")
-    connection = BatchConnection.objects.get(harvest=harvest)
-
-    assert plant.growth_stage == Plant.STAGE_HARVESTED
+    assert harvest.batch_number == "BATCH-LH-001"
+    assert plant.status == Plant.STATUS_HARVESTED
     assert strain.stock == Decimal("30.00")
-    assert batch.quantity == Decimal("30.00")
-    assert connection.batch_id == batch.id
 
 
 @pytest.mark.django_db

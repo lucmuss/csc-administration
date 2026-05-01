@@ -1,0 +1,14 @@
+{% extends "base.html" %}
+{% load l10n %}
+{% block title %}Charge {{ batch.batch_number }}{% endblock %}
+{% block content %}
+<section class="page-shell">
+  <h1>Charge {{ batch.batch_number }}</h1>
+  <ul class="detail-list">
+    <li><span>Sorte</span><strong>{{ batch.strain.name }}</strong></li>
+    <li><span>Verfuegbar</span><strong>{{ batch.available_grams }} g</strong></li>
+    <li><span>THC tatsaechlich</span><strong>{{ batch.thc_content_actual|unlocalize }}</strong></li>
+    <li><span>Status</span><strong>{{ batch.status }}</strong></li>
+  </ul>
+</section>
+{% endblock %}

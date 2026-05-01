@@ -26,7 +26,7 @@ class WorkHoursEntryForm(forms.ModelForm):
         self.fields["hours"].min_value = Decimal("0.50")
         self.fields["hours"].widget.attrs.update({"min": "0.5", "step": "0.5", "inputmode": "decimal"})
         self.fields["hours"].initial = Decimal("1.0")
-        self.fields["shift"].queryset = Shift.objects.order_by("starts_at")
+        self.fields["shift"].queryset = Shift.objects.filter(starts_at__gte=timezone.now()).order_by("starts_at")
         self.fields["shift"].required = False
         self.fields["shift"].empty_label = "Ohne Schichtzuordnung"
         for field in self.fields.values():

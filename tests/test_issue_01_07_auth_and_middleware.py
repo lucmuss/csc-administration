@@ -2,6 +2,7 @@ import pytest
 from django.contrib.messages import get_messages
 from django.urls import reverse
 from django.utils import timezone
+from django.test import override_settings
 
 from apps.accounts.views import _client_ip, _login_limit_key
 from apps.members.models import Profile
@@ -86,6 +87,7 @@ def test_login_limit_key_normalizes_username():
 
 
 @pytest.mark.django_db
+@override_settings(ENFORCE_ONBOARDING_REDIRECT_IN_TESTS=True)
 def test_middleware_redirects_incomplete_member_to_onboarding(client, member_user):
     member_user.profile.registration_completed_at = None
     member_user.profile.save(update_fields=["registration_completed_at", "updated_at"])

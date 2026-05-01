@@ -8,14 +8,36 @@ from django.utils import timezone
 from apps.inventory.models import Batch, Strain
 
 
+class _OrderCompatManager(models.Manager):
+    @staticmethod
+    def _normalize(kwargs: dict):
+        data = dict(kwargs)
+        member_value = data.get("member")
+        if hasattr(member_value, "user"):
+            data["member"] = member_value.user
+        return data
+
+    def create(self, **kwargs):
+        return super().create(**self._normalize(kwargs))
+
+    def filter(self, *args, **kwargs):
+        return super().filter(*args, **self._normalize(kwargs))
+
+    def get(self, *args, **kwargs):
+        return super().get(*args, **self._normalize(kwargs))
+
+
 class Order(models.Model):
     STATUS_RESERVED = "reserved"
     STATUS_COMPLETED = "completed"
+    STATUS_CONFIRMED = STATUS_COMPLETED
     STATUS_CANCELLED = "cancelled"
+    STATUS_EXPIRED = "expired"
     STATUS_CHOICES = [
         (STATUS_RESERVED, "Reserviert"),
         (STATUS_COMPLETED, "Abgeschlossen"),
         (STATUS_CANCELLED, "Storniert"),
+        (STATUS_EXPIRED, "Abgelaufen"),
     ]
 
     member = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name="orders")
@@ -26,6 +48,7 @@ class Order(models.Model):
     paid_with_balance = models.DecimalField(max_digits=10, decimal_places=2, default=Decimal("0.00"))
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
+    objects = _OrderCompatManager()
 
     class Meta:
         ordering = ["-created_at"]

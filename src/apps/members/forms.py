@@ -6,9 +6,11 @@ from django.conf import settings
 from django.contrib.auth.password_validation import validate_password
 from django.core.exceptions import ValidationError
 from django.core.validators import validate_email
+from django.db.utils import OperationalError, ProgrammingError
 from django.utils import timezone
 
 from apps.accounts.models import User
+from apps.core.club import ACTIVE_SOCIAL_CLUB_COOKIE, ACTIVE_SOCIAL_CLUB_SESSION_KEY, resolve_active_social_club
 from apps.core.models import SocialClub
 from apps.finance.models import SepaMandate
 from apps.messaging.services import sync_member_messaging_preferences
@@ -25,8 +27,12 @@ IBAN_RE = re.compile(r"^[A-Z]{2}[0-9A-Z]{13,32}$")
 
 def _validate_person_name(value: str, label: str) -> str:
     cleaned = " ".join(value.split()).strip()
+    if len(cleaned) < 3:
+        raise forms.ValidationError(f"{label} muss mindestens 3 Zeichen enthalten.")
+    if any(char.isdigit() for char in cleaned):
+        raise forms.ValidationError(f"{label} darf keine Zahlen enthalten.")
     if not NAME_RE.fullmatch(cleaned):
-        raise forms.ValidationError(f"{label} muss mindestens 3 Buchstaben enthalten und darf keine Zahlen enthalten.")
+        raise forms.ValidationError(f"{label} enthaelt unzulaessige Zeichen.")
     return cleaned
 
 
@@ -113,16 +119,36 @@ class MemberRegistrationForm(forms.Form):
     birth_date = forms.DateField(widget=forms.DateInput(attrs={"type": "date"}))
     password = forms.CharField(widget=forms.PasswordInput)
 
-    def __init__(self, *args, federal_state: str = "", **kwargs):
+    def __init__(self, *args, federal_state: str = "", request=None, **kwargs):
         super().__init__(*args, **kwargs)
+        self.request = request
         state_code = (federal_state or "").strip()
         if state_code:
-            self.fields["social_club"].queryset = self.fields["social_club"].queryset.filter(federal_state=state_code)
+            filtered = self.fields["social_club"].queryset.filter(federal_state=state_code)
+            if filtered.exists():
+                self.fields["social_club"].queryset = filtered
+        if request is not None:
+            saved_club_id = request.session.get(ACTIVE_SOCIAL_CLUB_SESSION_KEY) or request.COOKIES.get(ACTIVE_SOCIAL_CLUB_COOKIE)
+            if saved_club_id:
+                self.fields.pop("social_club", None)
+        try:
+            requires_club_choice = "social_club" in self.fields and self.fields["social_club"].queryset.exists()
+        except (RuntimeError, OperationalError, ProgrammingError):
+            requires_club_choice = False
+        if "social_club" in self.fields:
+            self.fields["social_club"].required = requires_club_choice
+            if requires_club_choice:
+                self.fields["social_club"].widget.attrs["required"] = True
         self.fields["email"].widget.attrs.update({"autocomplete": "email", "placeholder": "name@beispiel.de"})
-        self.fields["social_club"].widget.attrs.setdefault("data-search-hint", "z. B. Leipzig")
+        if "social_club" in self.fields:
+            self.fields["social_club"].widget.attrs.setdefault("data-search-hint", "z. B. Leipzig")
         self.fields["first_name"].widget.attrs.setdefault("autocomplete", "given-name")
         self.fields["last_name"].widget.attrs.setdefault("autocomplete", "family-name")
         self.fields["birth_date"].widget.attrs.setdefault("autocomplete", "bday")
+        minimum_age = getattr(settings, "MEMBER_MINIMUM_AGE", 21)
+        max_birth_date = timezone.localdate() - timedelta(days=minimum_age * 365)
+        self.fields["birth_date"].widget.attrs.setdefault("min", "1920-01-01")
+        self.fields["birth_date"].widget.attrs.setdefault("max", max_birth_date.isoformat())
         self.fields["password"].widget.attrs.update({"autocomplete": "new-password", "placeholder": "Passwort"})
         for field in self.fields.values():
             _apply_form_control(field.widget)
@@ -158,6 +184,8 @@ class MemberRegistrationForm(forms.Form):
     def save(self) -> User:
         bootstrap_board = not User.objects.exists()
         selected_club = self.cleaned_data.get("social_club")
+        if not selected_club and self.request is not None:
+            selected_club = resolve_active_social_club(self.request)
         if not selected_club:
             selected_club = SocialClub.objects.filter(is_active=True, is_approved=True).order_by("id").first()
         user = User.objects.create_user(

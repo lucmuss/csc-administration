@@ -4,7 +4,15 @@ from django.db.utils import OperationalError, ProgrammingError
 from functools import lru_cache
 import subprocess
 
-from apps.core.club import get_club_settings, resolve_active_federal_state, resolve_active_social_club
+from apps.core.club import (
+    ACTIVE_FEDERAL_STATE_COOKIE,
+    ACTIVE_FEDERAL_STATE_SESSION_KEY,
+    ACTIVE_SOCIAL_CLUB_COOKIE,
+    ACTIVE_SOCIAL_CLUB_SESSION_KEY,
+    get_club_settings,
+    resolve_active_federal_state,
+    resolve_active_social_club,
+)
 from apps.core.models import SocialClub
 
 
@@ -65,9 +73,33 @@ def club_info(request):
     active_social_club = resolve_active_social_club(request)
     active_federal_state = resolve_active_federal_state(request)
     try:
-        social_club_options = SocialClub.objects.filter(is_active=True, is_approved=True).order_by("name")[:200]
-    except (OperationalError, ProgrammingError):
+        if (
+            getattr(user, "is_authenticated", False)
+            and not getattr(user, "is_superuser", False)
+            and getattr(user, "social_club_id", None)
+        ):
+            social_club_options = list(
+                SocialClub.objects.filter(
+                id=user.social_club_id,
+                is_active=True,
+                is_approved=True,
+            )
+            )
+        else:
+            social_club_options = list(
+                SocialClub.objects.filter(is_active=True, is_approved=True).order_by("name")[:200]
+            )
+    except (RuntimeError, OperationalError, ProgrammingError):
         social_club_options = []
+    has_saved_club = bool(request.session.get(ACTIVE_SOCIAL_CLUB_SESSION_KEY) or request.COOKIES.get(ACTIVE_SOCIAL_CLUB_COOKIE))
+    has_saved_state = bool(request.session.get(ACTIVE_FEDERAL_STATE_SESSION_KEY) or request.COOKIES.get(ACTIVE_FEDERAL_STATE_COOKIE))
+    show_social_club_switcher = bool(
+        social_club_options
+        and (
+            getattr(user, "is_superuser", False)
+            or not (has_saved_club and has_saved_state)
+        )
+    )
     return {
         **get_club_settings(social_club=active_social_club),
         "pending_member_limited_access": pending_member_limited_access,
@@ -75,4 +107,5 @@ def club_info(request):
         "active_federal_state": active_federal_state,
         "federal_state_options": SocialClub.FEDERAL_STATE_CHOICES,
         "social_club_switch_options": social_club_options,
+        "show_social_club_switcher": show_social_club_switcher,
     }

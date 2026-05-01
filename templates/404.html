@@ -1,0 +1,19 @@
+{% extends 'base.html' %}
+{% block title %}Seite nicht gefunden{% endblock %}
+{% block content %}
+  <section class="auth-layout">
+    <article class="auth-card panel">
+      <div class="panel__header">
+        <div>
+          <p class="panel__eyebrow">Fehler 404</p>
+          <h1>Diese Seite wurde nicht gefunden.</h1>
+        </div>
+      </div>
+      <p class="lede">Die aufgerufene URL existiert nicht mehr oder wurde verschoben.</p>
+      <div class="inline-actions">
+        <a href="{% url 'core:dashboard' %}" class="btn-primary">Zum Dashboard</a>
+        <a href="{% url 'orders:shop' %}" class="btn-ghost">Zum Shop</a>
+      </div>
+    </article>
+  </section>
+{% endblock %}

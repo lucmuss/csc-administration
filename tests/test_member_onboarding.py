@@ -9,11 +9,29 @@ from django.utils import timezone
 from apps.members.forms import MemberOnboardingForm, MemberProfileEditForm, MemberRegistrationForm
 
 
+@pytest.fixture(autouse=True)
+def _enforce_onboarding_redirect_settings(settings):
+    settings.ENFORCE_LOGIN_ONBOARDING_REDIRECT_IN_TESTS = True
+    settings.ENFORCE_ONBOARDING_REDIRECT_IN_TESTS = True
+
+
 @pytest.mark.django_db
 def test_registration_creates_incomplete_onboarding_state(client):
     from apps.accounts.models import User
+    from apps.core.models import SocialClub
     from apps.members.models import Profile
 
+    club = SocialClub.objects.create(
+        name="CSC Onboarding Club",
+        email="onboarding-club@example.com",
+        street_address="Testweg 1",
+        postal_code="04109",
+        city="Leipzig",
+        phone="+491700000000",
+        federal_state=SocialClub.BUNDESLAND_SN,
+        is_active=True,
+        is_approved=True,
+    )
     User.objects.create_user(
         email="board@example.com",
         password="StrongPass123!",
@@ -21,6 +39,7 @@ def test_registration_creates_incomplete_onboarding_state(client):
         last_name="Board",
         role=User.ROLE_BOARD,
         is_staff=True,
+        social_club=club,
     )
 
     response = client.post(
@@ -31,6 +50,8 @@ def test_registration_creates_incomplete_onboarding_state(client):
             "email": "erika@example.com",
             "birth_date": "1990-01-01",
             "password": "StrongPass123!",
+            "federal_state": SocialClub.BUNDESLAND_SN,
+            "social_club": club.id,
         },
     )
 
@@ -195,10 +216,11 @@ def test_onboarding_form_saves_profile_and_mandate(client, member_user):
     assert EmailGroupMember.objects.filter(group=marketing_group, member=member_user.profile).exists()
     assert len(mail.outbox) == 1
     assert mail.outbox[0].to == [member_user.email]
-    assert len(mail.outbox[0].attachments) == 4
+    assert len(mail.outbox[0].attachments) == 3
     filenames = {attachment[0] for attachment in mail.outbox[0].attachments}
     assert "Aufnahmeantrag.pdf" in filenames
     assert "SEPA-Lastschriftmandat.pdf" in filenames
+    assert "Mitgliederausweis.pdf" not in filenames
 
 
 @pytest.mark.django_db
@@ -299,6 +321,20 @@ def test_completed_member_can_reach_dashboard(client, member_user):
 
 
 @pytest.mark.django_db
+def test_verified_member_can_download_member_card_pdf(client, member_user):
+    member_user.profile.is_verified = True
+    member_user.profile.member_number = 555001
+    member_user.profile.save(update_fields=["is_verified", "member_number", "updated_at"])
+    client.force_login(member_user)
+
+    response = client.get(reverse("members:member_card_pdf"))
+
+    assert response.status_code == 200
+    assert response["Content-Type"] == "application/pdf"
+    assert "Mitgliederausweis.pdf" in response["Content-Disposition"]
+
+
+@pytest.mark.django_db
 def test_registration_and_onboarding_forms_use_styled_inputs(member_user):
     registration_form = MemberRegistrationForm()
     onboarding_form = MemberOnboardingForm(profile=member_user.profile)
@@ -306,6 +342,9 @@ def test_registration_and_onboarding_forms_use_styled_inputs(member_user):
 
     assert "form-input" in registration_form.fields["email"].widget.attrs["class"]
     assert registration_form.fields["password"].widget.attrs["autocomplete"] == "new-password"
+    assert registration_form.fields["birth_date"].widget.input_type == "date"
+    assert registration_form.fields["birth_date"].widget.attrs["min"] == "1920-01-01"
+    assert "max" in registration_form.fields["birth_date"].widget.attrs
     assert "form-input" in onboarding_form.fields["street_address"].widget.attrs["class"]
     assert "form-input" in onboarding_form.fields["application_notes"].widget.attrs["class"]
     assert "form-checkbox" in onboarding_form.fields["privacy_accepted"].widget.attrs["class"]
@@ -315,6 +354,21 @@ def test_registration_and_onboarding_forms_use_styled_inputs(member_user):
 @pytest.mark.django_db
 @override_settings(MEMBER_MINIMUM_AGE=18)
 def test_registration_respects_configured_minimum_age():
+    from apps.core.models import SocialClub
+
+    club = SocialClub.objects.filter(is_active=True, is_approved=True).order_by("id").first()
+    if club is None:
+        club = SocialClub.objects.create(
+            name="CSC Age Test",
+            email="age-test@example.com",
+            street_address="Testweg 1",
+            postal_code="04109",
+            city="Leipzig",
+            phone="+491700000000",
+            federal_state=SocialClub.BUNDESLAND_SN,
+            is_active=True,
+            is_approved=True,
+        )
     form = MemberRegistrationForm(
         data={
             "first_name": "Erika",
@@ -322,6 +376,7 @@ def test_registration_respects_configured_minimum_age():
             "email": "erika2@example.com",
             "birth_date": "2008-01-01",
             "password": "StrongPass123!",
+            "social_club": club.id,
         }
     )
 
@@ -382,11 +437,13 @@ def test_profile_edit_updates_member_and_messaging_preferences(client, member_us
             "bank_name": "GLS",
             "account_holder_name": "Mila Mitglied",
             "iban": "DE12500105170648489890",
-            "bic": "GENODEM1GLS",
-            "optional_newsletter_opt_in": "False",
-            "application_notes": "Bitte auf neue Mailadresse umstellen.",
-        },
-    )
+                "bic": "GENODEM1GLS",
+                "optional_newsletter_opt_in": "False",
+                "preferred_language": "de",
+                "payment_method_preference": "sepa",
+                "application_notes": "Bitte auf neue Mailadresse umstellen.",
+            },
+        )
 
     member_user.refresh_from_db()
     member_user.profile.refresh_from_db()

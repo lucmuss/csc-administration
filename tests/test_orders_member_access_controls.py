@@ -5,6 +5,7 @@ from decimal import Decimal
 
 import pytest
 from django.contrib.auth import get_user_model
+from django.test import override_settings
 from django.urls import reverse
 from django.utils import timezone
 
@@ -34,6 +35,7 @@ def pending_member_user(db):
 
 
 @pytest.mark.django_db
+@override_settings(ENFORCE_ONBOARDING_REDIRECT_IN_TESTS=True)
 def test_unverified_member_is_redirected_from_shop(client, pending_member_user):
     client.force_login(pending_member_user)
     response = client.get(reverse("orders:shop"))

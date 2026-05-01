@@ -4,6 +4,8 @@ from django.test import override_settings
 from django.urls import reverse
 
 from apps.accounts.forms import EmailAuthenticationForm, StyledPasswordResetForm
+from apps.core.club import ACTIVE_FEDERAL_STATE_SESSION_KEY
+from apps.core.models import SocialClub
 
 
 @pytest.mark.django_db
@@ -86,6 +88,29 @@ def test_login_template_links_to_password_reset(client):
     assert reverse("core:documents") in html
     assert reverse("core:imprint") in html
     assert reverse("core:health") not in html
+
+
+@pytest.mark.django_db
+def test_login_form_keeps_state_selector_visible_when_only_state_is_saved(rf):
+    SocialClub.objects.create(
+        name="CSC Sachsen",
+        email="sachsen@example.com",
+        street_address="A",
+        postal_code="04109",
+        city="Leipzig",
+        phone="+49111",
+        federal_state=SocialClub.BUNDESLAND_SN,
+        is_approved=True,
+        is_active=True,
+    )
+    request = rf.get(reverse("accounts:login"))
+    request.session = {ACTIVE_FEDERAL_STATE_SESSION_KEY: SocialClub.BUNDESLAND_BW}
+
+    form = EmailAuthenticationForm(request=request)
+
+    assert "federal_state" in form.fields
+    assert "social_club" in form.fields
+    assert form.fields["social_club"].queryset.filter(name="CSC Sachsen").exists()
 
 
 @pytest.mark.django_db

@@ -11,7 +11,7 @@ from apps.compliance.services import (
     ensure_prevention_info_for_first_dispense,
 )
 from apps.finance.services import apply_monthly_membership_credits, available_balance, create_invoice_for_order, settle_order_with_balance
-from apps.inventory.models import Batch, Strain
+from apps.inventory.models import Batch, InventoryTransaction, Strain
 from apps.members.models import Profile
 
 from .models import Order, OrderItem
@@ -20,7 +20,16 @@ from .models import Order, OrderItem
 @dataclass
 class CartLine:
     strain_id: int
-    quantity: Decimal
+    quantity: Decimal | None = None
+    grams: Decimal | None = None
+
+    def __post_init__(self) -> None:
+        # Backward compatibility for legacy callers that still pass `grams`.
+        if self.quantity is None and self.grams is not None:
+            self.quantity = self.grams
+        if self.quantity is None:
+            raise TypeError("CartLine requires either `quantity` or legacy `grams`.")
+        self.quantity = Decimal(self.quantity)
 
 
 @transaction.atomic
@@ -95,7 +104,7 @@ def create_reserved_order(*, user, cart_lines: list[CartLine]) -> Order:
             if strain.is_weight_based
             else None
         )
-        OrderItem.objects.create(
+        order_item = OrderItem.objects.create(
             order=order,
             strain=strain,
             batch=batch,
@@ -106,6 +115,12 @@ def create_reserved_order(*, user, cart_lines: list[CartLine]) -> Order:
         if batch:
             batch.quantity = F("quantity") - line.quantity
             batch.save(update_fields=["quantity"])
+            InventoryTransaction.objects.create(
+                batch=batch,
+                order_item=order_item,
+                quantity=line.quantity,
+                kind=InventoryTransaction.KIND_RESERVATION,
+            )
         strain.stock = F("stock") - line.quantity
         strain.save(update_fields=["stock"])
 

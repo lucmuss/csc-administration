@@ -22,6 +22,8 @@ class SepaMandate(models.Model):
 
     class Meta:
         ordering = ["-created_at"]
+        verbose_name = "SEPA-Mandat"
+        verbose_name_plural = "SEPA-Mandate"
 
     def __str__(self):
         return f"{self.mandate_reference} ({self.profile})"
@@ -213,6 +215,8 @@ class BalanceTopUp(models.Model):
 
     class Meta:
         ordering = ["-created_at", "-id"]
+        verbose_name = "Guthaben-Aufladung"
+        verbose_name_plural = "Guthaben-Aufladungen"
 
     def __str__(self):
         return f"{self.profile} {self.amount} {self.provider} {self.status}"

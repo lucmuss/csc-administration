@@ -19,6 +19,9 @@
           {% if show_profile_edit_callout %}
             <a href="#profilpflege" class="btn-primary">Profil bearbeiten</a>
           {% endif %}
+          {% if profile.is_verified %}
+            <a href="{% url 'members:member_card_pdf' %}" class="btn-ghost">Mitgliederausweis (PDF)</a>
+          {% endif %}
           <a href="{% url 'members:verification' %}" class="btn-ghost">Verifizierung</a>
           <a href="{% url 'core:social_club_review' %}" class="btn-ghost">Club bewerten</a>
           {% if show_public_directory_link and not pending_member_limited_access %}
@@ -67,6 +70,13 @@
         </article>
       {% endif %}
     </div>
+
+    {% if show_private_profile_details and profile.monthly_used >= 40 %}
+      <section class="flash flash--warning">
+        <strong>Warnung:</strong> Dein aktueller Monatsverbrauch liegt bei {{ profile.monthly_used }} g.
+        Ab 40g solltest du deinen Konsum besonders achtsam planen.
+      </section>
+    {% endif %}
 
     <div class="board-grid">
       <article class="panel">

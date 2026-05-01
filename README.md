@@ -232,6 +232,21 @@ python src/manage.py seed_demo_data --reset
 
 Wenn `AUTO_SEED_DEMO_DATA=1` gesetzt ist, fuehrt `scripts/start-web.sh` den Import beim Start automatisch aus. Die Seed-Daten sind idempotent und aktualisieren bestehende Demo-Eintraege statt sie zu duplizieren.
 
+## PostgreSQL statt SQLite
+
+Die App ist standardmaessig auf PostgreSQL ausgelegt. Fuer lokale Migration von bestehender `db.sqlite3`:
+
+```bash
+docker compose up -d db
+./scripts/migrate_sqlite_to_postgres.sh
+```
+
+Hinweise:
+
+- `docker-compose.yml` startet eine eigene PostgreSQL-Instanz (`db`) mit Volume `postgres_data`.
+- Host-Port ist per Default `5434` (konfigurierbar ueber `POSTGRES_HOST_PORT`).
+- Datenbank-Umgebungsvariablen koennen als `DATABASE_*`, `DB_*`, `POSTGRES_*` oder `DATABASE_URL` gesetzt werden.
+
 ---
 
 **Letzte Aktualisierung**: 2025-03-01

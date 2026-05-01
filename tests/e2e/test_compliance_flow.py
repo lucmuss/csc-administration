@@ -77,7 +77,7 @@ def test_suspicious_activity_list_view(client, board_user, member_user):
     response = client.get(reverse("compliance:suspicious_activity_list"))
 
     assert response.status_code == 200
-    assert member_user.profile.member_number in str(response.content)
+    assert str(member_user.profile.member_number) in str(response.content)
 
 
 @pytest.mark.django_db

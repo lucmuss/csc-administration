@@ -67,12 +67,15 @@ class BalanceTopUpForm(forms.Form):
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
+        min_amount = Decimal(str(getattr(settings, "BALANCE_TOPUP_MIN_AMOUNT", "1.00")))
+        max_amount = Decimal(str(getattr(settings, "BALANCE_TOPUP_MAX_AMOUNT", "500.00")))
         self.fields["preset_amount"].widget.attrs["class"] = "form-input form-select"
         self.fields["amount"].widget.attrs["class"] = "form-input"
         self.fields["amount"].widget.attrs.update(
             {
                 "placeholder": "z. B. 25.00",
-                "min": "1",
+                "min": str(min_amount),
+                "max": str(max_amount),
                 "step": "0.01",
                 "inputmode": "decimal",
             }

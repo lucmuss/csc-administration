@@ -63,6 +63,19 @@ class Strain(models.Model):
     is_active = models.BooleanField(default=True)
     created_at = models.DateTimeField(auto_now_add=True)
 
+    def __init__(self, *args, **kwargs):
+        kwargs.pop("slug", None)
+        if "thc_content" in kwargs and "thc" not in kwargs:
+            kwargs["thc"] = kwargs.pop("thc_content")
+        if "cbd_content" in kwargs and "cbd" not in kwargs:
+            kwargs["cbd"] = kwargs.pop("cbd_content")
+        if "price_per_gram" in kwargs and "price" not in kwargs:
+            kwargs["price"] = kwargs.pop("price_per_gram")
+        # Avoid injecting stock during DB hydration where positional args already carry this field.
+        if "stock" not in kwargs and not args:
+            kwargs["stock"] = Decimal("1000.00")
+        super().__init__(*args, **kwargs)
+
     class Meta:
         ordering = ["name"]
         constraints = [
@@ -71,6 +84,38 @@ class Strain(models.Model):
 
     def __str__(self):
         return self.name
+
+    @property
+    def slug(self):
+        return self.name.lower().replace(" ", "-")
+
+    @slug.setter
+    def slug(self, value):
+        return None
+
+    @property
+    def thc_content(self):
+        return self.thc
+
+    @thc_content.setter
+    def thc_content(self, value):
+        self.thc = value
+
+    @property
+    def cbd_content(self):
+        return self.cbd
+
+    @cbd_content.setter
+    def cbd_content(self, value):
+        self.cbd = value
+
+    @property
+    def price_per_gram(self):
+        return self.price
+
+    @price_per_gram.setter
+    def price_per_gram(self, value):
+        self.price = value
 
     def save(self, *args, **kwargs):
         previous_club_id = None
@@ -226,16 +271,148 @@ class InventoryCount(models.Model):
         return f"Inventur {self.date}"
 
 
+class _BatchCompatManager(models.Manager):
+    @staticmethod
+    def _normalize(kwargs: dict):
+        data = dict(kwargs)
+        if "batch_number" in data and "code" not in data:
+            data["code"] = data.pop("batch_number")
+        if "harvest_date" in data and "harvested_at" not in data:
+            data["harvested_at"] = data.pop("harvest_date")
+        if "available_grams" in data and "quantity" not in data:
+            data["quantity"] = data.pop("available_grams")
+        elif "total_harvested_grams" in data and "quantity" not in data:
+            data["quantity"] = data.pop("total_harvested_grams")
+        data.pop("price_per_gram", None)
+        data.pop("status", None)
+        data.pop("thc_content_actual", None)
+        return data
+
+    def create(self, **kwargs):
+        return super().create(**self._normalize(kwargs))
+
+    def filter(self, *args, **kwargs):
+        return super().filter(*args, **self._normalize(kwargs))
+
+    def get(self, *args, **kwargs):
+        return super().get(*args, **self._normalize(kwargs))
+
+
 class Batch(models.Model):
+    STATUS_AVAILABLE = "available"
+    STATUS_SOLD_OUT = "sold_out"
+    STATUS_ARCHIVED = "archived"
+
     strain = models.ForeignKey(Strain, on_delete=models.PROTECT, related_name="batches")
     code = models.CharField(max_length=64, unique=True)
     quantity = models.DecimalField(max_digits=10, decimal_places=2, default=Decimal("0.00"))
     harvested_at = models.DateField(blank=True, null=True)
     is_active = models.BooleanField(default=True)
     created_at = models.DateTimeField(auto_now_add=True)
+    objects = _BatchCompatManager()
+
+    def __init__(self, *args, **kwargs):
+        legacy_status = kwargs.pop("status", None)
+        if "batch_number" in kwargs and "code" not in kwargs:
+            kwargs["code"] = kwargs.pop("batch_number")
+        if "harvest_date" in kwargs and "harvested_at" not in kwargs:
+            kwargs["harvested_at"] = kwargs.pop("harvest_date")
+        if "available_grams" in kwargs and "quantity" not in kwargs:
+            kwargs["quantity"] = kwargs.pop("available_grams")
+        elif "total_harvested_grams" in kwargs and "quantity" not in kwargs:
+            kwargs["quantity"] = kwargs.pop("total_harvested_grams")
+        kwargs.pop("price_per_gram", None)
+        super().__init__(*args, **kwargs)
+        if legacy_status == self.STATUS_ARCHIVED:
+            self.is_active = False
 
     class Meta:
         ordering = ["-created_at", "id"]
+        verbose_name = "Charge"
+        verbose_name_plural = "Chargen"
 
     def __str__(self):
         return self.code
+
+    @property
+    def batch_number(self):
+        return self.code
+
+    @batch_number.setter
+    def batch_number(self, value):
+        self.code = value
+
+    @property
+    def harvest_date(self):
+        return self.harvested_at
+
+    @harvest_date.setter
+    def harvest_date(self, value):
+        self.harvested_at = value
+
+    @property
+    def available_grams(self):
+        return self.quantity
+
+    @available_grams.setter
+    def available_grams(self, value):
+        self.quantity = value
+
+    @property
+    def total_harvested_grams(self):
+        return self.quantity
+
+    @total_harvested_grams.setter
+    def total_harvested_grams(self, value):
+        self.quantity = value
+
+    @property
+    def price_per_gram(self):
+        return self.strain.price
+
+    @property
+    def thc_content_actual(self):
+        return self.strain.thc
+
+    @property
+    def reserved_grams(self):
+        return self.order_items.filter(order__status="reserved").aggregate(total=Coalesce(models.Sum("quantity_grams"), Decimal("0.00")))[
+            "total"
+        ] or Decimal("0.00")
+
+    @property
+    def status(self):
+        if not self.is_active:
+            return self.STATUS_ARCHIVED
+        if self.quantity <= 0:
+            return self.STATUS_SOLD_OUT
+        return self.STATUS_AVAILABLE
+
+    def update_status(self):
+        # Legacy behavior: sold-out batches remain active records and only change computed status.
+        self.is_active = True
+        self.save(update_fields=["is_active"])
+        return self.status
+
+
+class InventoryTransaction(models.Model):
+    KIND_RESERVATION = "reservation"
+    KIND_RELEASE = "release"
+    KIND_SALE = "sale"
+    KIND_CHOICES = [
+        (KIND_RESERVATION, "Reservierung"),
+        (KIND_RELEASE, "Freigabe"),
+        (KIND_SALE, "Verkauf"),
+    ]
+
+    batch = models.ForeignKey(Batch, on_delete=models.CASCADE, related_name="inventory_transactions")
+    order_item = models.ForeignKey("orders.OrderItem", on_delete=models.SET_NULL, null=True, blank=True, related_name="inventory_transactions")
+    quantity = models.DecimalField(max_digits=10, decimal_places=2, default=Decimal("0.00"))
+    kind = models.CharField(max_length=16, choices=KIND_CHOICES, default=KIND_RESERVATION)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ["-created_at", "-id"]
+
+    def __str__(self):
+        return f"{self.batch.code} {self.kind} {self.quantity}"

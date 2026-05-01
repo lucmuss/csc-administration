@@ -19,6 +19,7 @@ def test_social_club_registration_creates_pending_admin(client):
             "street_address": "Testweg 1",
             "postal_code": "04109",
             "city": "Leipzig",
+            "max_verified_members": "500",
             "phone": "+4917000000",
             "website": "https://example.org",
         },

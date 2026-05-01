@@ -167,8 +167,36 @@ def send_membership_documents_email(profile, request: HttpRequest) -> bool:
         to=[profile.user.email],
     )
     msg.attach_alternative(html_body, "text/html")
-    for filename, content, mimetype in membership_document_attachments(profile):
+    for filename, content, mimetype in membership_document_attachments(profile, include_member_card=False):
         msg.attach(filename, content, mimetype)
+    return msg.send(fail_silently=True) > 0
+
+
+def send_member_card_email(profile, request: HttpRequest) -> bool:
+    from apps.members.documents import member_card_attachment
+
+    context = {
+        "user": profile.user,
+        "dashboard_url": _absolute_url(request, "core:dashboard", "/"),
+        "profile_url": _absolute_url(request, "members:profile", "/members/profile/"),
+        "login_url": _absolute_url(request, "accounts:login", "/accounts/login/"),
+        "profile": profile,
+    }
+    context.update(_club_email_context())
+    subject = _render_subject("emails/account/member_card_subject.txt", context)
+    text_body = render_to_string("emails/account/member_card_body.txt", context)
+    html_body = render_to_string("emails/account/member_card_body.html", context)
+    text_body, html_body = _apply_email_signature(text_body, html_body, context)
+
+    msg = EmailMultiAlternatives(
+        subject=subject,
+        body=text_body,
+        from_email=settings.DEFAULT_FROM_EMAIL,
+        to=[profile.user.email],
+    )
+    msg.attach_alternative(html_body, "text/html")
+    filename, content, mimetype = member_card_attachment(profile)
+    msg.attach(filename, content, mimetype)
     return msg.send(fail_silently=True) > 0
 
 

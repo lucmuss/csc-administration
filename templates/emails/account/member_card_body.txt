@@ -1,0 +1,17 @@
+Hallo {{ user.first_name|default:user.email }},
+
+herzlichen Glueckwunsch - deine Verifizierung wurde abgeschlossen.
+Im Anhang findest du deinen Mitgliederausweis als PDF.
+
+Du kannst den Mitgliederausweis jederzeit auch im Profil herunterladen:
+{{ profile_url }}
+
+Login:
+{{ login_url }}
+
+Dashboard:
+{{ dashboard_url }}
+
+Rueckfragen zur Mitgliedschaft: {{ club_membership_email }}
+{{ club_name }}
+{{ club_contact_address }}

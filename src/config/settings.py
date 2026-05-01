@@ -1,6 +1,7 @@
 from pathlib import Path
 import os
 import sys
+from urllib.parse import urlparse
 
 BASE_DIR = Path(__file__).resolve().parent.parent.parent
 
@@ -67,11 +68,13 @@ INSTALLED_APPS = [
     "apps.inventory",
     "apps.orders",
     "apps.compliance",
+    "apps.audit",
     "apps.finance",
     "apps.participation",
     "apps.cultivation",
     "apps.messaging",
     "apps.governance",
+    "apps.meetings",
 ]
 
 MIDDLEWARE = [
@@ -115,15 +118,33 @@ ASGI_APPLICATION = "config.asgi.application"
 DATABASES = {
     "default": {
         "ENGINE": "django.db.backends.postgresql",
-        "NAME": os.getenv("DATABASE_NAME", "csc"),
-        "USER": os.getenv("DATABASE_USER", "csc"),
-        "PASSWORD": os.getenv("DATABASE_PASSWORD", "csc"),
-        "HOST": os.getenv("DATABASE_HOST", "localhost"),
-        "PORT": os.getenv("DATABASE_PORT", "5432"),
+        "NAME": _env_first("DATABASE_NAME", "DB_NAME", "POSTGRES_DB", default="csc"),
+        "USER": _env_first("DATABASE_USER", "DB_USER", "POSTGRES_USER", default="csc"),
+        "PASSWORD": _env_first("DATABASE_PASSWORD", "DB_PASSWORD", "POSTGRES_PASSWORD", default="csc"),
+        "HOST": _env_first("DATABASE_HOST", "DB_HOST", "POSTGRES_HOST", default="localhost"),
+        "PORT": _env_first("DATABASE_PORT", "DB_PORT", "POSTGRES_PORT", default="5432"),
     }
 }
 
+database_url = _env_first("DATABASE_URL")
+if database_url:
+    parsed = urlparse(database_url)
+    if parsed.scheme in {"postgres", "postgresql"}:
+        DATABASES["default"] = {
+            "ENGINE": "django.db.backends.postgresql",
+            "NAME": parsed.path.lstrip("/") or "csc",
+            "USER": parsed.username or "csc",
+            "PASSWORD": parsed.password or "",
+            "HOST": parsed.hostname or "localhost",
+            "PORT": str(parsed.port or 5432),
+        }
+
 RUNNING_PYTEST = any("pytest" in arg for arg in sys.argv)
+
+if RUNNING_PYTEST:
+    PASSWORD_HASHERS = [
+        "django.contrib.auth.hashers.MD5PasswordHasher",
+    ]
 
 if (
     os.getenv("USE_SQLITE", "0") == "1"
@@ -136,10 +157,13 @@ if (
     }
 
 AUTH_PASSWORD_VALIDATORS = [
-    {"NAME": "django.contrib.auth.password_validation.UserAttributeSimilarityValidator"},
-    {"NAME": "django.contrib.auth.password_validation.MinimumLengthValidator"},
-    {"NAME": "django.contrib.auth.password_validation.CommonPasswordValidator"},
-    {"NAME": "django.contrib.auth.password_validation.NumericPasswordValidator"},
+    {"NAME": "apps.accounts.validators.GermanUserAttributeSimilarityValidator"},
+    {
+        "NAME": "apps.accounts.validators.GermanMinimumLengthValidator",
+        "OPTIONS": {"min_length": 8},
+    },
+    {"NAME": "apps.accounts.validators.GermanCommonPasswordValidator"},
+    {"NAME": "apps.accounts.validators.GermanNumericPasswordValidator"},
 ]
 
 LANGUAGE_CODE = "de-de"

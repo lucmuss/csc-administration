@@ -308,18 +308,34 @@ def documents(request):
 @require_POST
 def switch_social_club(request):
     club = SocialClub.objects.filter(id=request.POST.get("social_club_id"), is_active=True, is_approved=True).first()
-    if not club:
-        messages.error(request, "Social Club nicht gefunden.")
-        return redirect(request.POST.get("next") or "core:dashboard")
-    if request.user.is_authenticated and not request.user.is_superuser and request.user.social_club_id and request.user.social_club_id != club.id:
-        messages.error(request, "Du kannst nur den eigenen Social Club aktivieren.")
+    selected_state = (request.POST.get("federal_state") or "").strip()
+    valid_states = {code for code, _label in SocialClub.FEDERAL_STATE_CHOICES}
+    if selected_state and selected_state not in valid_states:
+        messages.error(request, "Bundesland nicht gefunden.")
         return redirect(request.POST.get("next") or "core:dashboard")
 
-    request.session[ACTIVE_SOCIAL_CLUB_SESSION_KEY] = club.id
+    if club:
+        if request.user.is_authenticated and not request.user.is_superuser and request.user.social_club_id and request.user.social_club_id != club.id:
+            messages.error(request, "Du kannst nur den eigenen Social Club aktivieren.")
+            return redirect(request.POST.get("next") or "core:dashboard")
+        request.session[ACTIVE_SOCIAL_CLUB_SESSION_KEY] = club.id
+    elif request.user.is_authenticated and not request.user.is_superuser and request.user.social_club_id:
+        # Keep fixed assignment for non-superusers even if no value was posted.
+        request.session[ACTIVE_SOCIAL_CLUB_SESSION_KEY] = request.user.social_club_id
+
+    if selected_state:
+        request.session[ACTIVE_FEDERAL_STATE_SESSION_KEY] = selected_state
+    else:
+        request.session.pop(ACTIVE_FEDERAL_STATE_SESSION_KEY, None)
     request.session.modified = True
     response = redirect(request.POST.get("next") or "core:dashboard")
-    response.set_cookie(ACTIVE_SOCIAL_CLUB_COOKIE, str(club.id), max_age=60 * 60 * 24 * 365, samesite="Lax")
-    messages.success(request, f"Aktiver Social Club: {club.name}")
+    if club:
+        response.set_cookie(ACTIVE_SOCIAL_CLUB_COOKIE, str(club.id), max_age=60 * 60 * 24 * 365, samesite="Lax")
+    if selected_state:
+        response.set_cookie(ACTIVE_FEDERAL_STATE_COOKIE, selected_state, max_age=60 * 60 * 24 * 365, samesite="Lax")
+    else:
+        response.delete_cookie(ACTIVE_FEDERAL_STATE_COOKIE)
+    messages.success(request, "Auswahl gespeichert.")
     return response
 
 
@@ -332,7 +348,7 @@ def pricing(request):
         {
             "total_members": total_members,
             "total_social_clubs": total_social_clubs,
-            "monthly_price_per_member": "0,50 EUR",
+            "monthly_price_per_member": "0,25 EUR",
             "one_time_price_per_new_member": "0,50 EUR",
         },
     )
@@ -340,7 +356,7 @@ def pricing(request):
 
 def social_club_public_list(request):
     query = " ".join((request.GET.get("q") or "").split()).strip()
-    state_filter = (request.GET.get("federal_state") or "").strip()
+    state_filter = (request.GET.get("federal_state") or resolve_active_federal_state(request) or "").strip()
     price_min = (request.GET.get("price_min") or "").strip()
     price_max = (request.GET.get("price_max") or "").strip()
     valid_states = {code for code, _label in SocialClub.FEDERAL_STATE_CHOICES}
@@ -379,48 +395,27 @@ def social_club_public_list(request):
 
 
 def social_club_regional_list(request):
-    query = " ".join((request.GET.get("q") or "").split()).strip()
-    state_filter = (request.GET.get("federal_state") or resolve_active_federal_state(request) or "").strip()
-    price_min = (request.GET.get("price_min") or "").strip()
-    price_max = (request.GET.get("price_max") or "").strip()
-    valid_states = {code for code, _label in SocialClub.FEDERAL_STATE_CHOICES}
-    if state_filter not in valid_states:
-        state_filter = ""
-    clubs = SocialClub.objects.filter(is_active=True, is_approved=True).exclude(slug="").order_by("name")
-    if state_filter:
-        clubs = clubs.filter(federal_state=state_filter)
-    if price_min:
-        try:
-            clubs = clubs.filter(avg_strain_price__gte=Decimal(price_min))
-        except Exception:
-            price_min = ""
-    if price_max:
-        try:
-            clubs = clubs.filter(avg_strain_price__lte=Decimal(price_max))
-        except Exception:
-            price_max = ""
-    if query:
-        clubs = clubs.filter(Q(name__icontains=query) | Q(city__icontains=query))
-    clubs = clubs[:200]
     if request.headers.get("x-requested-with") == "XMLHttpRequest":
+        query = " ".join((request.GET.get("q") or "").split()).strip()
+        state_filter = (request.GET.get("federal_state") or resolve_active_federal_state(request) or "").strip()
+        valid_states = {code for code, _label in SocialClub.FEDERAL_STATE_CHOICES}
+        if state_filter not in valid_states:
+            state_filter = ""
+        clubs = SocialClub.objects.filter(is_active=True, is_approved=True).exclude(slug="").order_by("name")
+        if state_filter:
+            clubs = clubs.filter(federal_state=state_filter)
+        if query:
+            clubs = clubs.filter(Q(name__icontains=query) | Q(city__icontains=query))
+        clubs = clubs[:200]
         html = render_to_string(
             "core/_social_club_regional_results.html",
             {"clubs": clubs},
             request=request,
         )
         return JsonResponse({"html": html, "count": len(clubs)})
-    return render(
-        request,
-        "core/social_club_regional_list.html",
-        {
-            "clubs": clubs,
-            "query": query,
-            "state_filter": state_filter,
-            "state_options": SocialClub.FEDERAL_STATE_CHOICES,
-            "price_min": price_min,
-            "price_max": price_max,
-        },
-    )
+
+    # Regional page is merged into the main Social-Club listing.
+    return social_club_public_list(request)
 
 
 def social_club_public_detail(request, slug: str):
@@ -440,6 +435,7 @@ def social_club_public_detail(request, slug: str):
     verified_member_slots_left = max(max_verified_members - verified_member_count, 0) if max_verified_members else 0
     club_strains = Strain.objects.filter(is_active=True, social_club=club)
     shop_strain_count = club_strains.count()
+    shop_strains = list(club_strains.order_by("name").values_list("name", flat=True))
     opening_hours_qs = SocialClubOpeningHour.objects.filter(social_club=club).order_by("weekday", "starts_at", "ends_at")
     weekday_labels = dict(SocialClubOpeningHour.WEEKDAY_CHOICES)
     opening_hours_by_weekday = {weekday: [] for weekday, _label in SocialClubOpeningHour.WEEKDAY_CHOICES}
@@ -468,6 +464,7 @@ def social_club_public_detail(request, slug: str):
             "max_verified_members": max_verified_members,
             "verified_member_slots_left": verified_member_slots_left,
             "shop_strain_count": shop_strain_count,
+            "shop_strains": shop_strains,
             "opening_week_schedule": opening_week_schedule,
         },
     )
@@ -696,10 +693,18 @@ def social_club_profile(request):
 
     if request.method == "POST":
         form = SocialClubSettingsForm(request.POST, request.FILES, instance=club)
-        opening_hour_formset = OpeningHourFormSet(request.POST, instance=club, prefix="opening_hours")
-        if form.is_valid() and opening_hour_formset.is_valid():
+        has_opening_hour_payload = any(key.startswith("opening_hours-") for key in request.POST.keys())
+        if has_opening_hour_payload:
+            opening_hour_formset = OpeningHourFormSet(request.POST, instance=club, prefix="opening_hours")
+            opening_hours_valid = opening_hour_formset.is_valid()
+        else:
+            opening_hour_formset = OpeningHourFormSet(instance=club, prefix="opening_hours")
+            opening_hours_valid = True
+
+        if form.is_valid() and opening_hours_valid:
             form.save()
-            opening_hour_formset.save()
+            if has_opening_hour_payload:
+                opening_hour_formset.save()
             messages.success(request, "Social-Club-Daten aktualisiert.")
             return redirect("core:social_club_profile")
     else:

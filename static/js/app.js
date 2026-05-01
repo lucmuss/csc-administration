@@ -136,10 +136,31 @@
     syncRecordForm();
   }
 
+  function wirePasswordToggles() {
+    document.querySelectorAll("[data-password-toggle]").forEach(function (button) {
+      var targetId = button.getAttribute("data-password-target");
+      if (!targetId) {
+        return;
+      }
+      var input = document.getElementById(targetId);
+      if (!input) {
+        return;
+      }
+
+      button.addEventListener("click", function () {
+        var show = input.type === "password";
+        input.type = show ? "text" : "password";
+        button.textContent = show ? "Verbergen" : "Anzeigen";
+        button.setAttribute("aria-label", show ? "Passwort verbergen" : "Passwort anzeigen");
+      });
+    });
+  }
+
   document.addEventListener("DOMContentLoaded", function () {
     toggleMobileNav();
     handleCookieConsent();
     maybeLoadAnalytics();
     wireGovernanceRecordForm();
+    wirePasswordToggles();
   });
 })();

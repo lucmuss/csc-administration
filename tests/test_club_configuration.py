@@ -170,3 +170,46 @@ def test_membership_documents_include_prevention_and_membership_contacts():
     assert "mitglied@custom.club" in text
     assert "praevention@custom.club" in text
     assert "Lina Schutz" in text
+
+
+@pytest.mark.django_db
+def test_member_card_pdf_uses_entry_label_and_no_status_line():
+    import io
+
+    from pypdf import PdfReader
+
+    from apps.accounts.models import User
+    from apps.members.documents import member_card_attachment
+    from apps.members.models import Profile
+
+    user = User.objects.create_user(email="cardmember@example.com", password="StrongPass123!", role=User.ROLE_MEMBER)
+    profile = Profile.objects.create(
+        user=user,
+        birth_date=date(1990, 1, 1),
+        status="active",
+        is_verified=True,
+        member_number=123456,
+        desired_join_date=date(2026, 5, 1),
+        street_address="Musterweg 1",
+        postal_code="04109",
+        city="Leipzig",
+        phone="+491511111111",
+        bank_name="GLS",
+        account_holder_name="Pdf Member",
+        privacy_accepted=True,
+        direct_debit_accepted=True,
+        no_other_csc_membership=True,
+        german_residence_confirmed=True,
+        minimum_age_confirmed=True,
+        id_document_confirmed=True,
+        important_newsletter_opt_in=True,
+        monthly_counter_key=date.today().strftime("%Y-%m"),
+    )
+
+    _, pdf_bytes, _ = member_card_attachment(profile)
+    text = "\n".join(page.extract_text() or "" for page in PdfReader(io.BytesIO(pdf_bytes)).pages)
+
+    assert "Eintritt" in text
+    assert "Fruehester Eintritt" not in text
+    assert "Status" not in text
+    assert "123456" in text

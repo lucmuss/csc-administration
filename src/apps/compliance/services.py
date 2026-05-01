@@ -61,6 +61,10 @@ def detect_suspicious_activity(target_date: date | None = None, threshold: Decim
     return created_or_updated
 
 
+def check_suspicious_activity(target_date: date | None = None, threshold: Decimal = Decimal("50.00")) -> int:
+    return detect_suspicious_activity(target_date=target_date, threshold=threshold)
+
+
 def ensure_prevention_info_for_first_dispense(*, user, order: Order) -> PreventionInfo | None:
     profile = Profile.objects.filter(user=user).first()
     if not profile:

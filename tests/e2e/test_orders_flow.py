@@ -212,7 +212,7 @@ def test_cancel_order(client, member_user, batch):
 
     # Stornieren
     response = client.post(
-        reverse("orders:cancel", kwargs={"pk": order.pk}),
+        reverse("orders:cancel_legacy", kwargs={"pk": order.pk}),
     )
 
     assert response.status_code == 302

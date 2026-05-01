@@ -44,21 +44,44 @@ class EmailGroupMember(models.Model):
         verbose_name_plural = "Gruppenmitglieder"
 
 
+class EmailTemplate(models.Model):
+    name = models.CharField(max_length=120)
+    slug = models.SlugField(max_length=140, unique=True)
+    subject = models.CharField(max_length=255)
+    body = models.TextField()
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        ordering = ["name"]
+
+    def __str__(self):
+        return self.name
+
+
 class MassEmail(models.Model):
     """Massen-E-Mail-Versand"""
+    STATUS_DRAFT = "draft"
+    STATUS_QUEUED = "queued"
+    STATUS_SENDING = "sending"
+    STATUS_SENT = "sent"
+    STATUS_FAILED = "failed"
+    STATUS_CANCELLED = "cancelled"
     STATUS_CHOICES = [
-        ("draft", "Entwurf"),
-        ("queued", "In Warteschlange"),
-        ("sending", "Wird gesendet"),
-        ("sent", "Gesendet"),
-        ("failed", "Fehlgeschlagen"),
-        ("cancelled", "Abgebrochen"),
+        (STATUS_DRAFT, "Entwurf"),
+        (STATUS_QUEUED, "In Warteschlange"),
+        (STATUS_SENDING, "Wird gesendet"),
+        (STATUS_SENT, "Gesendet"),
+        (STATUS_FAILED, "Fehlgeschlagen"),
+        (STATUS_CANCELLED, "Abgebrochen"),
     ]
 
+    RECIPIENT_ALL = "all"
+    RECIPIENT_GROUP = "group"
+    RECIPIENT_INDIVIDUAL = "individual"
     RECIPIENT_TYPE_CHOICES = [
-        ("all", "Alle Mitglieder"),
-        ("group", "Bestimmte Gruppe"),
-        ("individual", "Individuelle Auswahl"),
+        (RECIPIENT_ALL, "Alle Mitglieder"),
+        (RECIPIENT_GROUP, "Bestimmte Gruppe"),
+        (RECIPIENT_INDIVIDUAL, "Individuelle Auswahl"),
     ]
 
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
@@ -68,7 +91,7 @@ class MassEmail(models.Model):
     
     # Empfänger
     recipient_type = models.CharField(
-        max_length=20, choices=RECIPIENT_TYPE_CHOICES, default="all"
+        max_length=20, choices=RECIPIENT_TYPE_CHOICES, default=RECIPIENT_ALL
     )
     recipient_group = models.ForeignKey(
         EmailGroup, on_delete=models.SET_NULL, null=True, blank=True,
@@ -80,7 +103,7 @@ class MassEmail(models.Model):
     )
 
     # Status
-    status = models.CharField(max_length=20, choices=STATUS_CHOICES, default="draft")
+    status = models.CharField(max_length=20, choices=STATUS_CHOICES, default=STATUS_DRAFT)
     scheduled_at = models.DateTimeField(null=True, blank=True, verbose_name="Geplante Sendezeit")
     sent_at = models.DateTimeField(null=True, blank=True)
     

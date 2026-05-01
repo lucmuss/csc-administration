@@ -48,9 +48,26 @@ def resolve_active_social_club(request=None):
     if getattr(user, "is_authenticated", False) and not getattr(user, "is_superuser", False) and getattr(user, "social_club_id", None):
         return user.social_club
     club_id = request.session.get(ACTIVE_SOCIAL_CLUB_SESSION_KEY) or request.COOKIES.get(ACTIVE_SOCIAL_CLUB_COOKIE)
+
+    def _first_public_club():
+        try:
+            return SocialClub.objects.filter(is_active=True, is_approved=True).order_by("name").first()
+        except (RuntimeError, OperationalError, ProgrammingError):
+            return None
+
     if not club_id:
-        return SocialClub.objects.filter(is_active=True, is_approved=True).order_by("name").first()
-    return SocialClub.objects.filter(id=club_id, is_active=True, is_approved=True).first() or SocialClub.objects.filter(is_active=True, is_approved=True).order_by("name").first()
+        if getattr(user, "is_authenticated", False):
+            return None
+        return _first_public_club()
+    try:
+        selected = SocialClub.objects.filter(id=club_id, is_active=True, is_approved=True).first()
+    except (RuntimeError, OperationalError, ProgrammingError):
+        selected = None
+    if selected:
+        return selected
+    if getattr(user, "is_authenticated", False):
+        return None
+    return _first_public_club()
 
 
 def resolve_active_federal_state(request=None) -> str:
@@ -64,7 +81,7 @@ def resolve_active_federal_state(request=None) -> str:
 def get_club_settings(*, social_club: SocialClub | None = None) -> dict[str, object]:
     try:
         config = ClubConfiguration.objects.first()
-    except (OperationalError, ProgrammingError):
+    except (RuntimeError, OperationalError, ProgrammingError):
         config = None
 
     def pick(field_name: str, setting_name: str):

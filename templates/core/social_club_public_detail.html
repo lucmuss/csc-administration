@@ -23,7 +23,10 @@
     <article class="kpi-card kpi-card--sand">
       <span class="kpi-card__label">Profilbild</span>
       {% if club.profile_image %}
-        <img src="{{ club.profile_image.url }}" alt="Profilbild {{ club.name }}" style="width:88px; height:88px; border-radius:999px; object-fit:cover; margin-top:.5rem;">
+        <div style="display:flex; align-items:center; gap:.75rem; margin-top:.5rem;">
+          <img src="{{ club.profile_image.url }}" alt="Profilbild {{ club.name }}" style="width:88px; height:88px; border-radius:999px; object-fit:cover; border:2px solid #d9b46b;">
+          <small class="kpi-card__detail">Offizielles Club-Logo</small>
+        </div>
       {% else %}
         <strong class="kpi-card__value">Kein Bild</strong>
       {% endif %}
@@ -169,6 +172,19 @@
       </ul>
     {% else %}
       <p class="empty-copy">Noch keine Bewertungen vorhanden.</p>
+    {% endif %}
+  </section>
+
+  <section class="panel">
+    <div class="panel__header"><div><p class="panel__eyebrow">Shop</p><h2>Produkte dieses Social Clubs</h2></div></div>
+    {% if shop_strains %}
+      <ul class="stack-list">
+        {% for strain_name in shop_strains %}
+          <li class="stack-list__item"><div><strong>{{ strain_name }}</strong></div></li>
+        {% endfor %}
+      </ul>
+    {% else %}
+      <p class="empty-copy">Aktuell keine aktiven Produkte hinterlegt.</p>
     {% endif %}
   </section>
 </section>

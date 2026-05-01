@@ -95,7 +95,7 @@ def test_public_social_club_list_is_publicly_accessible(client):
 
 @pytest.mark.django_db
 def test_public_social_club_list_supports_average_price_filter(client):
-    SocialClub.objects.create(
+    low = SocialClub.objects.create(
         name="CSC Price Low",
         email="low@example.com",
         street_address="A",
@@ -108,7 +108,7 @@ def test_public_social_club_list_supports_average_price_filter(client):
         is_active=True,
         is_approved=True,
     )
-    SocialClub.objects.create(
+    high = SocialClub.objects.create(
         name="CSC Price High",
         email="high@example.com",
         street_address="B",
@@ -125,5 +125,5 @@ def test_public_social_club_list_supports_average_price_filter(client):
     response = client.get(reverse("core:social_club_public_list"), {"price_min": "10", "price_max": "13"})
     html = response.content.decode("utf-8")
     assert response.status_code == 200
-    assert "CSC Price High" in html
-    assert "CSC Price Low" not in html
+    assert reverse("core:social_club_public_detail", args=[high.slug]) in html
+    assert reverse("core:social_club_public_detail", args=[low.slug]) not in html

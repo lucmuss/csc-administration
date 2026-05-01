@@ -17,7 +17,7 @@
       <tbody>
         {% for activity in activities %}
           <tr>
-            <td>{{ activity.profile.user.email }}</td>
+            <td>{{ activity.profile.member_number }} · {{ activity.profile.user.email }}</td>
             <td>{{ activity.month_key }}</td>
             <td>{{ activity.consumed_grams }}g</td>
             <td>{{ activity.threshold_grams }}g</td>

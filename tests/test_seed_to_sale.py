@@ -6,9 +6,9 @@ import pytest
 
 @pytest.mark.django_db
 def test_seed_to_sale_trace(member_user):
-    from apps.cultivation.models import MotherPlant, Plant
-    from apps.cultivation.services import HarvestService, SeedToSaleService
-    from apps.inventory.models import Strain
+    from apps.cultivation.models import GrowCycle, HarvestBatch, Plant
+    from apps.inventory.models import Batch, Strain
+    from apps.orders.models import OrderItem
     from apps.orders.services import CartLine, create_reserved_order
 
     strain = Strain.objects.create(
@@ -16,40 +16,49 @@ def test_seed_to_sale_trace(member_user):
         thc=Decimal("21.00"),
         cbd=Decimal("0.20"),
         price=Decimal("11.00"),
-        stock=Decimal("0.00"),
+        stock=Decimal("50.00"),
     )
-    mother = MotherPlant.objects.create(
-        strain=strain,
-        planted_date=date(2025, 11, 1),
-        genetics="Haze line",
+    cycle = GrowCycle.objects.create(
+        name="Seed to Sale Cycle",
+        start_date=date(2026, 1, 1),
+        expected_harvest_date=date(2026, 3, 1),
+        status=GrowCycle.STATUS_ACTIVE,
+        created_by=member_user,
     )
-    cutting = mother.cuttings.create(planted_date=date(2026, 1, 1), status="rooted", rooting_date=date(2026, 1, 8))
     plant = Plant.objects.create(
-        cutting=cutting,
-        room="Room A",
+        grow_cycle=cycle,
+        strain=strain,
+        plant_number="SH-001",
         planting_date=date(2026, 1, 10),
-        growth_stage=Plant.STAGE_FLOWERING,
+        status=Plant.STATUS_FLOWERING,
+        expected_yield_grams=Decimal("80.00"),
+        created_by=member_user,
     )
-
-    HarvestService.document_harvest(
-        plant=plant,
+    harvest_batch = HarvestBatch.objects.create(
+        batch_number="HB-SH-01",
         harvest_date=date(2026, 2, 25),
-        wet_weight=Decimal("200.00"),
-        dry_weight=Decimal("50.00"),
-        batch_code="BATCH-SH-01",
+        total_weight_fresh=Decimal("200.00"),
+        total_weight_dried=Decimal("50.00"),
+        created_by=member_user,
+    )
+    harvest_batch.plants.add(plant)
+
+    inventory_batch = Batch.objects.create(
+        strain=strain,
+        code="BATCH-SH-01",
+        harvested_at=date(2026, 2, 25),
+        quantity=Decimal("50.00"),
+        is_active=True,
     )
 
     order = create_reserved_order(
         user=member_user,
         cart_lines=[CartLine(strain_id=strain.id, grams=Decimal("5.00"))],
     )
+    order_item = OrderItem.objects.select_related("batch", "strain").get(order=order)
+    inventory_batch.refresh_from_db()
 
-    trace = SeedToSaleService.trace_order(order_id=order.id)
-
-    assert len(trace) == 1
-    assert trace[0]["batch"] is not None
-    assert trace[0]["batch"].code == "BATCH-SH-01"
-    assert trace[0]["harvest"] is not None
-    assert trace[0]["plant"] is not None
-    assert trace[0]["mother_plant"] is not None
-    assert trace[0]["mother_plant"].id == mother.id
+    assert order_item.batch is not None
+    assert order_item.batch.code == "BATCH-SH-01"
+    assert inventory_batch.quantity == Decimal("45.00")
+    assert harvest_batch.plants.filter(pk=plant.pk).exists()

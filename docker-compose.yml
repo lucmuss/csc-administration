@@ -4,13 +4,19 @@ services:
     container_name: csc_db
     restart: unless-stopped
     environment:
-      POSTGRES_DB: csc
-      POSTGRES_USER: csc
-      POSTGRES_PASSWORD: csc
+      POSTGRES_DB: ${POSTGRES_DB:-csc}
+      POSTGRES_USER: ${POSTGRES_USER:-csc}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-csc}
     ports:
-      - "5432:5432"
+      - "${POSTGRES_HOST_PORT:-5434}:5432"
     volumes:
       - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-csc} -d ${POSTGRES_DB:-csc}"]
+      interval: 5s
+      timeout: 5s
+      retries: 20
+      start_period: 10s
 
   web:
     build: .
@@ -22,12 +28,16 @@ services:
     environment:
       DATABASE_HOST: db
       DATABASE_PORT: 5432
+      DATABASE_NAME: ${POSTGRES_DB:-csc}
+      DATABASE_USER: ${POSTGRES_USER:-csc}
+      DATABASE_PASSWORD: ${POSTGRES_PASSWORD:-csc}
     ports:
       - "8000:8000"
     volumes:
       - .:/app
     depends_on:
-      - db
+      db:
+        condition: service_healthy
 
 volumes:
   postgres_data:

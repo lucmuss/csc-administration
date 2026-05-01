@@ -6,10 +6,9 @@ Im Anhang findest du:
 - Aufnahmeantrag
 - SEPA-Lastschriftmandat
 - Selbstauskunft
-- Mitgliederausweis
 
 Bitte pruefe die Unterlagen und reiche die unterschriebenen Dokumente beim Verein ein.
-Der Vorstand prueft nun deine hinterlegten Daten und meldet sich nach der Freigabe erneut.
+Nach erfolgreicher Verifizierung erhaeltst du den Mitgliederausweis separat per E-Mail.
 
 Login:
 {{ login_url }}

@@ -1,0 +1,18 @@
+{% extends "base.html" %}
+
+{% block title %}Praeventionshinweis{% endblock %}
+
+{% block content %}
+<section class="panel stack-md">
+  <h1>Suchtpraevention bei der ersten Abgabe</h1>
+  <p>
+    Diese Information erklaert sichere Konsumregeln, Risiken und Hilfsangebote zur
+    Suchtpraevention.
+  </p>
+  {% if prevention_info and prevention_info.acknowledged %}
+    <p>Hinweis wurde bereits bestaetigt.</p>
+  {% else %}
+    <p>Bitte lies den Praeventionshinweis vollstaendig durch.</p>
+  {% endif %}
+</section>
+{% endblock %}

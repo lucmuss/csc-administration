@@ -210,9 +210,13 @@ def test_verify_member_sends_status_email(client, board_user, pending_user):
     pending_user.profile.refresh_from_db()
     assert response.status_code == 302
     assert pending_user.profile.is_verified is True
-    assert len(mail.outbox) == 1
-    assert pending_user.email in mail.outbox[0].to
-    assert "Mitgliedschaft freigeschaltet" in mail.outbox[0].subject
+    assert len(mail.outbox) == 2
+    subjects = [msg.subject for msg in mail.outbox]
+    assert any("Mitgliedschaft freigeschaltet" in subject for subject in subjects)
+    card_mail = next(msg for msg in mail.outbox if "Mitgliederausweis" in msg.subject)
+    assert pending_user.email in card_mail.to
+    attachment_names = {attachment[0] for attachment in card_mail.attachments}
+    assert "Mitgliederausweis.pdf" in attachment_names
     assert EmailGroupMember.objects.filter(group__name="Wichtige Vereinsinfos", member=pending_user.profile).exists() is True
 
 

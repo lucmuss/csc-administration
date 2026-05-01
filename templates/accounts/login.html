@@ -23,31 +23,47 @@
           <h2>Konto oeffnen</h2>
         </div>
       </div>
-      <form method="post" class="form-stack">
+      <form method="post" class="form-stack" novalidate>
         {% csrf_token %}
         {% if form.non_field_errors %}
           <div class="flash flash--error">{{ form.non_field_errors }}</div>
         {% endif %}
         <div class="field">
-          <label for="{{ form.username.id_for_label }}">E-Mail</label>
+          <label for="{{ form.username.id_for_label }}">E-Mail{% if form.username.field.required %} *{% endif %}</label>
           {{ form.username }}
           {{ form.username.errors }}
         </div>
-        <div class="field">
-          <label for="{{ form.federal_state.id_for_label }}">Bundesland</label>
-          {{ form.federal_state }}
-          {{ form.federal_state.errors }}
-          <small class="field-hint">Optional: Filtere Clubs in deiner Region.</small>
-        </div>
-        <div class="field">
-          <label for="{{ form.social_club.id_for_label }}">Social Club</label>
-          {{ form.social_club }}
-          {{ form.social_club.errors }}
-          <small class="field-hint">Tipp: Du kannst im Dropdown nach Ort/Name suchen, z. B. Leipzig.</small>
-        </div>
-        <div class="field">
-          <label for="{{ form.password.id_for_label }}">Passwort</label>
-          {{ form.password }}
+        {% if form.federal_state %}
+          <div class="field">
+            <label for="{{ form.federal_state.id_for_label }}">Bundesland{% if form.federal_state.field.required %} *{% endif %}</label>
+            {{ form.federal_state }}
+            {{ form.federal_state.errors }}
+            <small class="field-hint">Optional: Filtere Clubs in deiner Region.</small>
+          </div>
+        {% endif %}
+        {% if form.social_club %}
+          <div class="field">
+            <label for="{{ form.social_club.id_for_label }}">Social Club{% if form.social_club.field.required %} *{% endif %}</label>
+            {{ form.social_club }}
+            {{ form.social_club.errors }}
+            <small class="field-hint">Tipp: Du kannst im Dropdown nach Ort/Name suchen, z. B. Leipzig.</small>
+          </div>
+        {% endif %}
+        <div class="field field--password">
+          <label for="{{ form.password.id_for_label }}">Passwort{% if form.password.field.required %} *{% endif %}</label>
+          <div class="inline-actions" style="align-items:center; gap:.5rem;">
+            {{ form.password }}
+            <button
+              type="button"
+              class="btn-ghost"
+              data-password-toggle
+              data-password-target="{{ form.password.id_for_label }}"
+              aria-controls="{{ form.password.id_for_label }}"
+              aria-label="Passwort anzeigen"
+            >
+              Anzeigen
+            </button>
+          </div>
           {{ form.password.errors }}
         </div>
         <div class="auth-card__footer">
@@ -64,8 +80,8 @@
         <a href="{% url 'core:social_club_register' %}" class="text-link">Social Club registrieren</a>
       </div>
       <div class="auth-card__footer">
-        <span>Regional suchen?</span>
-        <a href="{% url 'core:social_club_regional_list' %}" class="text-link">Clubs in der Naehe ansehen</a>
+        <span>Clubs ansehen?</span>
+        <a href="{% url 'core:social_club_public_list' %}" class="text-link">Social Clubs auf der Plattform</a>
       </div>
     </div>
   </section>

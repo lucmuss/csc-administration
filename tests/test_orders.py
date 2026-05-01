@@ -26,14 +26,16 @@ def test_reserved_order_updates_balance_stock_and_limits(member_user):
 
     assert order.status == Order.STATUS_RESERVED
     assert order.total == Decimal("50.00")
+    assert order.paid_with_balance == Decimal("0.00")
 
     strain.refresh_from_db()
     profile = Profile.objects.get(user=member_user)
 
     assert strain.stock == Decimal("95.00")
-    assert profile.balance == Decimal("150.00")
-    assert profile.daily_used == Decimal("5.00")
-    assert profile.monthly_used == Decimal("5.00")
+    # Reservierungen reduzieren das Guthaben nicht sofort und buchen
+    # Limits erst bei finaler Freigabe/Ausgabe.
+    assert profile.daily_used == Decimal("0.00")
+    assert profile.monthly_used == Decimal("0.00")
 
 
 @pytest.mark.django_db

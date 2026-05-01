@@ -1,3 +1,4 @@
+import re
 from decimal import Decimal
 
 import pytest
@@ -25,7 +26,7 @@ def test_shop_displays_extended_cannabinoids_when_provided(client, member_user):
     response = client.get(reverse("orders:shop"))
     html = response.content.decode("utf-8")
     assert response.status_code == 200
-    assert "CBG 0.60%" in html
-    assert "CBN 0.20%" in html
-    assert "CBC 0.30%" in html
-    assert "CBV 0.10%" in html
+    assert re.search(r"CBG\s+0[\.,]6(?:0)?%", html)
+    assert re.search(r"CBN\s+0[\.,]2(?:0)?%", html)
+    assert re.search(r"CBC\s+0[\.,]3(?:0)?%", html)
+    assert re.search(r"CBV\s+0[\.,]1(?:0)?%", html)

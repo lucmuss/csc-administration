@@ -8,12 +8,14 @@ from .views import (
     MemberPasswordResetView,
     UserLogoutView,
     dev_login,
+    legacy_register,
 )
 
 app_name = "accounts"
 
 urlpatterns = [
     path("login/", EmailLoginView.as_view(), name="login"),
+    path("register/", legacy_register, name="register"),
     path("logout/", UserLogoutView.as_view(), name="logout"),
     path("password-reset/", MemberPasswordResetView.as_view(), name="password_reset"),
     path("password-reset/done/", MemberPasswordResetDoneView.as_view(), name="password_reset_done"),

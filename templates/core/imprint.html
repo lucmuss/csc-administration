@@ -20,27 +20,27 @@
       {% endif %}
       <h2>Betreiberangaben</h2>
       <ul>
-        <li>Name des Betreibers: {{ club_name|default:"Bitte konfigurieren" }}</li>
-        <li>Anschrift: {{ club_contact_address|default:"Bitte konfigurieren" }}</li>
-        <li>Vertreten durch: {{ club_board_representatives|default:"Bitte konfigurieren" }}</li>
-        <li>Kontakt E-Mail: {{ club_contact_email|default:"Bitte konfigurieren" }}</li>
-        <li>Mitgliedschaft: {{ club_membership_email|default:"Bitte konfigurieren" }}</li>
-        <li>Praevention: {{ club_prevention_email|default:"Bitte konfigurieren" }}</li>
-        <li>Finanzen: {{ club_finance_email|default:"Bitte konfigurieren" }}</li>
-        <li>Datenschutzkontakt: {{ club_privacy_contact|default:"Bitte konfigurieren" }}</li>
-        <li>Datenschutzbeauftragte Stelle: {{ club_data_protection_officer|default:"Nicht benannt" }}</li>
-        <li>Kontakt Telefon: {{ club_contact_phone|default:"Bitte konfigurieren" }}</li>
+        <li>Name des Betreibers: <strong>{{ club_name|default:"Bitte konfigurieren" }}</strong></li>
+        <li>Anschrift: <strong>{{ club_contact_address|default:"Bitte konfigurieren" }}</strong></li>
+        <li>Vertreten durch: <strong>{{ club_board_representatives|default:"Bitte konfigurieren" }}</strong></li>
+        <li>Kontakt E-Mail: {% if club_contact_email %}<a class="text-link" href="mailto:{{ club_contact_email }}"><strong>{{ club_contact_email }}</strong></a>{% else %}<strong>Bitte konfigurieren</strong>{% endif %}</li>
+        <li>Mitgliedschaft: {% if club_membership_email %}<a class="text-link" href="mailto:{{ club_membership_email }}"><strong>{{ club_membership_email }}</strong></a>{% else %}<strong>Bitte konfigurieren</strong>{% endif %}</li>
+        <li>Praevention: {% if club_prevention_email %}<a class="text-link" href="mailto:{{ club_prevention_email }}"><strong>{{ club_prevention_email }}</strong></a>{% else %}<strong>Bitte konfigurieren</strong>{% endif %}</li>
+        <li>Finanzen: {% if club_finance_email %}<a class="text-link" href="mailto:{{ club_finance_email }}"><strong>{{ club_finance_email }}</strong></a>{% else %}<strong>Bitte konfigurieren</strong>{% endif %}</li>
+        <li>Datenschutzkontakt: {% if club_privacy_contact %}<a class="text-link" href="mailto:{{ club_privacy_contact }}"><strong>{{ club_privacy_contact }}</strong></a>{% else %}<strong>Bitte konfigurieren</strong>{% endif %}</li>
+        <li>Datenschutzbeauftragte Stelle: <strong>{{ club_data_protection_officer|default:"Nicht benannt" }}</strong></li>
+        <li>Kontakt Telefon: {% if club_contact_phone %}<a class="text-link" href="tel:{{ club_contact_phone }}"><strong>{{ club_contact_phone }}</strong></a>{% else %}<strong>Bitte konfigurieren</strong>{% endif %}</li>
         <li>Instagram: {% if instagram_url %}<a href="{{ instagram_url }}" class="text-link" target="_blank" rel="noopener">{{ instagram_url }}</a>{% else %}Nicht angegeben{% endif %}</li>
         <li>Telegram: {% if telegram_url %}<a href="{{ telegram_url }}" class="text-link" target="_blank" rel="noopener">{{ telegram_url }}</a>{% else %}Nicht angegeben{% endif %}</li>
         <li>WhatsApp: {% if whatsapp_url %}<a href="{{ whatsapp_url }}" class="text-link" target="_blank" rel="noopener">{{ whatsapp_url }}</a>{% else %}Nicht angegeben{% endif %}</li>
-        <li>Registereintrag: {{ club_register_entry|default:"Bitte konfigurieren" }}</li>
-        <li>Registergericht: {{ club_register_court|default:"Bitte konfigurieren" }}</li>
-        <li>Steuernummer: {{ club_tax_number|default:"Bitte konfigurieren" }}</li>
-        <li>USt-ID / Wirtschafts-ID: {{ club_vat_id|default:"Nicht angegeben" }}</li>
-        <li>Aufsichtsbehoerde: {{ club_supervisory_authority|default:"Nicht angegeben" }}</li>
-        <li>Inhaltlich verantwortlich: {{ club_content_responsible|default:club_responsible_person|default:"Nicht angegeben" }}</li>
-        <li>Verantwortlich gemaess § 55 Abs. 2 RStV: {{ club_responsible_person|default:"Nicht angegeben" }}</li>
-        <li>Praeventionsbeauftragte:r: {{ prevention_officer_name|default:"Nicht angegeben" }}</li>
+        <li>Registereintrag: <strong>{{ club_register_entry|default:"Bitte konfigurieren" }}</strong></li>
+        <li>Registergericht: <strong>{{ club_register_court|default:"Bitte konfigurieren" }}</strong></li>
+        <li>Steuernummer: <strong>{{ club_tax_number|default:"Bitte konfigurieren" }}</strong></li>
+        <li>USt-ID / Wirtschafts-ID: <strong>{{ club_vat_id|default:"Nicht angegeben" }}</strong></li>
+        <li>Aufsichtsbehoerde: <strong>{{ club_supervisory_authority|default:"Nicht angegeben" }}</strong></li>
+        <li>Inhaltlich verantwortlich: <strong>{{ club_content_responsible|default:club_responsible_person|default:"Nicht angegeben" }}</strong></li>
+        <li>Verantwortlich gemaess § 55 Abs. 2 RStV: <strong>{{ club_responsible_person|default:"Nicht angegeben" }}</strong></li>
+        <li>Praeventionsbeauftragte:r: <strong>{{ prevention_officer_name|default:"Nicht angegeben" }}</strong></li>
       </ul>
 
       {% if club_language_notice %}

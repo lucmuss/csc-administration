@@ -18,7 +18,7 @@ def test_member_profile_view(client, member_user):
 
     assert response.status_code == 200
     assert member_user.email in str(response.content)
-    assert member_user.profile.member_number in str(response.content)
+    assert str(member_user.profile.member_number) in str(response.content)
 
 
 @pytest.mark.django_db

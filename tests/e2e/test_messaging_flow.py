@@ -45,35 +45,39 @@ def test_create_email_group_duplicate_name(client, board_user, email_group):
 @pytest.mark.django_db
 def test_add_member_to_group(client, board_user, email_group, pending_member):
     """Test: Mitglieder zu Gruppe hinzufügen"""
+    from apps.messaging.models import EmailGroupMember
+
     client.force_login(board_user)
 
     response = client.post(
-        reverse("messaging:email_group_add_member", kwargs={"pk": email_group.pk}),
+        reverse("messaging:email_group_add_members", kwargs={"pk": email_group.pk}),
         {
-            "member_ids": [pending_member.pk],
+            "members": [pending_member.profile.pk],
         },
     )
 
     assert response.status_code == 302
-    assert email_group.members.filter(pk=pending_member.pk).exists()
+    assert EmailGroupMember.objects.filter(group=email_group, member=pending_member.profile).exists()
 
 
 @pytest.mark.django_db
 def test_remove_member_from_group(client, board_user, email_group, member_user):
     """Test: Mitglieder aus Gruppe entfernen"""
-    email_group.members.add(member_user)
+    from apps.messaging.models import EmailGroupMember
+
+    EmailGroupMember.objects.get_or_create(group=email_group, member=member_user.profile)
     
     client.force_login(board_user)
 
     response = client.post(
         reverse("messaging:email_group_remove_member", kwargs={
             "pk": email_group.pk,
-            "member_id": member_user.pk
+            "member_pk": member_user.profile.pk
         }),
     )
 
     assert response.status_code == 302
-    assert not email_group.members.filter(pk=member_user.pk).exists()
+    assert not EmailGroupMember.objects.filter(group=email_group, member=member_user.profile).exists()
 
 
 @pytest.mark.django_db

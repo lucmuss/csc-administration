@@ -124,14 +124,26 @@ class ClubConfigurationForm(forms.ModelForm):
 
 
 class SocialClubRegistrationForm(forms.ModelForm):
+    street_address_number = forms.CharField(max_length=20, required=False, label="Street Address Number")
+
     class Meta:
         model = SocialClub
-        fields = ["name", "email", "street_address", "postal_code", "city", "federal_state", "max_verified_members", "phone", "website", "public_description"]
+        fields = ["name", "email", "phone", "street_address", "street_address_number", "postal_code", "city", "federal_state", "website"]
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         for field in self.fields.values():
             field.widget.attrs["class"] = (field.widget.attrs.get("class", "") + " form-input").strip()
+
+    def clean(self):
+        cleaned_data = super().clean()
+        street = (cleaned_data.get("street_address") or "").strip()
+        number = (cleaned_data.get("street_address_number") or "").strip()
+        if street and number:
+            cleaned_data["street_address"] = f"{street} {number}"
+        else:
+            cleaned_data["street_address"] = street
+        return cleaned_data
 
 
 class SocialClubSettingsForm(forms.ModelForm):

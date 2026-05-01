@@ -29,11 +29,14 @@ class Profile(models.Model):
     STATUS_PENDING = "pending"
     STATUS_VERIFIED = "verified"
     STATUS_ACTIVE = "active"
+    STATUS_ACCEPTED = STATUS_ACTIVE
+    STATUS_SUSPENDED = "suspended"
     STATUS_REJECTED = "rejected"
     STATUS_CHOICES = [
         (STATUS_PENDING, "Ausstehend"),
         (STATUS_VERIFIED, "Verifiziert"),
         (STATUS_ACTIVE, "Aktiv"),
+        (STATUS_SUSPENDED, "Gesperrt"),
         (STATUS_REJECTED, "Abgelehnt"),
     ]
 
@@ -65,6 +68,7 @@ class Profile(models.Model):
     telegram_opt_in = models.BooleanField(default=False)
     application_notes = models.TextField(blank=True)
     registration_completed_at = models.DateTimeField(null=True, blank=True)
+    probation_until = models.DateField(null=True, blank=True)
 
     balance = models.DecimalField(max_digits=10, decimal_places=2, default=Decimal("0.00"))
     sepa_mandate = models.OneToOneField(
@@ -89,21 +93,27 @@ class Profile(models.Model):
 
     class Meta:
         ordering = ["member_number", "id"]
-        constraints = [
-            models.CheckConstraint(
-                check=models.Q(daily_used__lte=25),
-                name="daily_limit_25g_check"
-            ),
-            models.CheckConstraint(
-                check=models.Q(monthly_used__lte=50),
-                name="monthly_limit_50g_check"
-            ),
-        ]
         indexes = [
             models.Index(fields=["status", "is_verified"]),
             models.Index(fields=["daily_counter_date"]),
             models.Index(fields=["monthly_counter_key"]),
         ]
+
+    def _ensure_unique_member_number(self) -> None:
+        if not self.member_number:
+            return
+        siblings = Profile.objects.exclude(pk=self.pk)
+        if not siblings.filter(member_number=self.member_number).exists():
+            return
+        max_number = siblings.aggregate(Max("member_number"))["member_number__max"]
+        candidate = (max_number + 1) if max_number else (self.member_number + 1)
+        while siblings.filter(member_number=candidate).exists():
+            candidate += 1
+        self.member_number = candidate
+
+    def save(self, *args, **kwargs):
+        self._ensure_unique_member_number()
+        super().save(*args, **kwargs)
 
     def __str__(self):
         return f"{self.user.email} ({self.member_number or 'neu'})"

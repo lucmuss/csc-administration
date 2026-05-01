@@ -43,6 +43,9 @@
         </div>
         <form method="post" class="form-stack">
           {% csrf_token %}
+          {% if form.errors %}
+            <div class="flash flash--error">Bitte pruefe die markierten Felder und korrigiere deine Eingaben.</div>
+          {% endif %}
           {{ form.date }}
           <p class="field-hint">Der Eintrag wird automatisch auf den heutigen Tag gesetzt.</p>
           <div class="field">

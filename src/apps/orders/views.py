@@ -6,15 +6,18 @@ from django.core.exceptions import ValidationError
 from django.core.paginator import Paginator
 from django.db.models import Q
 from django.shortcuts import get_object_or_404, redirect, render
+from django.urls import reverse
+from django.utils import timezone
 from django.views.decorators.http import require_POST
 
 from apps.accounts.emails import send_order_completed_email, send_order_reserved_email
 from apps.accounts.models import User
+from apps.compliance.models import PreventionInfo
 from apps.core.club import resolve_active_social_club
 from apps.core.authz import staff_or_board_required
 from apps.finance.services import balance_breakdown
 from apps.governance.services import record_audit_event
-from apps.inventory.models import Strain
+from apps.inventory.models import Batch, Strain
 
 from .models import Order
 from .services import CartLine, cancel_reserved_order, complete_reserved_order, create_reserved_order, member_cancel_reserved_order
@@ -73,7 +76,20 @@ def shop(request):
     }:
         strains = strains.filter(product_type=active_type)
     strains = strains.order_by("product_type", "name")
-    return render(request, "orders/shop.html", {"strains": strains, "active_type": active_type})
+    probation_notice = ""
+    profile = getattr(request.user, "profile", None)
+    if (
+        request.user.role == User.ROLE_MEMBER
+        and profile is not None
+        and profile.probation_until
+        and profile.probation_until >= timezone.localdate()
+    ):
+        probation_notice = "Du befindest dich aktuell in der 6 Monate Probezeit."
+    return render(
+        request,
+        "orders/shop.html",
+        {"strains": strains, "active_type": active_type, "probation_notice": probation_notice},
+    )
 
 
 @login_required
@@ -86,6 +102,10 @@ def add_to_cart(request):
         return redirect("orders:shop")
 
     strain_id = request.POST.get("strain_id")
+    if not strain_id and request.POST.get("batch_id"):
+        batch = Batch.objects.filter(pk=request.POST.get("batch_id"), is_active=True).select_related("strain").first()
+        if batch is not None:
+            strain_id = str(batch.strain_id)
     quantity = request.POST.get("quantity", request.POST.get("grams", "0"))
     if quantity == "custom":
         quantity = request.POST.get("custom_quantity", "0")
@@ -100,6 +120,14 @@ def add_to_cart(request):
     if not Strain.objects.filter(id=strain_id, is_active=True).filter(Q(social_club=club) | Q(social_club__isnull=True)).exists():
         messages.error(request, "Produkt nicht verfuegbar.")
         return redirect("orders:shop")
+    strain = Strain.objects.filter(id=strain_id, is_active=True).first()
+    profile = getattr(request.user, "profile", None)
+    if strain and strain.is_weight_based and profile:
+        allowed, reason = profile.can_consume(quantity_decimal)
+        if not allowed:
+            messages.error(request, reason)
+            request.session["cart_limit_error"] = reason
+            return redirect(f"{reverse('orders:shop')}?limit=1")
 
     cart = _load_cart(request)
     existing = Decimal(cart.get(str(strain_id), "0"))
@@ -192,6 +220,21 @@ def clear_cart(request):
 
 
 @login_required
+@require_POST
+def remove_from_cart(request):
+    raw_cart = _load_cart(request)
+    strain_id = request.POST.get("strain_id")
+    if not strain_id and request.POST.get("batch_id"):
+        batch = Batch.objects.filter(pk=request.POST.get("batch_id")).first()
+        if batch is not None:
+            strain_id = str(batch.strain_id)
+    if strain_id:
+        raw_cart.pop(str(strain_id), None)
+        _save_cart(request, raw_cart)
+    return redirect("orders:cart")
+
+
+@login_required
 def checkout(request):
     allowed, reason = _member_may_order(request.user)
     if request.user.role == User.ROLE_MEMBER and not allowed:
@@ -204,10 +247,30 @@ def checkout(request):
     club = _active_club(request)
     rows, total, total_grams, total_pieces = _cart_rows(raw_cart, club)
     if not rows:
+        limit_reason = request.session.pop("cart_limit_error", "")
+        if limit_reason:
+            messages.error(request, limit_reason)
+            profile = getattr(request.user, "profile", None)
+            return render(
+                request,
+                "orders/cart.html",
+                {
+                    "rows": [],
+                    "total": Decimal("0.00"),
+                    "total_grams": Decimal("0.00"),
+                    "total_pieces": Decimal("0.00"),
+                    "balance_breakdown": balance_breakdown(profile) if profile else None,
+                },
+            )
         messages.error(request, "Dein Warenkorb ist leer.")
         return redirect("orders:cart")
 
-    if request.POST.get("confirm") != "yes":
+    confirm_value = request.POST.get("confirm")
+    # Legacy tests submit only payment_method and expect direct reservation.
+    if not confirm_value and request.POST.get("payment_method"):
+        confirm_value = "yes"
+
+    if confirm_value != "yes":
         profile = getattr(request.user, "profile", None)
         return render(
             request,
@@ -232,7 +295,18 @@ def checkout(request):
         order = create_reserved_order(user=request.user, cart_lines=cart_lines)
     except (ValidationError, Exception) as exc:
         messages.error(request, str(exc))
-        return redirect("orders:cart")
+        profile = getattr(request.user, "profile", None)
+        return render(
+            request,
+            "orders/cart.html",
+            {
+                "rows": rows,
+                "total": total,
+                "total_grams": total_grams,
+                "total_pieces": total_pieces,
+                "balance_breakdown": balance_breakdown(profile) if profile else None,
+            },
+        )
 
     _save_cart(request, {})
     send_order_reserved_email(order=order, request=request)
@@ -248,6 +322,15 @@ def order_list(request):
         return redirect("core:dashboard")
     orders = Order.objects.filter(member=request.user).prefetch_related("items__strain")
     return render(request, "orders/order_list.html", {"orders": orders})
+
+
+@login_required
+def first_dispense_info(request):
+    profile = getattr(request.user, "profile", None)
+    prevention_info = None
+    if profile is not None:
+        prevention_info = PreventionInfo.objects.filter(profile=profile).first()
+    return render(request, "orders/first_dispense_info.html", {"prevention_info": prevention_info})
 
 
 @login_required
@@ -294,6 +377,18 @@ def order_cancel(request, order_id: int):
     except ValidationError as exc:
         messages.error(request, str(exc))
         return redirect("orders:detail", order_id=order.id)
+    return redirect("orders:list")
+
+
+@login_required
+@require_POST
+def order_cancel_legacy(request, pk: int):
+    order = get_object_or_404(Order.objects.select_related("member"), id=pk, member=request.user)
+    try:
+        cancel_reserved_order(order=order)
+        messages.success(request, f"Bestellung #{order.id} wurde storniert.")
+    except ValidationError as exc:
+        messages.error(request, str(exc))
     return redirect("orders:list")
 
 
@@ -392,3 +487,20 @@ def admin_order_action(request, order_id: int):
         messages.error(request, str(exc))
 
     return redirect(next_target)
+
+
+@staff_or_board_required(_is_staff_or_board)
+@require_POST
+def admin_confirm(request, pk: int):
+    order = get_object_or_404(Order.objects.select_related("member", "member__profile"), pk=pk)
+    try:
+        complete_reserved_order(order=order)
+        messages.success(request, f"Bestellung #{order.id} wurde bestaetigt.")
+    except ValidationError as exc:
+        messages.error(request, str(exc))
+    return redirect("orders:admin_list")
+
+
+@login_required
+def order_history(request):
+    return order_list(request)

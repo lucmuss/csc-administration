@@ -7,12 +7,14 @@ from django.db.models import Sum
 from django.http import Http404, HttpResponse
 from django.shortcuts import get_object_or_404, redirect, render
 from django.urls import reverse
+from django.utils import timezone
 
 from apps.accounts.models import User
+from apps.members.models import Profile
 from apps.orders.models import OrderItem
 
 from .forms import BalanceTopUpForm, SepaMandateForm, UploadedInvoiceForm, UploadedInvoiceUpdateForm
-from .models import BalanceTopUp, BalanceTransaction, Invoice, Payment, UploadedInvoice
+from .models import BalanceTopUp, BalanceTransaction, Invoice, Payment, SepaMandate, UploadedInvoice
 from .services import (
     active_sepa_mandate,
     analyze_uploaded_invoice,
@@ -24,6 +26,7 @@ from .services import (
     finalize_stripe_setup_session_for_member,
     finalize_stripe_topup,
     invoice_archive_summary,
+    add_balance_transaction,
     render_invoice_pdf,
 )
 
@@ -209,6 +212,11 @@ def dashboard(request):
 
 
 @login_required
+def balance(request):
+    return dashboard(request)
+
+
+@login_required
 def stripe_method_create(request):
     if request.user.role != User.ROLE_MEMBER:
         raise Http404
@@ -371,6 +379,86 @@ def topup_success(request):
     else:
         messages.warning(request, "Die Stripe-Zahlung ist noch nicht bestaetigt. Bitte pruefe es gleich erneut.")
     return redirect("finance:dashboard")
+
+
+@login_required
+def add_balance(request, member_id: int):
+    if request.user.role not in {User.ROLE_STAFF, User.ROLE_BOARD}:
+        raise Http404
+    if request.method != "POST":
+        return redirect("finance:dashboard")
+
+    profile = get_object_or_404(Profile.objects.select_related("user"), user_id=member_id)
+    amount_raw = request.POST.get("amount", "0")
+    method = request.POST.get("payment_method", "")
+    notes = request.POST.get("notes", "")
+    try:
+        amount = float(amount_raw)
+    except (TypeError, ValueError):
+        messages.error(request, "Ungueltiger Betrag.")
+        return redirect("finance:dashboard")
+    if amount <= 0:
+        messages.error(request, "Betrag muss groesser als 0 sein.")
+        return redirect("finance:dashboard")
+
+    add_balance_transaction(
+        profile=profile,
+        amount=amount_raw,
+        kind=BalanceTransaction.KIND_TOPUP if method in {"cash", "transfer", "bank"} else BalanceTransaction.KIND_MANUAL_ADJUSTMENT,
+        note=notes,
+        created_by=request.user,
+        reference=f"manual-balance-{request.user.id}-{profile.id}-{timezone.now().timestamp()}",
+    )
+    messages.success(request, "Guthaben wurde aktualisiert.")
+    return redirect("finance:dashboard")
+
+
+@login_required
+def invoice_pay(request, pk: int):
+    if request.user.role not in {User.ROLE_STAFF, User.ROLE_BOARD}:
+        raise Http404
+    if request.method != "POST":
+        return redirect("finance:invoice_detail", pk=pk)
+    invoice = get_object_or_404(Invoice, pk=pk)
+    invoice.status = Invoice.STATUS_PAID
+    invoice.save(update_fields=["status", "updated_at"])
+    messages.success(request, f"Rechnung {invoice.invoice_number} wurde als bezahlt markiert.")
+    return redirect("finance:invoice_detail", pk=pk)
+
+
+@login_required
+def sepa_mandate_create(request):
+    if request.method != "POST":
+        return mandate_create(request)
+    form = SepaMandateForm(request.POST)
+    if not form.is_valid():
+        return render(request, "finance/mandate_form.html", {"form": form, "existing_mandate": active_sepa_mandate(getattr(request.user, "profile", None))})
+    create_sepa_mandate(
+        user=request.user,
+        iban=form.cleaned_data["iban"],
+        bic=form.cleaned_data["bic"],
+        account_holder=form.cleaned_data["account_holder"],
+    )
+    messages.success(request, "SEPA-Mandat angelegt.")
+    return redirect("finance:dashboard")
+
+
+@login_required
+def sepa_mandate_revoke(request, pk: int):
+    if request.method != "POST":
+        return redirect("finance:mandate_create")
+    profile = getattr(request.user, "profile", None)
+    if profile is None:
+        raise Http404
+    mandate = get_object_or_404(SepaMandate, pk=pk, profile=profile)
+    mandate.is_active = False
+    mandate.revoked_at = timezone.now()
+    mandate.save(update_fields=["is_active", "revoked_at", "updated_at"])
+    if profile.sepa_mandate_id == mandate.id:
+        profile.sepa_mandate = None
+        profile.save(update_fields=["sepa_mandate", "updated_at"])
+    messages.success(request, "SEPA-Mandat wurde widerrufen.")
+    return redirect("finance:mandate_create")
 
 
 @login_required

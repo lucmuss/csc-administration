@@ -24,14 +24,19 @@
         <label for="q">Suche</label>
         <input id="q" name="q" type="text" value="{{ query }}" class="form-input" placeholder="z. B. Leipzig oder Clubname">
       </div>
-      <div class="field">
-        <label for="price_min">Min Ø Preis (EUR)</label>
-        <input id="price_min" name="price_min" type="number" step="0.01" min="0" value="{{ price_min }}" class="form-input" placeholder="z. B. 6.50">
-      </div>
-      <div class="field">
-        <label for="price_max">Max Ø Preis (EUR)</label>
-        <input id="price_max" name="price_max" type="number" step="0.01" min="0" value="{{ price_max }}" class="form-input" placeholder="z. B. 11.00">
-      </div>
+      <details class="field" style="grid-column:1 / -1;">
+        <summary class="btn-ghost" style="display:inline-flex; width:auto;">Erweiterte Filter</summary>
+        <div class="filter-grid" style="margin-top:.75rem;">
+          <div class="field">
+            <label for="price_min">Min Ø Preis (EUR)</label>
+            <input id="price_min" name="price_min" type="number" step="0.01" min="0" value="{{ price_min }}" class="form-input" placeholder="z. B. 6.50">
+          </div>
+          <div class="field">
+            <label for="price_max">Max Ø Preis (EUR)</label>
+            <input id="price_max" name="price_max" type="number" step="0.01" min="0" value="{{ price_max }}" class="form-input" placeholder="z. B. 11.00">
+          </div>
+        </div>
+      </details>
       <div class="field field--actions"><button type="submit" class="btn-primary btn-block">Suchen</button></div>
       <div class="field field--actions"><a href="{% url 'core:social_club_public_list' %}" class="btn-ghost btn-block">Zuruecksetzen</a></div>
     </form>

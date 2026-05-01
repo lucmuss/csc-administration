@@ -35,6 +35,7 @@ def unverified_member(db):
 
 
 @pytest.mark.django_db
+@override_settings(ENFORCE_ONBOARDING_REDIRECT_IN_TESTS=True)
 def test_participation_dashboard_blocks_unverified_member(client, unverified_member):
     client.force_login(unverified_member)
     response = client.get(reverse("participation:dashboard"))

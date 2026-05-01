@@ -138,13 +138,13 @@ def batch(db, strain):
 @pytest.fixture
 def email_group(db, member_user):
     """Test-E-Mail-Gruppe"""
-    from apps.messaging.models import EmailGroup
+    from apps.messaging.models import EmailGroup, EmailGroupMember
 
     group = EmailGroup.objects.create(
         name="Test Gruppe",
         description="Eine Test-Gruppe",
     )
-    group.members.add(member_user)
+    EmailGroupMember.objects.create(group=group, member=member_user.profile)
     return group
 
 

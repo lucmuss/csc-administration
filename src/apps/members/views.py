@@ -4,6 +4,7 @@ import re
 from datetime import datetime
 
 from django.contrib import messages
+from django.contrib.auth import login as auth_login
 from django.contrib.auth.decorators import login_required
 from django.db.models import Count, Q
 from django.http import HttpResponse
@@ -13,11 +14,13 @@ from django.utils import timezone
 from django.utils import translation
 
 from apps.accounts.emails import (
+    send_member_card_email,
     send_membership_documents_email,
     send_membership_status_email,
     send_registration_received_email,
 )
 from apps.accounts.models import User
+from apps.audit.models import AuditLog
 from apps.core.club import resolve_active_federal_state, resolve_active_social_club
 from apps.core.authz import board_required, staff_or_board_required
 from apps.finance.models import SepaMandate
@@ -187,9 +190,10 @@ def _normalize_directory_query(request):
 def register(request):
     active_state = resolve_active_federal_state(request)
     if request.method == "POST":
-        form = MemberRegistrationForm(request.POST, federal_state=active_state)
+        form = MemberRegistrationForm(request.POST, federal_state=active_state, request=request)
         if form.is_valid():
             user = form.save()
+            auth_login(request, user, backend="django.contrib.auth.backends.ModelBackend")
             send_registration_received_email(
                 user,
                 request,
@@ -205,12 +209,13 @@ def register(request):
                     request,
                     "Registrierung erfolgreich. Freischaltung folgt nach Verifizierung.",
                 )
-            return redirect("accounts:login")
+            return redirect("core:dashboard")
     else:
         active_club = resolve_active_social_club(request)
         form = MemberRegistrationForm(
             initial={"social_club": active_club.id} if active_club else None,
             federal_state=active_state,
+            request=request,
         )
     return render(request, "members/register.html", {"form": form, "is_bootstrap": not User.objects.exists()})
 
@@ -294,6 +299,20 @@ def profile_view(request):
 
 
 @login_required
+def member_card_pdf(request):
+    from apps.members.documents import member_card_attachment
+
+    profile = get_object_or_404(Profile.objects.select_related("user"), user=request.user)
+    if not profile.is_verified:
+        messages.info(request, "Der Mitgliederausweis ist erst nach abgeschlossener Verifizierung verfuegbar.")
+        return redirect("members:profile")
+    filename, content, mimetype = member_card_attachment(profile)
+    response = HttpResponse(content, content_type=mimetype)
+    response["Content-Disposition"] = f'attachment; filename="{filename}"'
+    return response
+
+
+@login_required
 def member_detail(request, profile_id: int):
     profile = get_object_or_404(Profile.objects.select_related("user"), id=profile_id)
     viewer = request.user
@@ -334,6 +353,24 @@ def member_detail(request, profile_id: int):
             "verification_submission": getattr(profile, "verification_submission", None),
         },
     )
+
+
+@board_required(_is_board)
+def profile_edit_legacy(request, pk: int):
+    profile = get_object_or_404(Profile.objects.select_related("user"), pk=pk)
+    if request.method == "POST":
+        user = profile.user
+        user.first_name = request.POST.get("first_name", user.first_name)
+        user.last_name = request.POST.get("last_name", user.last_name)
+        user.save(update_fields=["first_name", "last_name"])
+        AuditLog.objects.create(
+            user=request.user,
+            action="member_updated",
+            metadata={"profile_id": profile.id},
+        )
+        messages.success(request, "Mitglied aktualisiert.")
+        return redirect("members:detail", profile_id=profile.id)
+    return redirect("members:detail", profile_id=profile.id)
 
 
 @login_required
@@ -388,10 +425,11 @@ def verification_detail(request, profile_id: int):
             profile.is_verified = True
             profile.status = Profile.STATUS_ACTIVE
             profile.allocate_member_number()
-            profile.save(update_fields=["is_verified", "status", "updated_at"])
+            profile.save(update_fields=["is_verified", "status", "member_number", "updated_at"])
             from apps.finance.services import apply_admission_fee_if_needed
 
             apply_admission_fee_if_needed(profile)
+            send_member_card_email(profile, request)
             messages.success(request, f"Verifizierung fuer {profile.user.email} bestaetigt.")
         elif action == "reject":
             submission.status = VerificationSubmission.STATUS_REJECTED
@@ -814,11 +852,12 @@ def member_action(request, profile_id: int):
         profile.is_verified = True
         profile.status = Profile.STATUS_ACTIVE
         profile.allocate_member_number()
-        profile.save(update_fields=["is_verified", "status", "updated_at"])
+        profile.save(update_fields=["is_verified", "status", "member_number", "updated_at"])
         from apps.finance.services import apply_admission_fee_if_needed
 
         apply_admission_fee_if_needed(profile)
         sync_member_messaging_preferences(profile)
+        send_member_card_email(profile, request)
         send_membership_status_email(
             profile.user,
             request,
@@ -953,3 +992,76 @@ def verify_member(request, profile_id: int):
     request.POST = request.POST.copy()
     request.POST["action"] = "verify"
     return member_action(request, profile_id)
+
+
+@login_required
+def profile_edit_self(request):
+    profile = get_object_or_404(Profile.objects.select_related("user"), user=request.user)
+    if request.method == "POST":
+        first_name = (request.POST.get("first_name") or "").strip()
+        last_name = (request.POST.get("last_name") or "").strip()
+        phone = (request.POST.get("phone") or "").strip()
+        if first_name:
+            request.user.first_name = first_name
+        if last_name:
+            request.user.last_name = last_name
+        request.user.save(update_fields=["first_name", "last_name"])
+        if phone:
+            profile.phone = phone
+            profile.save(update_fields=["phone", "updated_at"])
+        messages.success(request, "Profil aktualisiert.")
+        return redirect("members:profile")
+    return redirect("members:profile")
+
+
+def _resolve_profile_from_user_pk(pk: int) -> Profile:
+    return get_object_or_404(Profile.objects.select_related("user"), user_id=pk)
+
+
+@board_required(_is_board)
+def approve_member_legacy(request, pk: int):
+    profile = _resolve_profile_from_user_pk(pk)
+    profile.status = Profile.STATUS_ACCEPTED
+    profile.allocate_member_number()
+    profile.save(update_fields=["status", "updated_at", "member_number"])
+    messages.success(request, f"Mitglied {profile.user.email} akzeptiert.")
+    return redirect("members:directory")
+
+
+@board_required(_is_board)
+def reject_member_legacy(request, pk: int):
+    profile = _resolve_profile_from_user_pk(pk)
+    profile.status = Profile.STATUS_REJECTED
+    profile.is_verified = False
+    profile.save(update_fields=["status", "is_verified", "updated_at"])
+    messages.warning(request, f"Mitglied {profile.user.email} abgelehnt.")
+    return redirect("members:directory")
+
+
+@board_required(_is_board)
+def verify_member_legacy(request, pk: int):
+    profile = _resolve_profile_from_user_pk(pk)
+    profile.is_verified = True
+    if profile.status == Profile.STATUS_PENDING:
+        profile.status = Profile.STATUS_ACCEPTED
+    profile.allocate_member_number()
+    profile.save(update_fields=["is_verified", "status", "updated_at", "member_number"])
+    send_member_card_email(profile, request)
+    messages.success(request, f"Mitglied {profile.user.email} verifiziert.")
+    return redirect("members:directory")
+
+
+@board_required(_is_board)
+def suspend_member_legacy(request, pk: int):
+    profile = _resolve_profile_from_user_pk(pk)
+    profile.status = Profile.STATUS_SUSPENDED
+    profile.is_locked_for_orders = True
+    profile.save(update_fields=["status", "is_locked_for_orders", "updated_at"])
+    messages.warning(request, f"Mitglied {profile.user.email} gesperrt.")
+    return redirect("members:directory")
+
+
+@login_required
+def member_detail_legacy(request, pk: int):
+    profile = _resolve_profile_from_user_pk(pk)
+    return member_detail(request, profile_id=profile.id)

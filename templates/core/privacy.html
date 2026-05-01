@@ -18,14 +18,18 @@
       {% endif %}
       <h2>Verantwortlicher</h2>
       <ul>
-        <li>{{ club_name }}</li>
-        <li>{{ club_contact_address|default:"Bitte konfigurieren" }}</li>
-        <li>{{ club_contact_email|default:"Bitte konfigurieren" }} / {{ club_contact_phone|default:"Bitte konfigurieren" }}</li>
-        <li>Mitgliedschaft: {{ club_membership_email|default:"Bitte konfigurieren" }}</li>
-        <li>Praevention: {{ club_prevention_email|default:"Bitte konfigurieren" }}</li>
-        <li>Datenschutzkontakt: {{ club_privacy_contact|default:"Bitte konfigurieren" }}</li>
-        <li>Datenschutzbeauftragte Stelle: {{ club_data_protection_officer|default:"Nicht benannt" }}</li>
-        <li>Praeventionsbeauftragte Stelle: {{ prevention_officer_name|default:"Nicht benannt" }}</li>
+        <li><strong>{{ club_name }}</strong></li>
+        <li><strong>{{ club_contact_address|default:"Bitte konfigurieren" }}</strong></li>
+        <li>
+          {% if club_contact_email %}<a class="text-link" href="mailto:{{ club_contact_email }}"><strong>{{ club_contact_email }}</strong></a>{% else %}<strong>Bitte konfigurieren</strong>{% endif %}
+          /
+          {% if club_contact_phone %}<a class="text-link" href="tel:{{ club_contact_phone }}"><strong>{{ club_contact_phone }}</strong></a>{% else %}<strong>Bitte konfigurieren</strong>{% endif %}
+        </li>
+        <li>Mitgliedschaft: {% if club_membership_email %}<a class="text-link" href="mailto:{{ club_membership_email }}"><strong>{{ club_membership_email }}</strong></a>{% else %}<strong>Bitte konfigurieren</strong>{% endif %}</li>
+        <li>Praevention: {% if club_prevention_email %}<a class="text-link" href="mailto:{{ club_prevention_email }}"><strong>{{ club_prevention_email }}</strong></a>{% else %}<strong>Bitte konfigurieren</strong>{% endif %}</li>
+        <li>Datenschutzkontakt: {% if club_privacy_contact %}<a class="text-link" href="mailto:{{ club_privacy_contact }}"><strong>{{ club_privacy_contact }}</strong></a>{% else %}<strong>Bitte konfigurieren</strong>{% endif %}</li>
+        <li>Datenschutzbeauftragte Stelle: <strong>{{ club_data_protection_officer|default:"Nicht benannt" }}</strong></li>
+        <li>Praeventionsbeauftragte Stelle: <strong>{{ prevention_officer_name|default:"Nicht benannt" }}</strong></li>
       </ul>
 
       <h2>Zwecke und Kategorien der Verarbeitung</h2>

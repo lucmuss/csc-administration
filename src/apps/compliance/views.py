@@ -9,6 +9,7 @@ from django.utils import timezone
 
 from apps.accounts.models import User
 from apps.core.authz import board_required
+from apps.members.models import Profile
 
 from .models import ComplianceReport, SuspiciousActivity
 from .services import generate_annual_report
@@ -99,3 +100,42 @@ def annual_report(request):
 def suspicious_activity_list(request):
     activities = SuspiciousActivity.objects.select_related("profile__user").order_by("-detected_at")
     return render(request, "compliance/suspicious_activity_list.html", {"activities": activities})
+
+
+@board_required(_is_board)
+def bopst_report(request):
+    today = timezone.localdate()
+    try:
+        month = int(request.GET.get("month", today.month))
+        year = int(request.GET.get("year", today.year))
+    except (TypeError, ValueError):
+        month = today.month
+        year = today.year
+
+    report = generate_annual_report(year=year, generated_by=request.user)
+    response = HttpResponse(content_type="text/csv; charset=utf-8")
+    response["Content-Disposition"] = f'attachment; filename="bopst-{year}-{month:02d}.csv"'
+    writer = csv.writer(response)
+    writer.writerow(["BOPST-Report", f"{month:02d}/{year}"])
+    writer.writerow(["Abgaben (Jahr)", report.total_orders])
+    writer.writerow(["Mitglieder (Jahr)", report.total_members])
+    writer.writerow(["Gesamtmenge (Jahr)", report.total_grams])
+    return response
+
+
+@board_required(_is_board)
+def member_export(request):
+    response = HttpResponse(content_type="text/csv; charset=utf-8")
+    response["Content-Disposition"] = 'attachment; filename="member-export.csv"'
+    writer = csv.writer(response)
+    writer.writerow(["Mitgliedsnummer", "Status", "Verifiziert", "Monatsverbrauch"])
+    for profile in Profile.objects.select_related("user").order_by("member_number"):
+        writer.writerow(
+            [
+                profile.member_number or "",
+                profile.status,
+                "ja" if profile.is_verified else "nein",
+                profile.monthly_used,
+            ]
+        )
+    return response

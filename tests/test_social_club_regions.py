@@ -7,7 +7,7 @@ from apps.core.models import SocialClub
 
 @pytest.mark.django_db
 def test_regional_social_club_page_filters_by_federal_state(client):
-    SocialClub.objects.create(
+    leipzig = SocialClub.objects.create(
         name="CSC Leipzig",
         email="leipzig@example.com",
         street_address="Strasse 1",
@@ -18,7 +18,7 @@ def test_regional_social_club_page_filters_by_federal_state(client):
         is_active=True,
         is_approved=True,
     )
-    SocialClub.objects.create(
+    muenchen = SocialClub.objects.create(
         name="CSC Muenchen",
         email="muenchen@example.com",
         street_address="Strasse 2",
@@ -33,8 +33,8 @@ def test_regional_social_club_page_filters_by_federal_state(client):
     response = client.get(reverse("core:social_club_regional_list"), {"federal_state": "SN"})
     html = response.content.decode("utf-8")
     assert response.status_code == 200
-    assert "CSC Leipzig" in html
-    assert "CSC Muenchen" not in html
+    assert reverse("core:social_club_public_detail", args=[leipzig.slug]) in html
+    assert reverse("core:social_club_public_detail", args=[muenchen.slug]) not in html
 
 
 @pytest.mark.django_db

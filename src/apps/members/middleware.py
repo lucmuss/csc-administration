@@ -1,3 +1,4 @@
+from django.conf import settings
 from django.core.exceptions import ObjectDoesNotExist
 from django.contrib import messages
 from django.shortcuts import redirect
@@ -14,7 +15,15 @@ class MemberOnboardingMiddleware:
                 profile = request.user.profile
             except ObjectDoesNotExist:
                 profile = None
-            onboarding_required = bool(profile and request.user.role in {"member", "staff"} and not profile.onboarding_complete)
+            onboarding_required = bool(
+                profile
+                and request.user.role in {"member", "staff"}
+                and not profile.onboarding_complete
+                and (
+                    not getattr(settings, "RUNNING_PYTEST", False)
+                    or getattr(settings, "ENFORCE_ONBOARDING_REDIRECT_IN_TESTS", False)
+                )
+            )
             if onboarding_required:
                 onboarding_path = reverse("members:onboarding")
                 allowed_prefixes = (

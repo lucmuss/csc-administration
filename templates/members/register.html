@@ -30,40 +30,54 @@
           <h2>Konto erstellen</h2>
         </div>
       </div>
-      <form method="post" class="form-stack">
+      <form method="post" class="form-stack" novalidate>
         {% csrf_token %}
         <div class="field-grid">
           <div class="field">
-            <label for="{{ form.first_name.id_for_label }}">Vorname</label>
+            <label for="{{ form.first_name.id_for_label }}">Vorname{% if form.first_name.field.required %} *{% endif %}</label>
             {{ form.first_name }}
             {{ form.first_name.errors }}
           </div>
           <div class="field">
-            <label for="{{ form.last_name.id_for_label }}">Nachname</label>
+            <label for="{{ form.last_name.id_for_label }}">Nachname{% if form.last_name.field.required %} *{% endif %}</label>
             {{ form.last_name }}
             {{ form.last_name.errors }}
           </div>
         </div>
         <div class="field">
-          <label for="{{ form.email.id_for_label }}">E-Mail</label>
+          <label for="{{ form.email.id_for_label }}">E-Mail{% if form.email.field.required %} *{% endif %}</label>
           {{ form.email }}
           {{ form.email.errors }}
         </div>
+        {% if form.social_club %}
+          <div class="field">
+            <label for="{{ form.social_club.id_for_label }}">Social Club{% if form.social_club.field.required %} *{% endif %}</label>
+            {{ form.social_club }}
+            {{ form.social_club.errors }}
+            <small class="field-hint">Waehle den Social Club, bei dem du Mitglied werden moechtest.</small>
+          </div>
+        {% endif %}
         <div class="field">
-          <label for="{{ form.social_club.id_for_label }}">Social Club</label>
-          {{ form.social_club }}
-          {{ form.social_club.errors }}
-          <small class="field-hint">Waehle den Social Club, bei dem du Mitglied werden moechtest.</small>
-        </div>
-        <div class="field">
-          <label for="{{ form.birth_date.id_for_label }}">Geburtsdatum</label>
+          <label for="{{ form.birth_date.id_for_label }}">Geburtsdatum{% if form.birth_date.field.required %} *{% endif %}</label>
           {{ form.birth_date }}
           {{ form.birth_date.errors }}
           <small class="field-hint">Die aktuelle Validierung setzt ein Mindestalter von 21 Jahren voraus.</small>
         </div>
-        <div class="field">
-          <label for="{{ form.password.id_for_label }}">Passwort</label>
-          {{ form.password }}
+        <div class="field field--password">
+          <label for="{{ form.password.id_for_label }}">Passwort{% if form.password.field.required %} *{% endif %}</label>
+          <div class="inline-actions" style="align-items:center; gap:.5rem;">
+            {{ form.password }}
+            <button
+              type="button"
+              class="btn-ghost"
+              data-password-toggle
+              data-password-target="{{ form.password.id_for_label }}"
+              aria-controls="{{ form.password.id_for_label }}"
+              aria-label="Passwort anzeigen"
+            >
+              Anzeigen
+            </button>
+          </div>
           {{ form.password.errors }}
           <small class="field-hint">Nutze ein starkes Passwort fuer Vereins- und Personendaten.</small>
         </div>

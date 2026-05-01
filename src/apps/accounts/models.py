@@ -38,3 +38,13 @@ class User(AbstractBaseUser, PermissionsMixin):
     @property
     def full_name(self) -> str:
         return f"{self.first_name} {self.last_name}".strip()
+
+    def has_perm(self, perm, obj=None):
+        if self.role in {self.ROLE_STAFF, self.ROLE_BOARD} and isinstance(perm, str) and perm.startswith("messaging."):
+            return True
+        return super().has_perm(perm, obj=obj)
+
+    def has_module_perms(self, app_label):
+        if self.role in {self.ROLE_STAFF, self.ROLE_BOARD} and app_label == "messaging":
+            return True
+        return super().has_module_perms(app_label)

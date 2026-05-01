@@ -46,7 +46,21 @@ def _build_pdf(title: str, lines: list[tuple[str, str]]) -> bytes:
     return stream.getvalue()
 
 
-def membership_document_attachments(profile) -> list[tuple[str, bytes, str]]:
+def member_card_attachment(profile) -> tuple[str, bytes, str]:
+    user = profile.user
+    member_card = _build_pdf(
+        "Mitgliederausweis",
+        [
+            ("Mitglied", user.full_name or user.email),
+            ("E-Mail", user.email),
+            ("Mitgliedsnummer", str(profile.member_number or "-")),
+            ("Eintritt", profile.desired_join_date.strftime("%d.%m.%Y") if profile.desired_join_date else "-"),
+        ],
+    )
+    return ("Mitgliederausweis.pdf", member_card, "application/pdf")
+
+
+def membership_document_attachments(profile, *, include_member_card: bool = True) -> list[tuple[str, bytes, str]]:
     user = profile.user
     mandate = profile.sepa_mandate
     common = [
@@ -90,20 +104,11 @@ def membership_document_attachments(profile) -> list[tuple[str, bytes, str]]:
             ("Ausweisdaten aktuell", "Ja" if profile.id_document_confirmed else "Nein"),
         ],
     )
-    member_card = _build_pdf(
-        "Mitgliederausweis",
-        [
-            ("Mitglied", user.full_name or user.email),
-            ("E-Mail", user.email),
-            ("Mitgliedsnummer", str(profile.member_number or "wird nach Freigabe vergeben")),
-            ("Status", profile.get_status_display()),
-            ("Fruehester Eintritt", profile.desired_join_date.strftime("%d.%m.%Y") if profile.desired_join_date else "-"),
-        ],
-    )
-
-    return [
+    attachments = [
         ("Aufnahmeantrag.pdf", application, "application/pdf"),
         ("SEPA-Lastschriftmandat.pdf", sepa, "application/pdf"),
         ("Selbstauskunft.pdf", self_disclosure, "application/pdf"),
-        ("Mitgliederausweis.pdf", member_card, "application/pdf"),
     ]
+    if include_member_card:
+        attachments.append(member_card_attachment(profile))
+    return attachments

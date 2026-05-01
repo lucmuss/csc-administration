@@ -407,7 +407,7 @@ class Command(BaseCommand):
             directory=directory,
             created_by=seed_user,
             assigned_to=seed_user,
-            analyze=True,
+            analyze=False,
         )
 
     def _seed_governance(self, data, refs):

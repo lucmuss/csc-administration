@@ -17,7 +17,7 @@ from apps.finance.models import BalanceTopUp, BalanceTransaction, Invoice, Payme
 from apps.finance.services import add_balance_transaction, ensure_seed_credit, import_uploaded_invoices_from_directory, sync_profile_balance
 from apps.governance.models import BoardMeeting, BoardTask, MeetingAgendaItem, MeetingResolution, MemberCard
 from apps.inventory.models import Batch, InventoryCount, InventoryItem, InventoryLocation, Strain
-from apps.members.models import Profile
+from apps.members.models import Profile, VerificationSubmission
 from apps.messaging.models import EmailGroup, EmailGroupMember, EmailTemplate
 from apps.orders.models import Order, OrderItem
 from apps.participation.models import MemberEngagement, Shift, WorkHours
@@ -127,6 +127,7 @@ class Command(BaseCommand):
         self._safe_delete(WorkHours)
         self._safe_delete(Shift)
         self._safe_delete(MemberCard)
+        self._safe_delete(VerificationSubmission)
         if self._table_ready(Profile):
             Profile.objects.update(sepa_mandate=None)
         self._safe_delete(SepaMandate)

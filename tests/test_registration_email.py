@@ -29,6 +29,7 @@ def test_registration_sends_confirmation_email(client, mailoutbox, member_user):
             "social_club": str(club.id),
             "birth_date": "1990-01-01",
             "password": "StrongPass123!",
+            "accept_terms": "on",
         },
     )
 

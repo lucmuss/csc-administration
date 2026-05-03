@@ -19,6 +19,17 @@ def test_login_success(client, member_user):
 
 
 @pytest.mark.django_db
+def test_login_invalid_credentials_shows_german_error(client, member_user):
+    response = client.post(
+        reverse("accounts:login"),
+        data={"username": member_user.email, "password": "definitiv-falsch"},
+    )
+
+    assert response.status_code == 200
+    assert "E-Mail-Adresse oder Passwort ist falsch." in response.content.decode("utf-8")
+
+
+@pytest.mark.django_db
 def test_member_login_ignores_admin_next_redirect(client, member_user):
     response = client.post(
         reverse("accounts:login") + "?next=/orders/admin/",
@@ -184,3 +195,10 @@ def test_impressum_alias_redirects_to_imprint(client):
 
     assert response.status_code == 302
     assert response["Location"].endswith("/imprint/")
+
+
+def test_terms_page_is_accessible(client):
+    response = client.get(reverse("core:terms"))
+
+    assert response.status_code == 200
+    assert "Nutzungsbedingungen" in response.content.decode("utf-8")

@@ -285,6 +285,10 @@ def privacy(request):
     )
 
 
+def terms(request):
+    return render(request, "core/terms.html")
+
+
 def imprint(request):
     club_settings = get_club_settings(social_club=resolve_active_social_club(request))
     return render(

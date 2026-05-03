@@ -89,9 +89,25 @@ def test_member_registration_form_uses_social_club_specific_minimum_age(settings
             "last_name": "Beispiel",
             "birth_date": (date.today() - timedelta(days=365 * 19)).isoformat(),
             "password": "StrongPass123!",
+            "accept_terms": "on",
         }
     )
     assert form.is_valid(), form.errors
+
+
+@pytest.mark.django_db
+def test_member_registration_form_requires_terms_acceptance():
+    form = MemberRegistrationForm(
+        data={
+            "email": "terms-required@example.com",
+            "first_name": "Erika",
+            "last_name": "Muster",
+            "birth_date": "1990-01-01",
+            "password": "StrongPass123!",
+        }
+    )
+    assert form.is_valid() is False
+    assert "accept_terms" in form.errors
 
 
 @pytest.mark.django_db

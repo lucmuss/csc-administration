@@ -12,6 +12,7 @@ from .views import (
     privacy,
     pricing,
     ready,
+    terms,
     social_club_review,
     social_club_admin,
     social_club_profile,
@@ -28,6 +29,7 @@ app_name = "core"
 urlpatterns = [
     path("", dashboard, name="dashboard"),
     path("privacy/", privacy, name="privacy"),
+    path("terms/", terms, name="terms"),
     path("imprint/", imprint, name="imprint"),
     path("documents/", documents, name="documents"),
     path("pricing/", pricing, name="pricing"),

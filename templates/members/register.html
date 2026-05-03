@@ -30,8 +30,11 @@
           <h2>Konto erstellen</h2>
         </div>
       </div>
-      <form method="post" class="form-stack" novalidate>
+      <form method="post" class="form-stack" novalidate data-submit-feedback>
         {% csrf_token %}
+        {% if form.non_field_errors %}
+          <div class="flash flash--error">{{ form.non_field_errors }}</div>
+        {% endif %}
         <div class="field-grid">
           <div class="field">
             <label for="{{ form.first_name.id_for_label }}">Vorname{% if form.first_name.field.required %} *{% endif %}</label>
@@ -83,7 +86,14 @@
           {{ form.password.errors }}
           <small class="field-hint">Nutze ein starkes Passwort fuer Vereins- und Personendaten.</small>
         </div>
-        <button type="submit" class="btn-primary btn-block">Registrierung absenden</button>
+        <div class="field">
+          <label>
+            {{ form.accept_terms }}
+            Ich akzeptiere die <a href="{% url 'core:terms' %}" class="text-link" target="_blank" rel="noopener">Nutzungsbedingungen</a>.
+          </label>
+          {{ form.accept_terms.errors }}
+        </div>
+        <button type="submit" class="btn-primary btn-block" data-loading-text="Wird gesendet ...">Registrierung absenden</button>
       </form>
       <div class="auth-card__footer">
         <span>Social Club noch nicht dabei?</span>

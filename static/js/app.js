@@ -156,11 +156,62 @@
     });
   }
 
+  function wireSubmitFeedback() {
+    document.querySelectorAll("form[data-submit-feedback]").forEach(function (form) {
+      form.addEventListener("submit", function () {
+        var submitButton = form.querySelector("button[type='submit'], input[type='submit']");
+        if (!submitButton || submitButton.disabled) {
+          return;
+        }
+        var loadingText = submitButton.getAttribute("data-loading-text");
+        if (loadingText && submitButton.tagName === "BUTTON") {
+          submitButton.dataset.originalText = submitButton.textContent;
+          submitButton.textContent = loadingText;
+        }
+        submitButton.disabled = true;
+        submitButton.setAttribute("aria-busy", "true");
+      });
+    });
+  }
+
+  function wireClickableRows() {
+    document.querySelectorAll("tr[data-row-link]").forEach(function (row) {
+      var target = row.getAttribute("data-row-link");
+      if (!target) {
+        return;
+      }
+
+      function isInteractiveElement(node) {
+        return Boolean(node.closest("a, button, input, select, textarea, label, form"));
+      }
+
+      row.addEventListener("click", function (event) {
+        if (isInteractiveElement(event.target)) {
+          return;
+        }
+        window.location.href = target;
+      });
+
+      row.addEventListener("keydown", function (event) {
+        if (event.key !== "Enter" && event.key !== " ") {
+          return;
+        }
+        if (isInteractiveElement(event.target)) {
+          return;
+        }
+        event.preventDefault();
+        window.location.href = target;
+      });
+    });
+  }
+
   document.addEventListener("DOMContentLoaded", function () {
     toggleMobileNav();
     handleCookieConsent();
     maybeLoadAnalytics();
     wireGovernanceRecordForm();
     wirePasswordToggles();
+    wireSubmitFeedback();
+    wireClickableRows();
   });
 })();

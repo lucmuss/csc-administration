@@ -184,6 +184,17 @@ def test_admin_lists_have_filter_reset_buttons(client, admin_user):
 
 
 @pytest.mark.django_db
+def test_members_directory_rows_are_clickable(client, admin_user):
+    client.force_login(admin_user)
+
+    response = client.get(reverse("members:directory"))
+    html = response.content.decode("utf-8")
+
+    assert response.status_code == 200
+    assert "data-row-link=" in html
+
+
+@pytest.mark.django_db
 def test_flash_labels_are_localized_and_compliance_report_is_tabular(client, admin_user):
     client.force_login(admin_user)
 

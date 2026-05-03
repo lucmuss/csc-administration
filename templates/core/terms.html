@@ -1,0 +1,53 @@
+{% extends 'base.html' %}
+{% block title %}Nutzungsbedingungen{% endblock %}
+{% block content %}
+  <section class="page-shell">
+    <article class="panel prose-panel">
+      <p class="eyebrow">Nutzungsbedingungen</p>
+      <h1>Rahmenbedingungen fuer die Nutzung dieser Plattform.</h1>
+      <p>
+        Diese Bedingungen regeln die Nutzung von {{ app_name }} innerhalb des Vereinskontexts.
+        Sie stellen keine individuelle Rechtsberatung dar und muessen vor Produktivbetrieb auf den konkreten Verein angepasst werden.
+      </p>
+
+      <h2>1. Geltungsbereich</h2>
+      <p>Die Plattform dient der internen Mitglieder-, Finanz- und Organisationsverwaltung.</p>
+
+      <h2>2. Zugang und Kontonutzung</h2>
+      <ul>
+        <li>Zugangsdaten sind vertraulich zu behandeln.</li>
+        <li>Konten duerfen nicht an Dritte weitergegeben werden.</li>
+        <li>Unbefugte Zugriffe sind unverzueglich zu melden.</li>
+      </ul>
+
+      <h2>3. Mitgliederpflichten</h2>
+      <ul>
+        <li>Angaben zu Identitaet und Kontaktdaten muessen wahrheitsgemaess sein.</li>
+        <li>Vereins- und gesetzliche Vorgaben sind einzuhalten.</li>
+        <li>Die Weitergabe von Cannabisprodukten an Dritte ist unzulaessig.</li>
+      </ul>
+
+      <h2>4. Verfuegbarkeit und Aenderungen</h2>
+      <p>
+        Funktionen koennen zur Wartung oder Weiterentwicklung angepasst werden.
+        Es besteht kein Anspruch auf eine bestimmte Verfuegbarkeit einzelner Module.
+      </p>
+
+      <h2>5. Haftung</h2>
+      <p>
+        Es gelten die gesetzlichen Haftungsregeln. Bei leichter Fahrlaessigkeit wird die Haftung,
+        soweit rechtlich zulaessig, auf vorhersehbare typische Schaeden begrenzt.
+      </p>
+
+      <h2>6. Datenschutz</h2>
+      <p>
+        Details zur Datenverarbeitung sind in der <a class="text-link" href="{% url 'core:privacy' %}">Datenschutzerklaerung</a> beschrieben.
+      </p>
+
+      <h2>7. Schlussbestimmungen</h2>
+      <p>
+        Sollten einzelne Bestimmungen unwirksam sein, bleibt die Wirksamkeit der uebrigen Bestimmungen unberuehrt.
+      </p>
+    </article>
+  </section>
+{% endblock %}

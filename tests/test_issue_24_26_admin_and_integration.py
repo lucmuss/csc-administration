@@ -74,6 +74,7 @@ def test_registration_login_onboarding_profile_flow(client):
             "email": "erika-flow@example.com",
             "birth_date": "1990-01-01",
             "password": "StrongPass123!",
+            "accept_terms": "on",
             "federal_state": SocialClub.BUNDESLAND_SN,
             "social_club": club.id,
         },

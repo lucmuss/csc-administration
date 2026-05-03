@@ -42,6 +42,8 @@ class EmailAuthenticationForm(AuthenticationForm):
     def __init__(self, request=None, *args, **kwargs):
         super().__init__(request, *args, **kwargs)
         self._request = request
+        self.fields["username"].error_messages.setdefault("required", "Dieses Feld ist erforderlich.")
+        self.fields["password"].error_messages.setdefault("required", "Dieses Feld ist erforderlich.")
         try:
             social_club_queryset = SocialClub.objects.filter(is_active=True, is_approved=True).order_by("name")
             # Trigger a tiny evaluation so tests without DB access can fall back cleanly.

@@ -109,6 +109,22 @@ def test_invoice_pdf_response_for_owner(client, member_user, monkeypatch):
 
 
 @pytest.mark.django_db
+def test_invoice_pdf_requires_login_redirects_to_login(client, member_user):
+    invoice = Invoice.objects.create(
+        profile=member_user.profile,
+        invoice_number="INV-LOGIN-REQ-1",
+        amount=Decimal("19.00"),
+        due_date=timezone.localdate(),
+        status=Invoice.STATUS_OPEN,
+    )
+
+    response = client.get(reverse("finance:invoice_pdf", args=[invoice.id]))
+
+    assert response.status_code == 302
+    assert reverse("accounts:login") in response.url
+
+
+@pytest.mark.django_db
 def test_topup_success_unknown_topup_redirects_dashboard(client, member_user):
     client.force_login(member_user)
     response = client.get(reverse("finance:topup_success"), {"topup_id": "9999", "session_id": "cs_x"})

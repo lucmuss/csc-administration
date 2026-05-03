@@ -18,6 +18,14 @@ services:
       retries: 20
       start_period: 10s
 
+  mailpit:
+    image: axllent/mailpit:latest
+    container_name: csc_mailpit
+    restart: unless-stopped
+    ports:
+      - "${MAILPIT_HTTP_HOST_PORT:-8025}:8025"
+      - "${MAILPIT_SMTP_HOST_PORT:-1025}:1025"
+
   web:
     build: .
     container_name: csc_web
@@ -39,6 +47,8 @@ services:
     depends_on:
       db:
         condition: service_healthy
+      mailpit:
+        condition: service_started
 
 volumes:
   postgres_data:

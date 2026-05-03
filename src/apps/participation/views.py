@@ -19,7 +19,10 @@ def _is_staff_or_board(user: User) -> bool:
 
 @login_required
 def dashboard_view(request):
-    profile = get_object_or_404(Profile, user=request.user)
+    profile = Profile.objects.filter(user=request.user).first()
+    if profile is None:
+        messages.info(request, "Zu deinem Konto ist noch kein Mitgliederprofil vorhanden.")
+        return redirect("core:dashboard")
     if request.user.role == User.ROLE_MEMBER and (not profile.is_verified or profile.status != Profile.STATUS_ACTIVE):
         messages.info(request, "Mitwirkung ist erst nach erfolgreicher Verifizierung verfuegbar.")
         return redirect("core:dashboard")
@@ -57,7 +60,10 @@ def dashboard_view(request):
 @login_required
 def shift_calendar_view(request):
     if request.user.role == User.ROLE_MEMBER:
-        profile = get_object_or_404(Profile, user=request.user)
+        profile = Profile.objects.filter(user=request.user).first()
+        if profile is None:
+            messages.info(request, "Zu deinem Konto ist noch kein Mitgliederprofil vorhanden.")
+            return redirect("core:dashboard")
         if not profile.is_verified or profile.status != Profile.STATUS_ACTIVE:
             messages.info(request, "Mitwirkung ist erst nach erfolgreicher Verifizierung verfuegbar.")
             return redirect("core:dashboard")
@@ -75,7 +81,10 @@ def shift_calendar_view(request):
 @login_required
 def shift_detail_view(request, pk: int):
     if request.user.role == User.ROLE_MEMBER:
-        profile = get_object_or_404(Profile, user=request.user)
+        profile = Profile.objects.filter(user=request.user).first()
+        if profile is None:
+            messages.info(request, "Zu deinem Konto ist noch kein Mitgliederprofil vorhanden.")
+            return redirect("core:dashboard")
         if not profile.is_verified or profile.status != Profile.STATUS_ACTIVE:
             messages.info(request, "Mitwirkung ist erst nach erfolgreicher Verifizierung verfuegbar.")
             return redirect("core:dashboard")

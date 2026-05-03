@@ -118,6 +118,11 @@ class MemberRegistrationForm(forms.Form):
     last_name = forms.CharField(max_length=150)
     birth_date = forms.DateField(widget=forms.DateInput(attrs={"type": "date"}))
     password = forms.CharField(widget=forms.PasswordInput)
+    accept_terms = forms.BooleanField(
+        required=True,
+        label="Ich akzeptiere die Nutzungsbedingungen.",
+        error_messages={"required": "Bitte akzeptiere die Nutzungsbedingungen."},
+    )
 
     def _resolve_minimum_age(self) -> int:
         default_age = int(getattr(settings, "MEMBER_MINIMUM_AGE", 21))
@@ -170,6 +175,11 @@ class MemberRegistrationForm(forms.Form):
         self.fields["birth_date"].widget.attrs.setdefault("min", "1920-01-01")
         self.fields["birth_date"].widget.attrs.setdefault("max", max_birth_date.isoformat())
         self.fields["password"].widget.attrs.update({"autocomplete": "new-password", "placeholder": "Passwort"})
+        self.fields["email"].error_messages.setdefault("required", "Dieses Feld ist erforderlich.")
+        self.fields["first_name"].error_messages.setdefault("required", "Dieses Feld ist erforderlich.")
+        self.fields["last_name"].error_messages.setdefault("required", "Dieses Feld ist erforderlich.")
+        self.fields["birth_date"].error_messages.setdefault("required", "Dieses Feld ist erforderlich.")
+        self.fields["password"].error_messages.setdefault("required", "Dieses Feld ist erforderlich.")
         for field in self.fields.values():
             _apply_form_control(field.widget)
 

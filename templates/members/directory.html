@@ -78,7 +78,13 @@
           </thead>
           <tbody>
             {% for profile in page_obj %}
-              <tr>
+              <tr
+                data-row-link="{% url 'members:detail' profile.id %}"
+                tabindex="0"
+                class="table-row-clickable"
+                style="cursor:pointer;"
+                aria-label="Profil von {{ profile.user.full_name|default:profile.user.email }} oeffnen"
+              >
                 <td>
                   <a href="{% url 'members:detail' profile.id %}" class="text-link">
                     <strong>{{ profile.user.full_name|default:profile.user.email }}</strong>

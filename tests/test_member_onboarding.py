@@ -50,6 +50,7 @@ def test_registration_creates_incomplete_onboarding_state(client):
             "email": "erika@example.com",
             "birth_date": "1990-01-01",
             "password": "StrongPass123!",
+            "accept_terms": "on",
             "federal_state": SocialClub.BUNDESLAND_SN,
             "social_club": club.id,
         },
@@ -378,6 +379,7 @@ def test_registration_respects_configured_minimum_age():
             "email": "erika2@example.com",
             "birth_date": "2008-01-01",
             "password": "StrongPass123!",
+            "accept_terms": "on",
             "social_club": club.id,
         }
     )

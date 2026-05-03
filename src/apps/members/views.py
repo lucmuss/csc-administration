@@ -258,7 +258,10 @@ def onboarding_view(request):
 
 @login_required
 def profile_view(request):
-    profile = get_object_or_404(Profile.objects.select_related("user"), user=request.user)
+    profile = Profile.objects.select_related("user").filter(user=request.user).first()
+    if profile is None:
+        messages.info(request, "Zu diesem Konto ist noch kein Profil vorhanden. Bitte vervollstaendige zuerst die Registrierung.")
+        return redirect("core:dashboard")
     if request.method == "POST":
         form = MemberProfileEditForm(request.POST, profile=profile)
         if form.is_valid():
@@ -375,7 +378,10 @@ def profile_edit_legacy(request, pk: int):
 
 @login_required
 def verification_view(request):
-    profile = get_object_or_404(Profile.objects.select_related("user"), user=request.user)
+    profile = Profile.objects.select_related("user").filter(user=request.user).first()
+    if profile is None:
+        messages.info(request, "Fuer die Verifizierung wird zuerst ein Mitgliederprofil benoetigt.")
+        return redirect("core:dashboard")
     submission, _ = VerificationSubmission.objects.get_or_create(profile=profile)
 
     if request.method == "POST":

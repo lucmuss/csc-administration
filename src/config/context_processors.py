@@ -97,8 +97,15 @@ def club_info(request):
         social_club_options = []
     has_saved_club = bool(request.session.get(ACTIVE_SOCIAL_CLUB_SESSION_KEY) or request.COOKIES.get(ACTIVE_SOCIAL_CLUB_COOKIE))
     has_saved_state = bool(request.session.get(ACTIVE_FEDERAL_STATE_SESSION_KEY) or request.COOKIES.get(ACTIVE_FEDERAL_STATE_COOKIE))
+    is_fixed_single_club_member = bool(
+        getattr(user, "is_authenticated", False)
+        and not getattr(user, "is_superuser", False)
+        and getattr(user, "social_club_id", None)
+        and len(social_club_options) <= 1
+    )
     show_social_club_switcher = bool(
         social_club_options
+        and not is_fixed_single_club_member
         and (
             getattr(user, "is_superuser", False)
             or not (has_saved_club and has_saved_state)

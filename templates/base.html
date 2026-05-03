@@ -211,8 +211,11 @@
           <a href="{% url 'core:pricing' %}">Pricing</a>
           <a href="{% url 'core:public_preferences' %}">Website-Einstellungen</a>
           <a href="{% url 'core:privacy' %}">Datenschutz</a>
+          <a href="{% url 'core:terms' %}">Nutzungsbedingungen</a>
           <a href="{% url 'core:imprint' %}">Impressum</a>
-          <span>ATC Version {{ app_version }}</span>
+          {% if app_version and app_version != 'dev' %}
+            <span>ATC Version {{ app_version }}</span>
+          {% endif %}
         </div>
       </div>
     </footer>

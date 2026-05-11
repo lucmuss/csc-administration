@@ -13,6 +13,7 @@ from django.utils import timezone
 
 from apps.accounts.models import User
 from apps.core.authz import board_required, staff_or_board_required
+from config.context_processors import club_info
 from apps.core.club import (
     ACTIVE_FEDERAL_STATE_COOKIE,
     ACTIVE_FEDERAL_STATE_SESSION_KEY,
@@ -231,3 +232,30 @@ def test_no_store_page_cache_middleware_sets_headers_for_auth_and_auth_paths(rf)
     anon_public_request.user = AnonymousUser()
     anon_public_response = middleware(anon_public_request)
     assert "Cache-Control" not in anon_public_response
+
+
+@override_settings(MAILPIT_UI_ENABLED=True, MAILPIT_HTTP_URL="http://localhost:8025")
+def test_club_info_exposes_mailpit_link_for_staff_and_board(rf):
+    board_user = _member("board-mailpit@example.com", role=User.ROLE_BOARD)
+    request = rf.get("/")
+    request.user = board_user
+    request.session = {}
+    request.COOKIES = {}
+
+    context = club_info(request)
+
+    assert context["show_mailpit_link"] is True
+    assert context["mailpit_ui_url"] == "http://localhost:8025"
+
+
+@override_settings(MAILPIT_UI_ENABLED=True, MAILPIT_HTTP_URL="http://localhost:8025")
+def test_club_info_hides_mailpit_link_for_member(rf):
+    member_user = _member("member-mailpit@example.com", role=User.ROLE_MEMBER)
+    request = rf.get("/")
+    request.user = member_user
+    request.session = {}
+    request.COOKIES = {}
+
+    context = club_info(request)
+
+    assert context["show_mailpit_link"] is False

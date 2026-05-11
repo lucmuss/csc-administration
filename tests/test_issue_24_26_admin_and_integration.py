@@ -100,6 +100,7 @@ def test_registration_login_onboarding_profile_flow(client):
         data={
             "desired_join_date": timezone.localdate().isoformat(),
             "street_address": "Flowstrasse 9",
+            "street_address_number": "9",
             "postal_code": "04107",
             "city": "Leipzig",
             "phone": "+4915112345678",
@@ -119,7 +120,7 @@ def test_registration_login_onboarding_profile_flow(client):
         },
     )
     assert onboarding_response.status_code == 302
-    assert onboarding_response.url == reverse("core:dashboard")
+    assert onboarding_response.url == reverse("members:verification")
 
     profile_response = client.get(reverse("members:profile"))
     assert profile_response.status_code == 200
@@ -184,6 +185,7 @@ def test_verification_submission_then_admin_approval_updates_profile_status(clie
         minimum_age_confirmed=True,
         id_document_confirmed=True,
         important_newsletter_opt_in=True,
+        email_verified_at=timezone.now(),
         registration_completed_at=timezone.now(),
         monthly_counter_key=timezone.localdate().strftime("%Y-%m"),
     )

@@ -77,17 +77,19 @@ def add_balance_transaction(
     reference: str = "",
     created_by=None,
 ) -> BalanceTransaction:
-    _ensure_legacy_balance_seed(profile)
-    transaction_entry = BalanceTransaction.objects.create(
-        profile=profile,
-        amount=_quantize_amount(amount),
-        kind=kind,
-        note=note,
-        reference=reference,
-        created_by=created_by,
-    )
-    sync_profile_balance(profile)
-    return transaction_entry
+    with transaction.atomic():
+        locked_profile = Profile.objects.select_for_update().get(pk=profile.pk)
+        _ensure_legacy_balance_seed(locked_profile)
+        transaction_entry = BalanceTransaction.objects.create(
+            profile=locked_profile,
+            amount=_quantize_amount(amount),
+            kind=kind,
+            note=note,
+            reference=reference,
+            created_by=created_by,
+        )
+        sync_profile_balance(locked_profile)
+        return transaction_entry
 
 
 def balance_breakdown(profile: Profile) -> dict[str, Decimal]:

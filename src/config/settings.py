@@ -226,10 +226,22 @@ if SITE_URL.startswith(("http://", "https://")):
 
 # E-Mail-Versand
 DEFAULT_FROM_EMAIL = _env_first("DEFAULT_FROM_EMAIL", "DJANGO_DEFAULT_FROM_EMAIL", default="noreply@localhost")
-EMAIL_DELIVERY_MODE = _env_first("EMAIL_DELIVERY_MODE", default="console")  # console | smtp | resend | file
+EMAIL_DELIVERY_MODE = _env_first("EMAIL_DELIVERY_MODE", default="console")  # console | smtp | resend | file | mailpit
 USE_RESEND = _env_bool("USE_RESEND", default=False)
+MAILPIT_HTTP_URL = _env_first("MAILPIT_HTTP_URL", default="http://mailpit:8025")
+MAILPIT_API_URL = _env_first("MAILPIT_API_URL", default=f"{MAILPIT_HTTP_URL.rstrip('/')}/api/v1")
+MAILPIT_UI_ENABLED = _env_bool("MAILPIT_UI_ENABLED", default=DEBUG)
 
-if EMAIL_DELIVERY_MODE == "smtp" or USE_RESEND:
+if EMAIL_DELIVERY_MODE == "mailpit":
+    EMAIL_BACKEND = "django.core.mail.backends.smtp.EmailBackend"
+    EMAIL_HOST = _env_first("EMAIL_HOST", "DJANGO_EMAIL_HOST", default="mailpit")
+    EMAIL_PORT = int(_env_first("EMAIL_PORT", "DJANGO_EMAIL_PORT", default="1025"))
+    EMAIL_USE_TLS = _env_bool("EMAIL_USE_TLS", "DJANGO_EMAIL_USE_TLS", default=False)
+    EMAIL_USE_SSL = _env_bool("EMAIL_USE_SSL", "DJANGO_EMAIL_USE_SSL", default=False)
+    EMAIL_HOST_USER = _env_first("EMAIL_HOST_USER", "DJANGO_EMAIL_HOST_USER", default="")
+    EMAIL_HOST_PASSWORD = _env_first("EMAIL_HOST_PASSWORD", "DJANGO_EMAIL_HOST_PASSWORD", default="")
+    EMAIL_TIMEOUT = int(_env_first("EMAIL_TIMEOUT", "DJANGO_EMAIL_TIMEOUT", default="10"))
+elif EMAIL_DELIVERY_MODE == "smtp" or USE_RESEND:
     EMAIL_BACKEND = "django.core.mail.backends.smtp.EmailBackend"
     EMAIL_HOST = _env_first("EMAIL_HOST", "DJANGO_EMAIL_HOST", default="")
     EMAIL_PORT = int(_env_first("EMAIL_PORT", "DJANGO_EMAIL_PORT", default="587"))

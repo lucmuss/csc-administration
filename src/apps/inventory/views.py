@@ -11,7 +11,7 @@ from django.shortcuts import render
 from django.shortcuts import get_object_or_404
 
 from apps.core.club import resolve_active_social_club
-from apps.core.authz import staff_or_board_required
+from apps.core.authz import board_required, staff_or_board_required
 from apps.core.permissions import is_overadmin
 
 from .forms import InventoryCountValueField, InventoryLocationForm, StrainForm
@@ -21,6 +21,10 @@ from .services import InventoryCountService
 
 def _is_staff_or_board(user) -> bool:
     return user.is_authenticated and getattr(user, "role", "") in {"staff", "board"}
+
+
+def _is_board(user) -> bool:
+    return user.is_authenticated and getattr(user, "role", "") == "board"
 
 
 def _active_club(request):
@@ -214,7 +218,7 @@ def strain_edit(request, pk: int):
     return render(request, "inventory/strain_form.html", {"form": form, "title": f"Produkt bearbeiten: {strain.name}", "strain": strain})
 
 
-@login_required
+@board_required(_is_board)
 def inventory_count_form(request):
     items = InventoryItem.objects.select_related("strain", "location")
     club = _active_club(request)

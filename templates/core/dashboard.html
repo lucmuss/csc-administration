@@ -13,7 +13,7 @@
         <div class="hero-actions">
           <a href="{% url 'members:directory' %}" class="btn-primary">Mitglieder-Cockpit</a>
           <a href="{% url 'members:profile' %}" class="btn-ghost">Eigenes Profil</a>
-          <a href="{% url 'governance:dashboard' %}" class="text-link">Governance</a>
+          <a href="{% url 'governance:dashboard' %}" class="text-link">Verwaltung</a>
         </div>
       </div>
       <div class="hero-panel__aside">
@@ -163,9 +163,9 @@
         <div class="panel__header">
           <div>
             <p class="panel__eyebrow">Kontrolle</p>
-            <h2>Compliance und operative Termine</h2>
+            <h2>Regelwerk und operative Termine</h2>
           </div>
-          <a href="{% url 'compliance:dashboard' %}" class="text-link">Compliance</a>
+          <a href="{% url 'compliance:dashboard' %}" class="text-link">Regelwerk</a>
         </div>
         <div class="split-cards">
           <div class="mini-panel">
@@ -207,7 +207,7 @@
         </div>
         {% if latest_report %}
           <div class="info-strip">
-            <span>Letzter Compliance-Bericht: {{ latest_report.year }}</span>
+            <span>Letzter Regelwerk-Bericht: {{ latest_report.year }}</span>
             <span>{{ latest_report.total_orders }} Abgaben · {{ latest_report.total_grams }} g</span>
           </div>
         {% endif %}
@@ -219,7 +219,7 @@
             <p class="panel__eyebrow">Anbau</p>
             <h2>Seed-to-sale Lage</h2>
           </div>
-          <a href="{% url 'cultivation:dashboard' %}" class="text-link">Anbau-Dashboard</a>
+          <a href="{% url 'cultivation:dashboard' %}" class="text-link">Anbau-Uebersicht</a>
         </div>
         <ul class="detail-list">
           <li><span>Aktive Grow Cycles</span><strong>{{ cultivation_overview.cycle_count }}</strong></li>
@@ -303,7 +303,7 @@
         </p>
         <div class="hero-actions">
           {% if not pending_member_limited_access %}
-            <a href="{% url 'orders:shop' %}" class="btn-primary">Zum Shop</a>
+            <a href="{% url 'orders:shop' %}" class="btn-primary">Zum Bestellbereich</a>
             <a href="{% url 'orders:cart' %}" class="btn-ghost">Warenkorb{% if request.session.cart %} ({{ request.session.cart|length }}){% endif %}</a>
           {% endif %}
           <a href="{% url 'members:profile' %}" class="btn-ghost">Profil ansehen</a>
@@ -399,7 +399,7 @@
             </table>
           </div>
         {% else %}
-          <p class="empty-copy">Noch keine Bestellungen vorhanden. Der Shop ist direkt ueber das Hauptmenue erreichbar.</p>
+          <p class="empty-copy">Noch keine Bestellungen vorhanden. Der Bestellbereich ist direkt ueber das Hauptmenue erreichbar.</p>
         {% endif %}
       </article>
       {% endif %}

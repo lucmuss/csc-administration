@@ -39,9 +39,9 @@
         <nav id="main-nav" class="nav-cluster" data-mobile-nav aria-label="Hauptnavigation">
           {% if user.is_authenticated %}
             {% if user.role == 'member' %}
-              <a href="{% url 'core:dashboard' %}" class="nav-link{% if request.path == '/' %} is-active{% endif %}">Dashboard</a>
+              <a href="{% url 'core:dashboard' %}" class="nav-link{% if request.path == '/' %} is-active{% endif %}">Uebersicht</a>
               {% if not pending_member_limited_access %}
-                <a href="{% url 'orders:shop' %}" class="nav-link{% if '/orders/shop/' in request.path %} is-active{% endif %}">Shop</a>
+                <a href="{% url 'orders:shop' %}" class="nav-link{% if '/orders/shop/' in request.path %} is-active{% endif %}">Bestellbereich</a>
                 <a href="{% url 'orders:list' %}" class="nav-link{% if '/orders/my/' in request.path %} is-active{% endif %}">Bestellungen</a>
                 <a href="{% url 'orders:cart' %}" class="nav-link{% if '/orders/cart/' in request.path or '/orders/checkout/' in request.path %} is-active{% endif %}">
                   Warenkorb{% if request.session.cart %} ({{ request.session.cart|length }}){% endif %}
@@ -57,7 +57,7 @@
             {% else %}
               <a href="{% url 'members:directory' %}" class="nav-link{% if '/members/admin/' in request.path %} is-active{% endif %}">Mitglieder</a>
               <a href="{% url 'orders:admin_list' %}" class="nav-link{% if '/orders/admin/' in request.path %} is-active{% endif %}">Bestellungen</a>
-              <a href="{% url 'orders:shop' %}" class="nav-link{% if '/orders/shop/' in request.path %} is-active{% endif %}">Shop</a>
+              <a href="{% url 'orders:shop' %}" class="nav-link{% if '/orders/shop/' in request.path %} is-active{% endif %}">Bestellbereich</a>
               <a href="{% url 'cultivation:dashboard' %}" class="nav-link{% if '/cultivation/' in request.path %} is-active{% endif %}">Anbau</a>
               <a href="{% url 'finance:dashboard' %}" class="nav-link{% if '/finance/' in request.path %} is-active{% endif %}">Finanzen</a>
               <a href="{% url 'participation:admin_hours' %}" class="nav-link{% if '/participation/' in request.path %} is-active{% endif %}">Mitwirkung</a>
@@ -65,13 +65,16 @@
                 <summary class="nav-link">Verwaltung</summary>
                 <div class="nav-dropdown__menu">
                   <a href="{% url 'inventory:strain_list' %}" class="nav-dropdown__item">Inventar</a>
-                  <a href="{% url 'messaging:dashboard' %}" class="nav-dropdown__item">Messaging</a>
-                  <a href="{% url 'compliance:dashboard' %}" class="nav-dropdown__item">Compliance</a>
-                  <a href="{% url 'governance:dashboard' %}" class="nav-dropdown__item">Governance</a>
+                  <a href="{% url 'messaging:dashboard' %}" class="nav-dropdown__item">Nachrichten</a>
+                  <a href="{% url 'compliance:dashboard' %}" class="nav-dropdown__item">Regelwerk</a>
+                  <a href="{% url 'governance:dashboard' %}" class="nav-dropdown__item">Verwaltung</a>
                   <a href="{% url 'governance:tasks' %}" class="nav-dropdown__item">Aufgabenboard</a>
                   <a href="{% url 'finance:archive' %}" class="nav-dropdown__item">Rechnungsarchiv</a>
                   <a href="{% url 'finance:statistics' %}" class="nav-dropdown__item">Statistiken</a>
                   <a href="{% url 'core:documents_admin' %}" class="nav-dropdown__item">Dokumente</a>
+                  {% if show_mailpit_link %}
+                    <a href="{{ mailpit_ui_url }}" target="_blank" rel="noopener noreferrer" class="nav-dropdown__item">E-Mail-Postfach (Mailpit)</a>
+                  {% endif %}
                   <a href="{% url 'core:club_settings' %}" class="nav-dropdown__item">Clubdaten</a>
                   <a href="{% url 'members:import' %}" class="nav-dropdown__item">Mitglieder-Import</a>
                   {% if is_overadmin %}
@@ -82,11 +85,11 @@
             {% endif %}
           {% else %}
             <a href="{% url 'core:social_club_public_list' %}" class="nav-link{% if '/social-clubs/' in request.path and '/social-clubs/register/' not in request.path %} is-active{% endif %}">Social Clubs</a>
-            <a href="{% url 'core:pricing' %}" class="nav-link{% if '/pricing/' in request.path %} is-active{% endif %}">Pricing</a>
+            <a href="{% url 'core:pricing' %}" class="nav-link{% if '/pricing/' in request.path %} is-active{% endif %}">Preise</a>
             <a href="{% url 'accounts:login' %}" class="nav-link{% if '/accounts/login/' in request.path %} is-active{% endif %}">Anmelden</a>
             <a href="{% url 'members:register' %}" class="nav-link{% if '/members/register/' in request.path %} is-active{% endif %}">Registrieren</a>
           {% endif %}
-          <div class="mobile-nav-utilities">
+          <div class="mobile-nav-utilities md:hidden">
             {% if user.is_authenticated %}
               <a href="{% if user.role == 'member' %}{% url 'members:profile' %}{% else %}{% url 'members:directory' %}{% endif %}" class="btn-ghost btn-block">
                 {% if user.role == 'member' %}Mein Bereich{% else %}Mitglieder-Cockpit{% endif %}
@@ -104,17 +107,17 @@
 
         <div class="topbar__actions">
           {% if user.is_authenticated %}
-            <a href="{% if user.role == 'member' %}{% url 'members:profile' %}{% else %}{% url 'core:dashboard' %}{% endif %}" class="user-chip topbar__home-link" title="{% if user.role == 'member' %}Zum Profil{% else %}Zum Dashboard{% endif %}">
+            <a href="{% if user.role == 'member' %}{% url 'members:profile' %}{% else %}{% url 'core:dashboard' %}{% endif %}" class="user-chip topbar__home-link" title="{% if user.role == 'member' %}Zum Profil{% else %}Zur Uebersicht{% endif %}">
               <span class="role-pill role-pill--{{ user.role }}">{{ user.get_role_display }}</span>
               <span class="user-chip__name">{{ user.first_name|default:user.email }}</span>
             </a>
-            <form method="post" action="{% url 'accounts:logout' %}" class="topbar__utility">
+            <form method="post" action="{% url 'accounts:logout' %}" class="topbar__utility hidden md:inline-flex">
               {% csrf_token %}
               <button type="submit" class="btn-ghost">Abmelden</button>
             </form>
           {% else %}
-            <a href="{% url 'accounts:login' %}" class="btn-ghost topbar__utility">Anmelden</a>
-            <a href="{% url 'members:register' %}" class="btn-primary topbar__utility">Konto anlegen</a>
+            <a href="{% url 'accounts:login' %}" class="btn-ghost topbar__utility hidden md:inline-flex">Anmelden</a>
+            <a href="{% url 'members:register' %}" class="btn-primary topbar__utility hidden md:inline-flex">Konto anlegen</a>
           {% endif %}
           <button
             id="mobile-menu-button"
@@ -165,7 +168,7 @@
       </section>
     {% endif %}
 
-    {% if user.is_authenticated and email_verification_pending %}
+    {% if user.is_authenticated and user.role == 'member' and email_verification_pending %}
       <section class="container-shell" style="padding-top:.5rem;">
         <article class="flash flash--warning">
           <strong>Hinweis:</strong>
@@ -218,7 +221,7 @@
         </div>
         <div class="site-footer__links">
           <a href="{% url 'core:documents' %}">Dokumente</a>
-          <a href="{% url 'core:pricing' %}">Pricing</a>
+          <a href="{% url 'core:pricing' %}">Preise</a>
           <a href="{% url 'core:public_preferences' %}">Website-Einstellungen</a>
           <a href="{% url 'core:privacy' %}">Datenschutz</a>
           <a href="{% url 'core:terms' %}">Nutzungsbedingungen</a>

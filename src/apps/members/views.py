@@ -171,12 +171,12 @@ def _session_import_data(request):
     return request.session.get(MEMBER_IMPORT_SESSION_KEY) or {}
 
 
-def _issue_member_email_verification_code(*, profile: Profile, request) -> None:
+def _issue_member_email_verification_code(*, profile: Profile, request) -> bool:
     code = "".join(secrets.choice("0123456789") for _ in range(6))
     profile.email_verification_code = code
     profile.email_verification_sent_at = timezone.now()
     profile.save(update_fields=["email_verification_code", "email_verification_sent_at", "updated_at"])
-    send_member_email_verification_code_email(profile=profile, code=code, request=request)
+    return send_member_email_verification_code_email(profile=profile, code=code, request=request)
 
 
 def _normalize_directory_query(request):
@@ -272,7 +272,10 @@ def onboarding_view(request):
 def profile_view(request):
     profile = Profile.objects.select_related("user").filter(user=request.user).first()
     if profile is None:
-        messages.info(request, "Zu diesem Konto ist noch kein Profil vorhanden. Bitte vervollstaendige zuerst die Registrierung.")
+        messages.info(
+            request,
+            "Zu diesem Konto ist noch kein Mitgliederprofil vorhanden. Bitte kontaktiere den Vorstand, damit dein Profil angelegt wird.",
+        )
         return redirect("core:dashboard")
     email_verification_required = bool(getattr(django_settings, "MEMBER_EMAIL_VERIFICATION_REQUIRED", True))
     email_verification_pending = bool(email_verification_required and not profile.is_email_verified)
@@ -418,11 +421,22 @@ def verification_view(request):
                 submission.save()
                 run_verification_ai_check(submission=submission, profile=profile)
                 if not profile.is_email_verified:
-                    _issue_member_email_verification_code(profile=profile, request=request)
-                messages.success(
-                    request,
-                    "Dokumente wurden eingereicht. Bitte jetzt den E-Mail-Code bestaetigen.",
-                )
+                    email_sent = _issue_member_email_verification_code(profile=profile, request=request)
+                    if email_sent:
+                        messages.success(
+                            request,
+                            "Dokumente wurden eingereicht. Bitte jetzt den E-Mail-Code bestaetigen.",
+                        )
+                    else:
+                        messages.warning(
+                            request,
+                            "Dokumente wurden eingereicht, aber die Verifizierungs-E-Mail konnte nicht versendet werden. Bitte Vorstand oder Support kontaktieren.",
+                        )
+                else:
+                    messages.success(
+                        request,
+                        "Dokumente wurden eingereicht. Bitte jetzt den E-Mail-Code bestaetigen.",
+                    )
                 return redirect("members:verification")
         elif action == "verify_email_code":
             submitted_code = (request.POST.get("verification_code") or "").strip()
@@ -436,8 +450,13 @@ def verification_view(request):
                 messages.error(request, "Der Verifizierungscode ist ungueltig.")
             form = VerificationSubmissionForm(instance=submission)
         elif action == "resend_email_code":
-            _issue_member_email_verification_code(profile=profile, request=request)
-            messages.success(request, "Ein neuer Verifizierungscode wurde per E-Mail versendet.")
+            if _issue_member_email_verification_code(profile=profile, request=request):
+                messages.success(request, "Ein neuer Verifizierungscode wurde per E-Mail versendet.")
+            else:
+                messages.warning(
+                    request,
+                    "Die Verifizierungs-E-Mail konnte nicht versendet werden. Bitte versuche es spaeter erneut oder kontaktiere den Vorstand.",
+                )
             form = VerificationSubmissionForm(instance=submission)
         else:
             form = VerificationSubmissionForm(instance=submission)
@@ -1110,13 +1129,17 @@ def profile_edit_self(request):
     return redirect("members:profile")
 
 
-def _resolve_profile_from_user_pk(pk: int) -> Profile:
-    return get_object_or_404(Profile.objects.select_related("user"), user_id=pk)
+def _resolve_profile_from_user_pk(pk: int, actor: User) -> Profile:
+    queryset = Profile.objects.select_related("user")
+    # Board-Mitglieder duerfen nur Profile ihres eigenen Social Clubs verwalten.
+    if actor.social_club_id:
+        queryset = queryset.filter(user__social_club_id=actor.social_club_id)
+    return get_object_or_404(queryset, user_id=pk)
 
 
 @board_required(_is_board)
 def approve_member_legacy(request, pk: int):
-    profile = _resolve_profile_from_user_pk(pk)
+    profile = _resolve_profile_from_user_pk(pk, request.user)
     profile.status = Profile.STATUS_ACCEPTED
     profile.allocate_member_number()
     profile.save(update_fields=["status", "updated_at", "member_number"])
@@ -1126,7 +1149,7 @@ def approve_member_legacy(request, pk: int):
 
 @board_required(_is_board)
 def reject_member_legacy(request, pk: int):
-    profile = _resolve_profile_from_user_pk(pk)
+    profile = _resolve_profile_from_user_pk(pk, request.user)
     profile.status = Profile.STATUS_REJECTED
     profile.is_verified = False
     profile.save(update_fields=["status", "is_verified", "updated_at"])
@@ -1136,7 +1159,7 @@ def reject_member_legacy(request, pk: int):
 
 @board_required(_is_board)
 def verify_member_legacy(request, pk: int):
-    profile = _resolve_profile_from_user_pk(pk)
+    profile = _resolve_profile_from_user_pk(pk, request.user)
     profile.is_verified = True
     if profile.status == Profile.STATUS_PENDING:
         profile.status = Profile.STATUS_ACCEPTED
@@ -1149,7 +1172,7 @@ def verify_member_legacy(request, pk: int):
 
 @board_required(_is_board)
 def suspend_member_legacy(request, pk: int):
-    profile = _resolve_profile_from_user_pk(pk)
+    profile = _resolve_profile_from_user_pk(pk, request.user)
     profile.status = Profile.STATUS_SUSPENDED
     profile.is_locked_for_orders = True
     profile.save(update_fields=["status", "is_locked_for_orders", "updated_at"])
@@ -1159,5 +1182,5 @@ def suspend_member_legacy(request, pk: int):
 
 @login_required
 def member_detail_legacy(request, pk: int):
-    profile = _resolve_profile_from_user_pk(pk)
+    profile = _resolve_profile_from_user_pk(pk, request.user)
     return member_detail(request, profile_id=profile.id)

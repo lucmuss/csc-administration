@@ -32,5 +32,9 @@ urlpatterns = [
     path("cultivation/", include("apps.cultivation.urls")),
     path("messaging/", include("apps.messaging.urls")),
     path("governance/", include("apps.governance.urls")),
-    path("media/<path:path>", serve, {"document_root": settings.MEDIA_ROOT}),
 ]
+
+if settings.DEBUG:
+    urlpatterns += [
+        path("media/<path:path>", serve, {"document_root": settings.MEDIA_ROOT}),
+    ]

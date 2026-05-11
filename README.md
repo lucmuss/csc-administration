@@ -247,6 +247,44 @@ Hinweise:
 - Host-Port ist per Default `5434` (konfigurierbar ueber `POSTGRES_HOST_PORT`).
 - Datenbank-Umgebungsvariablen koennen als `DATABASE_*`, `DB_*`, `POSTGRES_*` oder `DATABASE_URL` gesetzt werden.
 
+## E-Mail-Testing mit Mailpit
+
+Fuer verifizierbare Agenten- und E2E-Tests (Registrierung, Verifizierungscode, Passwort-Reset):
+
+1. In `.env` Mailpit aktivieren:
+
+```env
+EMAIL_DELIVERY_MODE=mailpit
+EMAIL_HOST=mailpit
+EMAIL_PORT=1025
+EMAIL_USE_TLS=0
+EMAIL_USE_SSL=0
+MAILPIT_HTTP_URL=http://localhost:8025
+MAILPIT_API_URL=http://localhost:8025/api/v1
+```
+
+2. Dienste starten:
+
+```bash
+docker compose up -d db mailpit web
+```
+
+3. Inbox pruefen:
+
+- UI: `http://localhost:8025`
+- API: `http://localhost:8025/api/v1/messages`
+
+4. Agenten-Helfer nutzen:
+
+```bash
+python scripts/mailpit_api.py list
+python scripts/mailpit_api.py wait-code --recipient user@example.com --subject-contains Verifizierung
+```
+
+Optional:
+
+- `MAILPIT_UI_ENABLED=1` blendet fuer Vorstand/Mitarbeiter in der Navigation unter `Verwaltung` einen Direktlink auf die Mailpit-Oberflaeche ein.
+
 ---
 
 ## Aktuelle Aenderungen (2026-05-11)

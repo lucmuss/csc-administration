@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+import logging
+
 from django.conf import settings
 from django.core.exceptions import DisallowedHost
 from django.core.mail import EmailMultiAlternatives
@@ -9,6 +11,8 @@ from django.urls import NoReverseMatch, reverse
 from django.utils import timezone
 
 from apps.core.club import get_club_settings
+
+logger = logging.getLogger(__name__)
 
 
 def _request_meta(request: HttpRequest) -> tuple[str, str]:
@@ -58,6 +62,14 @@ def _apply_email_signature(text_body: str, html_body: str, context: dict) -> tup
     return text_body, html_body
 
 
+def _send_message(msg: EmailMultiAlternatives, *, recipient: str, context_label: str) -> bool:
+    try:
+        return msg.send(fail_silently=False) > 0
+    except Exception:
+        logger.exception("E-Mail-Versand fehlgeschlagen (%s) an %s", context_label, recipient)
+        return False
+
+
 def send_login_alert_email(user, request: HttpRequest) -> bool:
     ip_address, user_agent = _request_meta(request)
     context = {
@@ -85,7 +97,7 @@ def send_login_alert_email(user, request: HttpRequest) -> bool:
         to=[user.email],
     )
     msg.attach_alternative(html_body, "text/html")
-    return msg.send(fail_silently=True) > 0
+    return _send_message(msg, recipient=user.email, context_label="login_alert")
 
 
 def send_registration_received_email(user, request: HttpRequest, *, is_bootstrap: bool = False) -> bool:
@@ -109,7 +121,7 @@ def send_registration_received_email(user, request: HttpRequest, *, is_bootstrap
         to=[user.email],
     )
     msg.attach_alternative(html_body, "text/html")
-    return msg.send(fail_silently=True) > 0
+    return _send_message(msg, recipient=user.email, context_label="registration_received")
 
 
 def send_membership_status_email(
@@ -142,7 +154,7 @@ def send_membership_status_email(
         to=[user.email],
     )
     msg.attach_alternative(html_body, "text/html")
-    return msg.send(fail_silently=True) > 0
+    return _send_message(msg, recipient=user.email, context_label="membership_status")
 
 
 def send_membership_documents_email(profile, request: HttpRequest) -> bool:
@@ -169,7 +181,7 @@ def send_membership_documents_email(profile, request: HttpRequest) -> bool:
     msg.attach_alternative(html_body, "text/html")
     for filename, content, mimetype in membership_document_attachments(profile, include_member_card=False):
         msg.attach(filename, content, mimetype)
-    return msg.send(fail_silently=True) > 0
+    return _send_message(msg, recipient=profile.user.email, context_label="membership_documents")
 
 
 def send_member_card_email(profile, request: HttpRequest) -> bool:
@@ -197,7 +209,7 @@ def send_member_card_email(profile, request: HttpRequest) -> bool:
     msg.attach_alternative(html_body, "text/html")
     filename, content, mimetype = member_card_attachment(profile)
     msg.attach(filename, content, mimetype)
-    return msg.send(fail_silently=True) > 0
+    return _send_message(msg, recipient=profile.user.email, context_label="member_card")
 
 
 def send_order_reserved_email(*, order, request: HttpRequest) -> bool:
@@ -226,7 +238,7 @@ def send_order_reserved_email(*, order, request: HttpRequest) -> bool:
     msg.attach_alternative(html_body, "text/html")
     if invoice:
         msg.attach(f"{invoice.invoice_number}.pdf", render_invoice_pdf(invoice), "application/pdf")
-    return msg.send(fail_silently=True) > 0
+    return _send_message(msg, recipient=order.member.email, context_label="order_reserved")
 
 
 def send_order_completed_email(*, order, request: HttpRequest) -> bool:
@@ -255,7 +267,7 @@ def send_order_completed_email(*, order, request: HttpRequest) -> bool:
     msg.attach_alternative(html_body, "text/html")
     if invoice:
         msg.attach(f"{invoice.invoice_number}.pdf", render_invoice_pdf(invoice), "application/pdf")
-    return msg.send(fail_silently=True) > 0
+    return _send_message(msg, recipient=order.member.email, context_label="order_completed")
 
 
 def send_verification_reminder_email(user, profile) -> bool:
@@ -279,7 +291,7 @@ def send_verification_reminder_email(user, profile) -> bool:
         to=[user.email],
     )
     msg.attach_alternative(html_body, "text/html")
-    return msg.send(fail_silently=True) > 0
+    return _send_message(msg, recipient=user.email, context_label="verification_reminder")
 
 
 def send_social_club_registration_code_email(*, club, code: str, request: HttpRequest) -> bool:
@@ -302,7 +314,7 @@ def send_social_club_registration_code_email(*, club, code: str, request: HttpRe
         to=[club.email],
     )
     msg.attach_alternative(html_body, "text/html")
-    return msg.send(fail_silently=True) > 0
+    return _send_message(msg, recipient=club.email, context_label="social_club_registration_code")
 
 
 def send_social_club_registration_reminder_email(*, club, day_marker: int) -> bool:
@@ -334,7 +346,11 @@ def send_social_club_registration_reminder_email(*, club, day_marker: int) -> bo
         to=recipients,
     )
     msg.attach_alternative(html_body, "text/html")
-    return msg.send(fail_silently=True) > 0
+    return _send_message(
+        msg,
+        recipient=", ".join(recipients),
+        context_label=f"social_club_registration_reminder_day_{day_marker}",
+    )
 
 
 def send_member_email_verification_code_email(*, profile, code: str, request: HttpRequest) -> bool:
@@ -357,4 +373,4 @@ def send_member_email_verification_code_email(*, profile, code: str, request: Ht
         to=[profile.user.email],
     )
     msg.attach_alternative(html_body, "text/html")
-    return msg.send(fail_silently=True) > 0
+    return _send_message(msg, recipient=profile.user.email, context_label="member_email_verification_code")

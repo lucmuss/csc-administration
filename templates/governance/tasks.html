@@ -9,7 +9,7 @@
         <p class="lede">Aufgaben koennen weiterhin klassisch aktualisiert werden. Zusaetzlich lassen sie sich jetzt direkt zwischen den Spalten ziehen.</p>
       </div>
       <div class="hero-actions">
-        <a href="{% url 'governance:dashboard' %}" class="btn-ghost">Governance</a>
+        <a href="{% url 'governance:dashboard' %}" class="btn-ghost">Verwaltung</a>
       </div>
     </div>
 
@@ -17,7 +17,7 @@
       <article class="panel panel--span-2">
         <div class="panel__header">
           <div>
-            <p class="panel__eyebrow">Statusboard</p>
+            <p class="panel__eyebrow">Statusuebersicht</p>
             <h2>Operative Aufgaben</h2>
           </div>
         </div>
@@ -35,7 +35,7 @@
                     <small class="task-card__due">{% if task.due_date %}Faellig: {{ task.due_date|date:"d.m.Y" }}{% else %}Faellig: -{% endif %}</small>
                   </div>
                   <details class="task-card__details">
-                    <summary>Details</summary>
+                    <summary>Einzelheiten</summary>
                     {% if task.description %}
                       <p>{{ task.description }}</p>
                     {% else %}

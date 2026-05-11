@@ -116,6 +116,16 @@ def club_info(request):
         and not is_fixed_single_club_member
         and not has_saved_selection
     )
+    is_staff_or_board = bool(
+        getattr(user, "is_authenticated", False)
+        and getattr(user, "role", "") in {"staff", "board"}
+    )
+    mailpit_ui_url = (getattr(settings, "MAILPIT_HTTP_URL", "") or "").strip()
+    show_mailpit_link = bool(
+        is_staff_or_board
+        and getattr(settings, "MAILPIT_UI_ENABLED", False)
+        and mailpit_ui_url
+    )
     return {
         **get_club_settings(social_club=active_social_club),
         "pending_member_limited_access": pending_member_limited_access,
@@ -128,4 +138,6 @@ def club_info(request):
         "is_overadmin": is_overadmin(user),
         "email_verification_pending": email_verification_pending,
         "has_saved_social_club_selection": has_saved_selection,
+        "show_mailpit_link": show_mailpit_link,
+        "mailpit_ui_url": mailpit_ui_url,
     }

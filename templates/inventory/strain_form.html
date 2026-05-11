@@ -113,13 +113,13 @@
         <div class="panel__header">
           <div>
             <p class="panel__eyebrow">Vorschau</p>
-            <h2>Shop-Ansicht</h2>
+            <h2>Produktansicht</h2>
           </div>
         </div>
         {% if strain and strain.image %}
           <img src="{{ strain.image.url }}" alt="{{ strain.name }}" style="width: 100%; max-width: 24rem; border-radius: 1.25rem; object-fit: cover;">
         {% else %}
-          <p class="empty-copy">Noch kein Shop-Bild hochgeladen.</p>
+          <p class="empty-copy">Noch kein Produktbild hochgeladen.</p>
         {% endif %}
         {% if strain %}
           <ul class="detail-list">

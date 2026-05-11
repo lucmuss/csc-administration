@@ -1,4 +1,5 @@
 from decimal import Decimal
+from django.db.models.expressions import BaseExpression
 
 from django.core.exceptions import ValidationError
 from django.db import models
@@ -118,6 +119,7 @@ class Strain(models.Model):
         self.price = value
 
     def save(self, *args, **kwargs):
+        self.clean()
         previous_club_id = None
         if self.pk:
             previous_club_id = Strain.objects.filter(pk=self.pk).values_list("social_club_id", flat=True).first()
@@ -222,6 +224,33 @@ class Strain(models.Model):
             },
         }
         return palettes.get(self.card_tone, palettes[self.CARD_TONE_APRICOT])
+
+    def clean(self):
+        super().clean()
+        for field_name in ("thc", "cbd", "cbg", "cbn", "cbc", "cbv"):
+            value = getattr(self, field_name, None)
+            if value is None:
+                continue
+            if isinstance(value, BaseExpression):
+                continue
+            if isinstance(value, str):
+                value = Decimal(value)
+            if value < Decimal("0.00") or value > Decimal("100.00"):
+                raise ValidationError({field_name: "Wert muss zwischen 0 und 100 Prozent liegen."})
+        price_value = self.price
+        if isinstance(price_value, str):
+            price_value = Decimal(price_value)
+        if isinstance(price_value, BaseExpression):
+            return
+        if price_value <= Decimal("0.00"):
+            raise ValidationError({"price": "Preis muss groesser als 0 sein."})
+        stock_value = self.stock
+        if isinstance(stock_value, BaseExpression):
+            return
+        if isinstance(stock_value, str):
+            stock_value = Decimal(stock_value)
+        if stock_value < Decimal("0.00"):
+            raise ValidationError({"stock": "Bestand darf nicht negativ sein."})
 
 
 class InventoryLocation(models.Model):

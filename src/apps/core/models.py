@@ -1,5 +1,7 @@
 from decimal import Decimal
 
+from django.contrib.auth.hashers import check_password, identify_hasher, make_password
+from django.db import IntegrityError
 from django.db import models
 from django.utils.text import slugify
 
@@ -121,11 +123,35 @@ class SocialClub(models.Model):
             base = slugify(self.name)[:200] or "social-club"
             candidate = base
             suffix = 2
-            while SocialClub.objects.exclude(pk=self.pk).filter(slug=candidate).exists():
-                candidate = f"{base}-{suffix}"
-                suffix += 1
-            self.slug = candidate
+            for _ in range(100):
+                if SocialClub.objects.exclude(pk=self.pk).filter(slug=candidate).exists():
+                    candidate = f"{base}-{suffix}"
+                    suffix += 1
+                    continue
+                self.slug = candidate
+                try:
+                    super().save(*args, **kwargs)
+                    return
+                except IntegrityError:
+                    # Parallel create inserted same slug between exists() and save().
+                    candidate = f"{base}-{suffix}"
+                    suffix += 1
+            raise ValueError(f"Konnte keinen eindeutigen Slug fuer Social Club '{self.name}' erzeugen.")
         super().save(*args, **kwargs)
+
+    def set_registration_verification_code(self, code: str) -> None:
+        self.registration_email_verification_code = make_password(code)
+
+    def check_registration_verification_code(self, code: str) -> bool:
+        stored = (self.registration_email_verification_code or "").strip()
+        if not stored or not code:
+            return False
+        try:
+            identify_hasher(stored)
+        except Exception:
+            # Backward compatibility for legacy plaintext codes still in DB.
+            return stored == code
+        return check_password(code, stored)
 
 
 class SocialClubOpeningHour(models.Model):

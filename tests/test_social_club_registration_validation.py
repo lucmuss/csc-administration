@@ -17,6 +17,7 @@ def _base_form_data(**overrides):
         "postal_code": "04209",
         "city": "Leipzig",
         "federal_state": SocialClub.BUNDESLAND_SN,
+        "register_entry": "VR 12345",
         "minimum_age": 21,
         "website": "https://example.com",
     }

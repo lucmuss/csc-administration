@@ -6,7 +6,7 @@
 {% block content %}
 <div class="page-header flex flex-col sm:flex-row sm:items-center sm:justify-between">
   <div>
-    <h1 class="page-title">Messaging</h1>
+    <h1 class="page-title">Nachrichten</h1>
     <p class="page-subtitle">Massen-E-Mails und Gruppenverwaltung</p>
   </div>
   <div class="page-actions flex flex-col sm:flex-row gap-3">
@@ -164,7 +164,7 @@
             </td>
             <td class="text-sm text-slate-500">{{ email.created_at|date:"d.m.Y" }}</td>
             <td class="text-right">
-              <a href="{% url 'messaging:mass_email_detail' email.pk %}" class="text-blue-600 hover:text-blue-800 text-sm font-medium">Details</a>
+              <a href="{% url 'messaging:mass_email_detail' email.pk %}" class="text-blue-600 hover:text-blue-800 text-sm font-medium">Einzelheiten</a>
             </td>
           </tr>
           {% endfor %}

@@ -9,7 +9,7 @@
         <p class="lede">{{ strain.get_product_type_display }} · {{ strain.price }} EUR {{ strain.unit_price_label }}</p>
       </div>
       <div class="hero-actions">
-        <a href="{% url 'orders:shop' %}" class="btn-ghost">Zum Shop</a>
+        <a href="{% url 'orders:shop' %}" class="btn-ghost">Zum Bestellbereich</a>
         {% if can_manage_inventory %}
           <a href="{% url 'inventory:strain_edit' strain.id %}" class="btn-primary">Produkt bearbeiten</a>
         {% endif %}
@@ -21,20 +21,20 @@
         <div class="panel__header">
           <div>
             <p class="panel__eyebrow">Produktansicht</p>
-            <h2>Shop-Vorschau</h2>
+            <h2>Produktvorschau</h2>
           </div>
         </div>
         {% if strain.image %}
           <img src="{{ strain.image.url }}" alt="{{ strain.name }}" style="width: 100%; max-width: 28rem; border-radius: 1.25rem; object-fit: cover;">
         {% else %}
-          <p class="empty-copy">Zu diesem Produkt ist noch kein Shop-Bild hinterlegt.</p>
+          <p class="empty-copy">Zu diesem Produkt ist noch kein Produktbild hinterlegt.</p>
         {% endif %}
       </article>
 
       <article class="panel">
         <div class="panel__header">
           <div>
-            <p class="panel__eyebrow">Details</p>
+            <p class="panel__eyebrow">Einzelheiten</p>
             <h2>Preis, Einheit und Verfuegbarkeit</h2>
           </div>
         </div>

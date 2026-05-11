@@ -4,7 +4,7 @@
   <section class="auth-layout">
     <div class="auth-copy panel">
       <p class="eyebrow">Mitgliedschaft</p>
-      <h1>Neue Konten werden in einen klaren Vereinsworkflow aufgenommen.</h1>
+      <h1>Jetzt Mitglied werden</h1>
       <p class="lede">
         Die Registrierung startet den Mitgliedsprozess und legt den operativen Datensatz fuer Shop, Finanzen,
         Pflichtstunden und Compliance an.
@@ -72,6 +72,7 @@
           {% if form.birth_date.help_text %}
             <small class="field-hint">{{ form.birth_date.help_text }}</small>
           {% endif %}
+          <small class="field-hint">Das Geburtsdatum wird zur Altersverifikation gemaess KCanG benoetigt.</small>
         </div>
         <div class="field field--password">
           <label for="{{ form.password.id_for_label }}">Passwort{% if form.password.field.required %} *{% endif %}</label>
@@ -93,7 +94,7 @@
           <small class="field-hint">Nutze ein starkes Passwort fuer Vereins- und Personendaten.</small>
         </div>
         <div class="field">
-          <label>
+          <label for="{{ form.accept_terms.id_for_label }}">
             {{ form.accept_terms }}
             Ich akzeptiere die <a href="{% url 'core:terms' %}" class="text-link" target="_blank" rel="noopener">Nutzungsbedingungen</a>.
           </label>

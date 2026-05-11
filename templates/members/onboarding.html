@@ -150,20 +150,36 @@
               </div>
             </div>
             <div class="form-stack">
-              <label>{{ form.privacy_accepted }} Ich habe die <a href="{% url 'core:privacy' %}" class="text-link" target="_blank" rel="noopener">Datenschutzerklaerung</a> gelesen und verstanden.</label>
-              {{ form.privacy_accepted.errors }}
-              <label>{{ form.direct_debit_accepted }} Ich ermaechtige den Verein zum Lastschrifteinzug des Mitgliedsbeitrags.</label>
-              {{ form.direct_debit_accepted.errors }}
-              <label>{{ form.no_other_csc_membership }} Ich bin kein Mitglied in einer anderen Anbaugemeinschaft.</label>
-              {{ form.no_other_csc_membership.errors }}
-              <label>{{ form.german_residence_confirmed }} Ich habe seit mindestens 6 Monaten einen festen Wohnsitz in Deutschland.</label>
-              {{ form.german_residence_confirmed.errors }}
-              <label>{{ form.minimum_age_confirmed }} {{ form.minimum_age_confirmed.label }}</label>
-              {{ form.minimum_age_confirmed.errors }}
-              <label>{{ form.id_document_confirmed }} Meine Ausweisdaten sind aktuell und korrekt.</label>
-              {{ form.id_document_confirmed.errors }}
-              <label>{{ form.important_newsletter_opt_in }} Ich moechte wichtige organisatorische Informationen per E-Mail erhalten.</label>
-              {{ form.important_newsletter_opt_in.errors }}
+              <div class="field">
+                <label for="{{ form.privacy_accepted.id_for_label }}">{{ form.privacy_accepted }} Ich habe die <a href="{% url 'core:privacy' %}" class="text-link" target="_blank" rel="noopener">Datenschutzerklaerung</a> gelesen und verstanden.</label>
+                {{ form.privacy_accepted.errors }}
+              </div>
+              <div class="field">
+                <label for="{{ form.direct_debit_accepted.id_for_label }}">{{ form.direct_debit_accepted }} Ich ermaechtige den Verein zum Lastschrifteinzug des Mitgliedsbeitrags.</label>
+                {{ form.direct_debit_accepted.errors }}
+              </div>
+              <div class="field">
+                <label for="{{ form.no_other_csc_membership.id_for_label }}">{{ form.no_other_csc_membership }} Ich bin kein Mitglied in einer anderen Anbaugemeinschaft.</label>
+                {{ form.no_other_csc_membership.errors }}
+              </div>
+              <div class="field">
+                <label for="{{ form.german_residence_confirmed.id_for_label }}">{{ form.german_residence_confirmed }} Ich habe seit mindestens 6 Monaten einen festen Wohnsitz in Deutschland.</label>
+                {{ form.german_residence_confirmed.errors }}
+              </div>
+              <div class="field">
+                <label for="{{ form.minimum_age_confirmed.id_for_label }}">{{ form.minimum_age_confirmed }} {{ form.minimum_age_confirmed.label }}</label>
+                {{ form.minimum_age_confirmed.errors }}
+              </div>
+              <div class="field">
+                <label for="{{ form.id_document_confirmed.id_for_label }}">{{ form.id_document_confirmed }} Meine Ausweisdaten sind aktuell und korrekt.</label>
+                {{ form.id_document_confirmed.errors }}
+              </div>
+              <div class="field">
+                <label for="{{ form.important_newsletter_opt_in.id_for_label }}">{{ form.important_newsletter_opt_in }} Ich moechte wichtige organisatorische Informationen per E-Mail erhalten.</label>
+                {% if form.important_newsletter_opt_in.errors %}
+                  <p class="field-error">{{ form.important_newsletter_opt_in.errors|join:", " }}</p>
+                {% endif %}
+              </div>
             </div>
           </div>
 

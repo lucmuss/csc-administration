@@ -4,6 +4,8 @@ from django.urls import reverse
 
 @pytest.mark.django_db
 def test_member_can_store_preferred_language_and_session(client, member_user):
+    member_user.profile.email_verified_at = member_user.profile.email_verified_at or member_user.profile.updated_at
+    member_user.profile.save(update_fields=["email_verified_at", "updated_at"])
     client.force_login(member_user)
     response = client.post(
         reverse("members:profile"),

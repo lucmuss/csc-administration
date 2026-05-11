@@ -13,7 +13,7 @@
           <a href="{% url 'orders:admin_list' %}?q={{ profile.user.email }}" class="btn-ghost">Bestellungen</a>
         {% else %}
           {% if not pending_member_limited_access and not email_verification_pending %}
-            <a href="{% url 'orders:shop' %}" class="btn-ghost">Zum Shop</a>
+            <a href="{% url 'orders:shop' %}" class="btn-ghost">Zum Bestellbereich</a>
             <a href="{% url 'orders:cart' %}" class="btn-ghost">Warenkorb{% if request.session.cart %} ({{ request.session.cart|length }}){% endif %}</a>
           {% endif %}
           {% if show_profile_edit_callout %}

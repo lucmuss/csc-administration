@@ -118,7 +118,7 @@ class InactivityService:
 
         for profile in InactivityService._inactive_profiles(today=today):
             engagement, _ = MemberEngagement.objects.get_or_create(profile=profile)
-            if engagement.inactivity_notified_at and engagement.inactivity_notified_at.date() >= today:
+            if engagement.inactivity_notified_at:
                 continue
 
             body = render_to_string("emails/inactivity_reminder.html", {"profile": profile})

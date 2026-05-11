@@ -1,8 +1,8 @@
 {% extends "base.html" %}
-{% block title %}Inventar Dashboard{% endblock %}
+{% block title %}Inventar-Uebersicht{% endblock %}
 {% block content %}
 <section class="page-shell">
-  <h1>Inventar Dashboard</h1>
+  <h1>Inventar-Uebersicht</h1>
   {% if low_stock_batches %}
     <div class="flash flash--warning">Niedriger Bestand bei {{ low_stock_batches|length }} Charge(n).</div>
   {% endif %}

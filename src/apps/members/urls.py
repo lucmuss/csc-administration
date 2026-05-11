@@ -26,6 +26,7 @@ from .views import (
 app_name = "members"
 
 urlpatterns = [
+    path("", profile_view, name="profile_root"),
     path("register/", register, name="register"),
     path("onboarding/", onboarding_view, name="onboarding"),
     path("profile/", profile_view, name="profile"),

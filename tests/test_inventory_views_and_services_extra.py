@@ -24,7 +24,7 @@ def test_inventory_move_stock_rejects_insufficient_quantity():
 
 @pytest.mark.django_db
 def test_inventory_count_form_rejects_decimal_count_input(client, member_user):
-    member_user.role = User.ROLE_STAFF
+    member_user.role = User.ROLE_BOARD
     member_user.is_staff = True
     member_user.save(update_fields=["role", "is_staff"])
     strain = Strain.objects.create(name="Count A", thc=18, cbd=0.2, price=8, stock=100)

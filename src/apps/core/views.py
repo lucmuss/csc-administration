@@ -753,7 +753,7 @@ def social_club_register(request):
 
     def _issue_registration_verification_code(club: SocialClub) -> None:
         code = "".join(secrets.choice("0123456789") for _ in range(6))
-        club.registration_email_verification_code = code
+        club.set_registration_verification_code(code)
         club.registration_email_verified_at = None
         club.save(
             update_fields=[
@@ -795,8 +795,7 @@ def social_club_register(request):
                 messages.success(request, "Ein neuer Verifizierungscode wurde per E-Mail versendet.")
                 return redirect("core:social_club_register")
             submitted_code = (request.POST.get("verification_code") or "").strip()
-            expected_code = (pending_club.registration_email_verification_code or "").strip()
-            if submitted_code and expected_code and submitted_code == expected_code:
+            if pending_club.check_registration_verification_code(submitted_code):
                 pending_club.registration_email_verified_at = timezone.now()
                 pending_club.registration_email_verification_code = ""
                 pending_club.save(

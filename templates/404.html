@@ -11,8 +11,13 @@
       </div>
       <p class="lede">Die aufgerufene URL existiert nicht mehr oder wurde verschoben.</p>
       <div class="inline-actions">
-        <a href="{% url 'core:dashboard' %}" class="btn-primary">Zum Dashboard</a>
-        <a href="{% url 'orders:shop' %}" class="btn-ghost">Zum Shop</a>
+        {% if user.is_authenticated %}
+          <a href="{% url 'core:dashboard' %}" class="btn-primary">Zur Uebersicht</a>
+          <a href="{% url 'orders:shop' %}" class="btn-ghost">Zum Bestellbereich</a>
+        {% else %}
+          <a href="/" class="btn-primary">Zur Startseite</a>
+          <a href="{% url 'accounts:login' %}" class="btn-ghost">Anmelden</a>
+        {% endif %}
       </div>
     </article>
   </section>

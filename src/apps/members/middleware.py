@@ -15,6 +15,21 @@ class MemberOnboardingMiddleware:
                 profile = request.user.profile
             except ObjectDoesNotExist:
                 profile = None
+            if profile is None and request.user.role in {"member", "staff"}:
+                allowed_prefixes = (
+                    reverse("core:dashboard"),
+                    reverse("members:profile"),
+                    reverse("accounts:logout"),
+                    "/static/",
+                    "/media/",
+                    "/offline",
+                )
+                if not request.path.startswith(allowed_prefixes):
+                    messages.info(
+                        request,
+                        "Zu deinem Konto fehlt aktuell ein Mitgliederprofil. Bitte kontaktiere den Vorstand fuer die Profilanlage.",
+                    )
+                    return redirect("core:dashboard")
             onboarding_required = bool(
                 profile
                 and request.user.role in {"member", "staff"}

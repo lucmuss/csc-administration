@@ -52,7 +52,7 @@
                     <td>{{ order.paid_with_balance }} EUR</td>
                     <td>
                       <div class="inline-actions">
-                        <a href="{% url 'orders:detail' order.id %}" class="btn-ghost btn-ghost--small">Details</a>
+                        <a href="{% url 'orders:detail' order.id %}" class="btn-ghost btn-ghost--small">Einzelheiten</a>
                         {% if order.can_self_cancel %}
                           <form method="post" action="{% url 'orders:cancel' order.id %}">
                             {% csrf_token %}

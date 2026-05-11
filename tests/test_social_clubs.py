@@ -1,6 +1,8 @@
 from datetime import date
 
 import pytest
+from django.core import mail
+from django.test import override_settings
 from django.urls import reverse
 
 from apps.accounts.models import User
@@ -9,6 +11,7 @@ from apps.members.models import Profile
 
 
 @pytest.mark.django_db
+@override_settings(EMAIL_BACKEND="django.core.mail.backends.locmem.EmailBackend")
 def test_social_club_registration_creates_pending_admin(client):
     response = client.post(
         reverse("core:social_club_register"),
@@ -32,12 +35,17 @@ def test_social_club_registration_creates_pending_admin(client):
     club = SocialClub.objects.get(name="CSC Test Leipzig")
     assert club.is_approved is False
     assert club.registration_email_verification_code
+    assert "$" in club.registration_email_verification_code
+    assert len(mail.outbox) == 1
+    verification_code = "123456"
+    club.set_registration_verification_code(verification_code)
+    club.save(update_fields=["registration_email_verification_code", "updated_at"])
 
     response = client.post(
         reverse("core:social_club_register"),
         data={
             "step": "verify_club",
-            "verification_code": club.registration_email_verification_code,
+            "verification_code": verification_code,
         },
         follow=True,
     )

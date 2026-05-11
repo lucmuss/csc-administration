@@ -93,7 +93,7 @@
             <p class="panel__eyebrow">Aktive Sorten</p>
             <h2>Aktuell im Anbau</h2>
           </div>
-          <a href="{% url 'inventory:strain_list' %}" class="text-link">Shop-Sorten</a>
+          <a href="{% url 'inventory:strain_list' %}" class="text-link">Sortenangebot</a>
         </div>
         {% if active_strains %}
           <ul class="stack-list stack-list--compact">
@@ -138,7 +138,7 @@
                     <td>{{ batch.harvest_date|date:"d.m.Y" }}</td>
                     <td>{{ batch.quality_grade }}</td>
                     <td>{{ batch.total_weight_fresh }} g</td>
-                    <td><a href="{% url 'cultivation:harvest_detail' batch.pk %}" class="text-link">Details</a></td>
+                    <td><a href="{% url 'cultivation:harvest_detail' batch.pk %}" class="text-link">Einzelheiten</a></td>
                   </tr>
                 {% endfor %}
               </tbody>

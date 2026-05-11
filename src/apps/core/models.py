@@ -205,6 +205,8 @@ class ClubConfiguration(models.Model):
 
     def save(self, *args, **kwargs):
         self.pk = 1
+        # Always update the singleton row instead of forcing INSERT on repeated create().
+        kwargs.pop("force_insert", None)
         super().save(*args, **kwargs)
 
     def delete(self, *args, **kwargs):

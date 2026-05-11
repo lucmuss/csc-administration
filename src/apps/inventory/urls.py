@@ -6,7 +6,6 @@ from .views import (
     batch_delete,
     batch_detail,
     dashboard,
-    discrepancy_report,
     inventory_count_form,
     location_create,
     location_delete,
@@ -39,5 +38,4 @@ urlpatterns = [
     path("locations/<int:pk>/edit/", location_edit, name="location_edit"),
     path("locations/<int:pk>/delete/", location_delete, name="location_delete"),
     path("count/", inventory_count_form, name="inventory_count_form"),
-    path("discrepancies/", discrepancy_report, name="discrepancy_report"),
 ]

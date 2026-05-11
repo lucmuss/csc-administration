@@ -280,3 +280,81 @@ def send_verification_reminder_email(user, profile) -> bool:
     )
     msg.attach_alternative(html_body, "text/html")
     return msg.send(fail_silently=True) > 0
+
+
+def send_social_club_registration_code_email(*, club, code: str, request: HttpRequest) -> bool:
+    context = {
+        "club": club,
+        "code": code,
+        "dashboard_url": _absolute_url(request, "core:dashboard", "/"),
+        "registration_url": _absolute_url(request, "core:social_club_register", "/social-clubs/register/"),
+    }
+    context.update(_club_email_context())
+    subject = _render_subject("emails/account/social_club_registration_code_subject.txt", context)
+    text_body = render_to_string("emails/account/social_club_registration_code_body.txt", context)
+    html_body = render_to_string("emails/account/social_club_registration_code_body.html", context)
+    text_body, html_body = _apply_email_signature(text_body, html_body, context)
+
+    msg = EmailMultiAlternatives(
+        subject=subject,
+        body=text_body,
+        from_email=settings.DEFAULT_FROM_EMAIL,
+        to=[club.email],
+    )
+    msg.attach_alternative(html_body, "text/html")
+    return msg.send(fail_silently=True) > 0
+
+
+def send_social_club_registration_reminder_email(*, club, day_marker: int) -> bool:
+    registration_url = f"{_app_public_url()}/social-clubs/register/"
+    context = {
+        "club": club,
+        "day_marker": day_marker,
+        "registration_url": registration_url,
+    }
+    context.update(_club_email_context())
+    subject = _render_subject("emails/account/social_club_registration_reminder_subject.txt", context)
+    text_body = render_to_string("emails/account/social_club_registration_reminder_body.txt", context)
+    html_body = render_to_string("emails/account/social_club_registration_reminder_body.html", context)
+    text_body, html_body = _apply_email_signature(text_body, html_body, context)
+
+    recipients = [club.email]
+    admin_emails = list(
+        club.users.filter(role="board", is_active=False).values_list("email", flat=True)
+    )
+    recipients.extend(admin_emails)
+    recipients = sorted({item for item in recipients if item})
+    if not recipients:
+        return False
+
+    msg = EmailMultiAlternatives(
+        subject=subject,
+        body=text_body,
+        from_email=settings.DEFAULT_FROM_EMAIL,
+        to=recipients,
+    )
+    msg.attach_alternative(html_body, "text/html")
+    return msg.send(fail_silently=True) > 0
+
+
+def send_member_email_verification_code_email(*, profile, code: str, request: HttpRequest) -> bool:
+    context = {
+        "user": profile.user,
+        "profile": profile,
+        "code": code,
+        "verification_url": _absolute_url(request, "members:verification", "/members/verification/"),
+    }
+    context.update(_club_email_context())
+    subject = _render_subject("emails/account/member_email_verification_subject.txt", context)
+    text_body = render_to_string("emails/account/member_email_verification_body.txt", context)
+    html_body = render_to_string("emails/account/member_email_verification_body.html", context)
+    text_body, html_body = _apply_email_signature(text_body, html_body, context)
+
+    msg = EmailMultiAlternatives(
+        subject=subject,
+        body=text_body,
+        from_email=settings.DEFAULT_FROM_EMAIL,
+        to=[profile.user.email],
+    )
+    msg.attach_alternative(html_body, "text/html")
+    return msg.send(fail_silently=True) > 0

@@ -1,10 +1,12 @@
 from decimal import Decimal
+import secrets
 
 from django.conf import settings as django_settings
 from django.contrib.auth.decorators import login_required
 from django.contrib import messages
 from django.db import connection
 from django.db.models import Count, Q, Sum
+from django.db.utils import OperationalError, ProgrammingError
 from django.forms import inlineformset_factory
 from django.http import HttpResponseForbidden, JsonResponse
 from django.shortcuts import get_object_or_404, redirect, render
@@ -13,6 +15,9 @@ from django.urls import reverse
 from django.utils import timezone
 from django.views.decorators.http import require_POST
 
+from apps.accounts.emails import (
+    send_social_club_registration_code_email,
+)
 from apps.accounts.models import User
 from apps.core.club import (
     ACTIVE_FEDERAL_STATE_COOKIE,
@@ -43,10 +48,19 @@ from .forms import (
     SocialClubSettingsForm,
 )
 from .models import ClubConfiguration, PublicDocument, SocialClub, SocialClubOpeningHour, SocialClubReview
+from .permissions import is_overadmin
 
 
 def _superadmin_required(user: User) -> bool:
-    return bool(getattr(user, "is_authenticated", False) and getattr(user, "is_superuser", False))
+    return is_overadmin(user)
+
+
+def _is_club_restricted_admin(user: User) -> bool:
+    return bool(
+        getattr(user, "is_authenticated", False)
+        and not is_overadmin(user)
+        and getattr(user, "social_club_id", None)
+    )
 
 LOW_STOCK_THRESHOLD = Decimal(django_settings.LOW_STOCK_THRESHOLD_EUR)
 MEMBER_CAPACITY = django_settings.MEMBER_CAPACITY
@@ -319,11 +333,16 @@ def switch_social_club(request):
         return redirect(request.POST.get("next") or "core:dashboard")
 
     if club:
-        if request.user.is_authenticated and not request.user.is_superuser and request.user.social_club_id and request.user.social_club_id != club.id:
+        if _is_club_restricted_admin(request.user) and request.user.social_club_id != club.id:
             messages.error(request, "Du kannst nur den eigenen Social Club aktivieren.")
             return redirect(request.POST.get("next") or "core:dashboard")
+        if selected_state and club.federal_state and club.federal_state != selected_state:
+            messages.error(request, "Der Social Club gehoert nicht zum ausgewaehlten Bundesland.")
+            return redirect(request.POST.get("next") or "core:dashboard")
+        if not selected_state and club.federal_state:
+            selected_state = club.federal_state
         request.session[ACTIVE_SOCIAL_CLUB_SESSION_KEY] = club.id
-    elif request.user.is_authenticated and not request.user.is_superuser and request.user.social_club_id:
+    elif _is_club_restricted_admin(request.user):
         # Keep fixed assignment for non-superusers even if no value was posted.
         request.session[ACTIVE_SOCIAL_CLUB_SESSION_KEY] = request.user.social_club_id
 
@@ -361,13 +380,17 @@ def pricing(request):
 
 
 def public_preferences(request):
+    state_filter = (resolve_active_federal_state(request) or "").strip()
     club_options = SocialClub.objects.filter(is_active=True, is_approved=True).order_by("name")
+    if state_filter:
+        club_options = club_options.filter(federal_state=state_filter)
     return render(
         request,
         "core/public_preferences.html",
         {
             "club_options": club_options,
             "federal_state_options": SocialClub.FEDERAL_STATE_CHOICES,
+            "state_filter": state_filter,
         },
     )
 
@@ -552,7 +575,7 @@ def social_club_review(request):
 
 @staff_or_board_required(_is_staff_or_board)
 def documents_admin(request):
-    active_club = request.user.social_club if not request.user.is_superuser else resolve_active_social_club(request)
+    active_club = request.user.social_club if not is_overadmin(request.user) else resolve_active_social_club(request)
     if request.method == "POST":
         action = request.POST.get("action")
         if action == "delete":
@@ -592,15 +615,68 @@ def documents_admin(request):
 
 @staff_or_board_required(_is_staff_or_board)
 def club_settings_admin(request):
-    configuration = ClubConfiguration.objects.first() or ClubConfiguration(pk=1)
-    if request.method == "POST":
-        form = ClubConfigurationForm(request.POST, instance=configuration)
-        if form.is_valid():
-            form.save()
-            messages.success(request, "Club-Konfiguration wurde gespeichert und in der gesamten App aktualisiert.")
-            return redirect("core:club_settings")
+    try:
+        configuration = ClubConfiguration.objects.first() or ClubConfiguration(pk=1)
+    except (OperationalError, ProgrammingError):
+        messages.error(
+            request,
+            "Die Club-Konfiguration kann aktuell nicht geladen werden. Bitte zuerst Datenbank-Migrationen ausfuehren.",
+        )
+        return render(
+            request,
+            "core/club_settings.html",
+            {
+                "form": ClubConfigurationForm(),
+                "effective_settings": get_club_settings(),
+                "settings_sections": [],
+            },
+        )
+    if is_overadmin(request.user):
+        active_social_club = resolve_active_social_club(request)
     else:
-        form = ClubConfigurationForm(instance=configuration)
+        active_social_club = request.user.social_club
+
+    OpeningHourFormSet = inlineformset_factory(
+        SocialClub,
+        SocialClubOpeningHour,
+        form=SocialClubOpeningHourForm,
+        extra=1,
+        can_delete=True,
+    )
+
+    form = ClubConfigurationForm(instance=configuration)
+    social_club_form = SocialClubSettingsForm(instance=active_social_club) if active_social_club else None
+    opening_hour_formset = (
+        OpeningHourFormSet(instance=active_social_club, prefix="opening_hours")
+        if active_social_club
+        else None
+    )
+    if request.method == "POST":
+        settings_scope = (request.POST.get("settings_scope") or "club_configuration").strip()
+        if settings_scope == "social_club_profile":
+            if not active_social_club:
+                messages.error(request, "Kein Social Club zugeordnet.")
+                return redirect("core:dashboard")
+            social_club_form = SocialClubSettingsForm(request.POST, request.FILES, instance=active_social_club)
+            has_opening_hour_payload = any(key.startswith("opening_hours-") for key in request.POST.keys())
+            if has_opening_hour_payload:
+                opening_hour_formset = OpeningHourFormSet(request.POST, instance=active_social_club, prefix="opening_hours")
+                opening_hours_valid = opening_hour_formset.is_valid()
+            else:
+                opening_hour_formset = OpeningHourFormSet(instance=active_social_club, prefix="opening_hours")
+                opening_hours_valid = True
+            if social_club_form.is_valid() and opening_hours_valid:
+                social_club_form.save()
+                if has_opening_hour_payload:
+                    opening_hour_formset.save()
+                messages.success(request, "Social-Club-Daten aktualisiert.")
+                return redirect(f"{reverse('core:club_settings')}#social-club")
+        else:
+            form = ClubConfigurationForm(request.POST, instance=configuration)
+            if form.is_valid():
+                form.save()
+                messages.success(request, "Club-Konfiguration wurde gespeichert und in der gesamten App aktualisiert.")
+                return redirect("core:club_settings")
     settings_sections = [
         ("Basis", ["app_name", "app_tagline", "app_description", "club_name", "club_slogan"]),
         (
@@ -651,6 +727,10 @@ def club_settings_admin(request):
         ),
         ("E-Mail-Signatur", ["email_signature_text", "email_signature_html"]),
     ]
+    settings_section_fields = [
+        (section_title, [form[field_name] for field_name in section_fields])
+        for section_title, section_fields in settings_sections
+    ]
     return render(
         request,
         "core/club_settings.html",
@@ -658,6 +738,10 @@ def club_settings_admin(request):
             "form": form,
             "effective_settings": get_club_settings(),
             "settings_sections": settings_sections,
+            "settings_section_fields": settings_section_fields,
+            "social_club": active_social_club,
+            "social_club_form": social_club_form,
+            "opening_hour_formset": opening_hour_formset,
         },
     )
 
@@ -666,6 +750,19 @@ def social_club_register(request):
     session_key = "pending_social_club_id"
     pending_club_id = request.session.get(session_key)
     pending_club = SocialClub.objects.filter(id=pending_club_id, is_approved=False).first() if pending_club_id else None
+
+    def _issue_registration_verification_code(club: SocialClub) -> None:
+        code = "".join(secrets.choice("0123456789") for _ in range(6))
+        club.registration_email_verification_code = code
+        club.registration_email_verified_at = None
+        club.save(
+            update_fields=[
+                "registration_email_verification_code",
+                "registration_email_verified_at",
+                "updated_at",
+            ]
+        )
+        send_social_club_registration_code_email(club=club, code=code, request=request)
 
     if request.method == "POST":
         step = request.POST.get("step", "club")
@@ -677,15 +774,52 @@ def social_club_register(request):
                 club.is_active = True
                 club.is_approved = False
                 club.save()
+                if django_settings.CLUB_REGISTRATION_EMAIL_VERIFICATION_REQUIRED:
+                    _issue_registration_verification_code(club)
                 request.session[session_key] = club.id
                 request.session.modified = True
-                messages.success(request, "Social Club wurde angelegt. Bitte jetzt den Admin-Zugang erstellen.")
+                if django_settings.CLUB_REGISTRATION_EMAIL_VERIFICATION_REQUIRED:
+                    messages.success(request, "Social Club wurde angelegt. Bitte den E-Mail-Code bestaetigen.")
+                else:
+                    messages.success(request, "Social Club wurde angelegt. Bitte jetzt den Admin-Zugang erstellen.")
                 return redirect("core:social_club_register")
+        elif step == "verify_club":
+            club_form = SocialClubRegistrationForm()
+            admin_form = SocialClubAdminRegistrationForm()
+            if not pending_club:
+                messages.error(request, "Bitte zuerst den Social Club registrieren.")
+                return redirect("core:social_club_register")
+            action = request.POST.get("action")
+            if action == "resend":
+                _issue_registration_verification_code(pending_club)
+                messages.success(request, "Ein neuer Verifizierungscode wurde per E-Mail versendet.")
+                return redirect("core:social_club_register")
+            submitted_code = (request.POST.get("verification_code") or "").strip()
+            expected_code = (pending_club.registration_email_verification_code or "").strip()
+            if submitted_code and expected_code and submitted_code == expected_code:
+                pending_club.registration_email_verified_at = timezone.now()
+                pending_club.registration_email_verification_code = ""
+                pending_club.save(
+                    update_fields=[
+                        "registration_email_verified_at",
+                        "registration_email_verification_code",
+                        "updated_at",
+                    ]
+                )
+                messages.success(request, "E-Mail-Adresse verifiziert. Jetzt kann der Admin-Zugang erstellt werden.")
+                return redirect("core:social_club_register")
+            messages.error(request, "Der Verifizierungscode ist ungueltig.")
         else:
             club_form = SocialClubRegistrationForm()
             admin_form = SocialClubAdminRegistrationForm(request.POST)
             if not pending_club:
                 messages.error(request, "Bitte zuerst den Social Club registrieren.")
+                return redirect("core:social_club_register")
+            if (
+                django_settings.CLUB_REGISTRATION_EMAIL_VERIFICATION_REQUIRED
+                and pending_club.registration_email_verified_at is None
+            ):
+                messages.error(request, "Bitte zuerst die E-Mail-Adresse des Social Clubs mit dem Code bestaetigen.")
                 return redirect("core:social_club_register")
             if admin_form.is_valid():
                 user = User.objects.create_user(
@@ -722,6 +856,10 @@ def social_club_register(request):
             "club_form": club_form,
             "admin_form": admin_form,
             "pending_club": pending_club,
+            "verification_required": bool(django_settings.CLUB_REGISTRATION_EMAIL_VERIFICATION_REQUIRED),
+            "pending_club_email_verified": bool(
+                pending_club and pending_club.registration_email_verified_at
+            ),
         },
     )
 
@@ -735,7 +873,18 @@ def social_club_admin(request):
         if action == "approve":
             club.is_approved = True
             club.is_active = True
-            club.save(update_fields=["is_approved", "is_active", "updated_at"])
+            if not club.registration_email_verified_at:
+                club.registration_email_verified_at = timezone.now()
+            club.registration_email_verification_code = ""
+            club.save(
+                update_fields=[
+                    "is_approved",
+                    "is_active",
+                    "registration_email_verified_at",
+                    "registration_email_verification_code",
+                    "updated_at",
+                ]
+            )
             club_admins = User.objects.filter(social_club=club, role=User.ROLE_BOARD, is_active=False)
             for admin_user in club_admins:
                 admin_user.is_active = True
@@ -766,13 +915,17 @@ def social_club_admin(request):
 
 @staff_or_board_required(_is_staff_or_board)
 def social_club_profile(request):
-    if request.user.is_superuser:
+    if is_overadmin(request.user):
         club = resolve_active_social_club(request)
     else:
         club = request.user.social_club
     if not club:
         messages.error(request, "Kein Social Club zugeordnet.")
         return redirect("core:dashboard")
+
+    if request.method != "POST":
+        messages.info(request, "Die Social-Club-Einstellungen sind jetzt in Clubdaten integriert.")
+        return redirect(f"{reverse('core:club_settings')}#social-club")
 
     OpeningHourFormSet = inlineformset_factory(
         SocialClub,
@@ -781,31 +934,48 @@ def social_club_profile(request):
         extra=1,
         can_delete=True,
     )
-
-    if request.method == "POST":
-        form = SocialClubSettingsForm(request.POST, request.FILES, instance=club)
-        has_opening_hour_payload = any(key.startswith("opening_hours-") for key in request.POST.keys())
-        if has_opening_hour_payload:
-            opening_hour_formset = OpeningHourFormSet(request.POST, instance=club, prefix="opening_hours")
-            opening_hours_valid = opening_hour_formset.is_valid()
-        else:
-            opening_hour_formset = OpeningHourFormSet(instance=club, prefix="opening_hours")
-            opening_hours_valid = True
-
-        if form.is_valid() and opening_hours_valid:
-            form.save()
-            if has_opening_hour_payload:
-                opening_hour_formset.save()
-            messages.success(request, "Social-Club-Daten aktualisiert.")
-            return redirect("core:social_club_profile")
+    legacy_payload = request.POST.copy()
+    if not (legacy_payload.get("federal_state") or "").strip() and club.federal_state:
+        legacy_payload["federal_state"] = club.federal_state
+    form = SocialClubSettingsForm(legacy_payload, request.FILES, instance=club)
+    has_opening_hour_payload = any(key.startswith("opening_hours-") for key in request.POST.keys())
+    if has_opening_hour_payload:
+        opening_hour_formset = OpeningHourFormSet(request.POST, instance=club, prefix="opening_hours")
+        opening_hours_valid = opening_hour_formset.is_valid()
     else:
-        form = SocialClubSettingsForm(instance=club)
         opening_hour_formset = OpeningHourFormSet(instance=club, prefix="opening_hours")
-    return render(
-        request,
-        "core/social_club_profile.html",
-        {"form": form, "club": club, "opening_hour_formset": opening_hour_formset},
-    )
+        opening_hours_valid = True
+
+    if form.is_valid() and opening_hours_valid:
+        form.save()
+        if has_opening_hour_payload:
+            opening_hour_formset.save()
+        messages.success(request, "Social-Club-Daten aktualisiert.")
+    else:
+        image_fields = [
+            "profile_image",
+            "banner_image",
+            "gallery_image_1",
+            "gallery_image_2",
+            "gallery_image_3",
+            "gallery_image_4",
+            "gallery_image_5",
+        ]
+        uploaded_image_fields = []
+        for field_name in image_fields:
+            uploaded = request.FILES.get(field_name)
+            if uploaded:
+                setattr(club, field_name, uploaded)
+                uploaded_image_fields.append(field_name)
+        if uploaded_image_fields:
+            club.save(update_fields=[*uploaded_image_fields, "updated_at"])
+            messages.warning(
+                request,
+                "Social-Club-Profilbilder wurden gespeichert. Weitere Felder bitte in Clubdaten pruefen.",
+            )
+        else:
+            messages.error(request, "Social-Club-Daten konnten nicht gespeichert werden.")
+    return redirect(f"{reverse('core:club_settings')}#social-club")
 
 
 @require_POST

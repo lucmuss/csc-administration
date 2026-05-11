@@ -1,13 +1,15 @@
 import csv
 import io
 import re
+import secrets
 from datetime import datetime
 
 from django.contrib import messages
 from django.contrib.auth import login as auth_login
 from django.contrib.auth.decorators import login_required
+from django.conf import settings as django_settings
 from django.db.models import Count, Q
-from django.http import HttpResponse
+from django.http import HttpResponse, JsonResponse
 from django.shortcuts import get_object_or_404, redirect, render
 from django.core.paginator import Paginator
 from django.utils import timezone
@@ -15,6 +17,7 @@ from django.utils import translation
 
 from apps.accounts.emails import (
     send_member_card_email,
+    send_member_email_verification_code_email,
     send_membership_documents_email,
     send_membership_status_email,
     send_registration_received_email,
@@ -23,14 +26,23 @@ from apps.accounts.models import User
 from apps.audit.models import AuditLog
 from apps.core.club import resolve_active_federal_state, resolve_active_social_club
 from apps.core.authz import board_required, staff_or_board_required
+from apps.core.permissions import is_overadmin
 from apps.finance.models import SepaMandate
 from apps.finance.models import Invoice
 from apps.messaging.services import sync_member_messaging_preferences
 from apps.orders.models import Order
 from apps.participation.models import MemberEngagement
 
-from .forms import MemberOnboardingForm, MemberProfileEditForm, MemberRegistrationForm, VerificationSubmissionForm
+from .forms import (
+    MemberOnboardingForm,
+    MemberProfileEditForm,
+    MemberRegistrationForm,
+    VerificationSubmissionForm,
+    _lookup_iban_bank_data,
+    _validate_iban,
+)
 from .models import Profile, VerificationSubmission
+from .verification_ai import run_verification_ai_check
 
 _SEARCH_SANITIZE_RE = re.compile(r"[^0-9A-Za-zÄÖÜäöüß@._+\-\s]")
 LANGUAGE_SESSION_KEY = "django_language"
@@ -38,63 +50,52 @@ MEMBER_IMPORT_SESSION_KEY = "member_import_payload"
 MEMBER_IMPORT_RESULT_SESSION_KEY = "member_import_result_payload"
 IMPORT_FIELD_CHOICES = [
     ("", "Nicht importieren"),
-    ("email", "E-Mail-Adresse"),
-    ("first_name", "Vorname"),
-    ("last_name", "Nachname"),
-    ("birth_date", "Geburtsdatum"),
-    ("desired_join_date", "Aufnahmedatum"),
-    ("street_address", "Strasse, Hausnummer"),
+    ("email", "E-Mail-Adresse *"),
+    ("first_name", "Vorname *"),
+    ("last_name", "Nachname *"),
+    ("birth_date", "Geburtsdatum *"),
+    ("street_address", "Strasse"),
+    ("street_address_number", "Hausnummer"),
     ("postal_code", "Postleitzahl"),
     ("city", "Stadt"),
     ("phone", "Telefonnummer"),
-    ("privacy_accepted", "Datenschutzerklaerung"),
     ("iban", "IBAN"),
     ("bic", "BIC"),
     ("bank_name", "Kreditinstitut"),
-    ("direct_debit_accepted", "Ermaechtigung zur Lastschrift"),
-    ("no_other_csc_membership", "Mitgliedschaft anderer Anbaugemeinschaften"),
-    ("german_residence_confirmed", "Fester Wohnsitz in Deutschland"),
-    ("minimum_age_confirmed", "Mindestalter 21 Jahre"),
     ("id_document_confirmed", "Aktueller Lichtbildausweis"),
     ("important_newsletter_opt_in", "Newsletter fuer wichtige Ankuendigungen"),
     ("optional_newsletter_opt_in", "Optionaler Newsletter"),
-    ("member_number", "Mitgliedsnummer"),
-    ("monthly_limit", "Monatsabgabe"),
-    ("daily_limit", "Tagesabgabe"),
-    ("balance", "Guthaben"),
     ("accepted", "Akzeptiert"),
     ("verified", "Verifiziert"),
 ]
+REQUIRED_IMPORT_FIELDS = ("email", "first_name", "last_name", "birth_date")
+REQUIRED_IMPORT_FIELD_LABELS = {
+    "email": "E-Mail-Adresse",
+    "first_name": "Vorname",
+    "last_name": "Nachname",
+    "birth_date": "Geburtsdatum",
+}
 DEFAULT_IMPORT_MAP = {
     "e-mail-adresse": "email",
     "emailadresse": "email",
     "vorname": "first_name",
     "nachname": "last_name",
     "geburtsdatum": "birth_date",
-    "aufnahmedatum": "desired_join_date",
+    "strasse": "street_address",
+    "straße": "street_address",
+    "hausnummer": "street_address_number",
     "strassehausnummer": "street_address",
     "straßehausnummer": "street_address",
     "postleitzahl": "postal_code",
     "stadt": "city",
     "telefonnummer": "phone",
-    "datenschutzerklarung": "privacy_accepted",
-    "datenschutzerklärung": "privacy_accepted",
     "iban": "iban",
     "bic": "bic",
     "kreditinstitut": "bank_name",
-    "ermachtigungzurlastschrift": "direct_debit_accepted",
-    "ermächtigungzurlastschrift": "direct_debit_accepted",
-    "mitgliedschaftandereranbaugemeinschaften": "no_other_csc_membership",
-    "festerwohnsitzindeutschland": "german_residence_confirmed",
-    "mindestalter21jahre": "minimum_age_confirmed",
     "aktuellerlichtbildausweis": "id_document_confirmed",
     "newsletterfurwichtigeankundigungen": "important_newsletter_opt_in",
     "newsletterfürwichtigeankündigungen": "important_newsletter_opt_in",
     "optionalernewsletter": "optional_newsletter_opt_in",
-    "mitgliedsnummer": "member_number",
-    "monatsabgabe": "monthly_limit",
-    "tagesabgabe": "daily_limit",
-    "guthaben": "balance",
     "akzeptiert": "accepted",
     "verifiziert": "verified",
 }
@@ -170,6 +171,14 @@ def _session_import_data(request):
     return request.session.get(MEMBER_IMPORT_SESSION_KEY) or {}
 
 
+def _issue_member_email_verification_code(*, profile: Profile, request) -> None:
+    code = "".join(secrets.choice("0123456789") for _ in range(6))
+    profile.email_verification_code = code
+    profile.email_verification_sent_at = timezone.now()
+    profile.save(update_fields=["email_verification_code", "email_verification_sent_at", "updated_at"])
+    send_member_email_verification_code_email(profile=profile, code=code, request=request)
+
+
 def _normalize_directory_query(request):
     raw_query = request.GET.get("q", "")
     sanitized_query = _sanitize_search_query(raw_query)
@@ -233,13 +242,16 @@ def onboarding_view(request):
         form = MemberOnboardingForm(request.POST, profile=profile)
         if form.is_valid():
             form.save()
+            if not getattr(django_settings, "MEMBER_EMAIL_VERIFICATION_REQUIRED", True):
+                profile.email_verified_at = timezone.now()
+                profile.save(update_fields=["email_verified_at", "updated_at"])
             from apps.finance.services import apply_admission_fee_if_needed
 
             apply_admission_fee_if_needed(profile)
             if request.user.role == User.ROLE_MEMBER:
                 send_membership_documents_email(profile, request)
-            messages.success(request, "Deine Registrierungsdaten wurden vervollstaendigt.")
-            return redirect("core:dashboard")
+            messages.success(request, "Deine Profildaten sind gespeichert. Naechster Schritt: Verifizierung.")
+            return redirect("members:verification")
     else:
         form = MemberOnboardingForm(profile=profile)
 
@@ -262,7 +274,12 @@ def profile_view(request):
     if profile is None:
         messages.info(request, "Zu diesem Konto ist noch kein Profil vorhanden. Bitte vervollstaendige zuerst die Registrierung.")
         return redirect("core:dashboard")
+    email_verification_required = bool(getattr(django_settings, "MEMBER_EMAIL_VERIFICATION_REQUIRED", True))
+    email_verification_pending = bool(email_verification_required and not profile.is_email_verified)
     if request.method == "POST":
+        if email_verification_pending:
+            messages.warning(request, "E-Mail noch nicht bestaetigt. Profilbearbeitung ist bis dahin gesperrt.")
+            return redirect("members:verification")
         form = MemberProfileEditForm(request.POST, profile=profile)
         if form.is_valid():
             form.save()
@@ -272,12 +289,17 @@ def profile_view(request):
             messages.success(request, "Deine Profildaten wurden aktualisiert.")
             return redirect("members:profile")
     else:
-        form = MemberProfileEditForm(profile=profile)
+        form = None if email_verification_pending else MemberProfileEditForm(profile=profile)
         translation.activate(profile.preferred_language or Profile.LANGUAGE_DE)
         request.session[LANGUAGE_SESSION_KEY] = profile.preferred_language or Profile.LANGUAGE_DE
-    recent_orders = Order.objects.filter(member=request.user).prefetch_related("items__strain").order_by("-created_at")[:8]
-    invoices = profile.invoices.order_by("-created_at")[:8]
-    payments = profile.payments.select_related("invoice").order_by("-created_at")[:8]
+    show_sensitive = not email_verification_pending
+    recent_orders = (
+        Order.objects.filter(member=request.user).prefetch_related("items__strain").order_by("-created_at")[:8]
+        if show_sensitive
+        else []
+    )
+    invoices = profile.invoices.order_by("-created_at")[:8] if show_sensitive else []
+    payments = profile.payments.select_related("invoice").order_by("-created_at")[:8] if show_sensitive else []
     return render(
         request,
         "members/profile.html",
@@ -288,15 +310,16 @@ def profile_view(request):
             "payments": payments,
             "is_admin_view": False,
             "can_manage": False,
-            "can_view_sensitive_finance": True,
+            "can_view_sensitive_finance": show_sensitive,
             "show_full_bic": True,
-            "show_order_history": True,
-            "show_private_profile_details": True,
+            "show_order_history": show_sensitive,
+            "show_private_profile_details": show_sensitive,
             "profile_form": form,
-            "show_public_directory_link": True,
-            "show_profile_edit_callout": True,
+            "show_public_directory_link": show_sensitive,
+            "show_profile_edit_callout": show_sensitive,
             "pending_member_limited_access": profile.status == Profile.STATUS_PENDING,
             "verification_submission": getattr(profile, "verification_submission", None),
+            "email_verification_pending": email_verification_pending,
         },
     )
 
@@ -321,7 +344,7 @@ def member_detail(request, profile_id: int):
     viewer = request.user
     is_admin_view = viewer.role in {User.ROLE_STAFF, User.ROLE_BOARD}
     is_self_view = viewer.id == profile.user_id
-    if not viewer.is_superuser and viewer.social_club_id and profile.user.social_club_id != viewer.social_club_id:
+    if not is_overadmin(viewer) and viewer.social_club_id and profile.user.social_club_id != viewer.social_club_id:
         messages.info(request, "Dieses Mitgliederprofil gehoert zu einem anderen Social Club.")
         return redirect("core:dashboard")
     if viewer.role == User.ROLE_MEMBER and not is_self_view:
@@ -385,14 +408,39 @@ def verification_view(request):
     submission, _ = VerificationSubmission.objects.get_or_create(profile=profile)
 
     if request.method == "POST":
-        form = VerificationSubmissionForm(request.POST, request.FILES, instance=submission)
-        if form.is_valid():
-            submission = form.save(commit=False)
-            submission.status = VerificationSubmission.STATUS_SUBMITTED
-            submission.submitted_at = timezone.now()
-            submission.save()
-            messages.success(request, "Verifizierungsunterlagen wurden eingereicht und an die Administration uebergeben.")
-            return redirect("members:verification")
+        action = (request.POST.get("action") or "upload_documents").strip()
+        if action == "upload_documents":
+            form = VerificationSubmissionForm(request.POST, request.FILES, instance=submission)
+            if form.is_valid():
+                submission = form.save(commit=False)
+                submission.status = VerificationSubmission.STATUS_SUBMITTED
+                submission.submitted_at = timezone.now()
+                submission.save()
+                run_verification_ai_check(submission=submission, profile=profile)
+                if not profile.is_email_verified:
+                    _issue_member_email_verification_code(profile=profile, request=request)
+                messages.success(
+                    request,
+                    "Dokumente wurden eingereicht. Bitte jetzt den E-Mail-Code bestaetigen.",
+                )
+                return redirect("members:verification")
+        elif action == "verify_email_code":
+            submitted_code = (request.POST.get("verification_code") or "").strip()
+            expected_code = (profile.email_verification_code or "").strip()
+            if submitted_code and expected_code and submitted_code == expected_code:
+                profile.email_verified_at = timezone.now()
+                profile.email_verification_code = ""
+                profile.save(update_fields=["email_verified_at", "email_verification_code", "updated_at"])
+                messages.success(request, "E-Mail-Adresse erfolgreich bestaetigt.")
+            else:
+                messages.error(request, "Der Verifizierungscode ist ungueltig.")
+            form = VerificationSubmissionForm(instance=submission)
+        elif action == "resend_email_code":
+            _issue_member_email_verification_code(profile=profile, request=request)
+            messages.success(request, "Ein neuer Verifizierungscode wurde per E-Mail versendet.")
+            form = VerificationSubmissionForm(instance=submission)
+        else:
+            form = VerificationSubmissionForm(instance=submission)
     else:
         form = VerificationSubmissionForm(instance=submission)
 
@@ -408,6 +456,40 @@ def verification_view(request):
     )
 
 
+@login_required
+def iban_lookup(request):
+    raw_iban = (request.GET.get("iban") or "").strip()
+    if not raw_iban:
+        return JsonResponse({"ok": False, "valid": False, "matches": 0, "message": "Bitte IBAN eingeben."}, status=400)
+    try:
+        iban = _validate_iban(raw_iban)
+    except Exception:
+        return JsonResponse({"ok": False, "valid": False, "matches": 0, "message": "IBAN ungueltig."}, status=200)
+    try:
+        bank_data = _lookup_iban_bank_data(iban)
+    except Exception:
+        return JsonResponse(
+            {
+                "ok": False,
+                "valid": True,
+                "matches": 0,
+                "message": "IBAN-API derzeit nicht erreichbar.",
+            },
+            status=503,
+        )
+    bic = str(bank_data.get("bic", "") or "").strip().upper()
+    bank_name = str(bank_data.get("bank_name", "") or "").strip()
+    return JsonResponse(
+        {
+            "ok": True,
+            "valid": True,
+            "matches": 1 if (bic or bank_name) else 0,
+            "bank_name": bank_name,
+            "bic": bic,
+        }
+    )
+
+
 @staff_or_board_required(_is_staff_or_board)
 def verification_detail(request, profile_id: int):
     profile = get_object_or_404(Profile.objects.select_related("user"), id=profile_id)
@@ -418,6 +500,9 @@ def verification_detail(request, profile_id: int):
         admin_notes = request.POST.get("admin_notes", "").strip()
         submission.admin_notes = admin_notes
         if action == "approve":
+            if not profile.is_email_verified:
+                messages.error(request, "Freigabe noch nicht moeglich: E-Mail-Adresse ist nicht bestaetigt.")
+                return redirect("members:verification_detail", profile_id=profile.id)
             if _club_verified_capacity_reached(profile):
                 messages.error(
                     request,
@@ -436,6 +521,7 @@ def verification_detail(request, profile_id: int):
 
             apply_admission_fee_if_needed(profile)
             send_member_card_email(profile, request)
+            submission.purge_sensitive_documents()
             messages.success(request, f"Verifizierung fuer {profile.user.email} bestaetigt.")
         elif action == "reject":
             submission.status = VerificationSubmission.STATUS_REJECTED
@@ -492,7 +578,7 @@ def _staff_directory(request):
         )
         .order_by("status", "member_number", "user__last_name", "user__first_name")
     )
-    if not request.user.is_superuser and request.user.social_club_id:
+    if not is_overadmin(request.user) and request.user.social_club_id:
         profiles = profiles.filter(user__social_club_id=request.user.social_club_id)
 
     if query:
@@ -656,8 +742,10 @@ def import_members_csv(request):
                 for index, header in enumerate(import_data.get("headers", []))
             }
             used_targets = [target for target in mappings.values() if target]
-            if "email" not in used_targets:
-                messages.error(request, "Mindestens eine Spalte muss auf E-Mail-Adresse gemappt werden.")
+            missing_required = [field for field in REQUIRED_IMPORT_FIELDS if field not in used_targets]
+            if missing_required:
+                readable = ", ".join(REQUIRED_IMPORT_FIELD_LABELS[field] for field in missing_required)
+                messages.error(request, f"Pflichtzuordnung fehlt: {readable}.")
                 return redirect("members:import")
 
             created_count = 0
@@ -672,15 +760,17 @@ def import_members_csv(request):
                         mapped[target] = (row.get(header) or "").strip()
                 email = (mapped.get("email") or "").strip().lower()
                 birth_date = _parse_import_date(mapped.get("birth_date", ""))
-                if not email or not birth_date:
-                    skipped_rows.append(f"Zeile {row_index}: E-Mail oder Geburtsdatum fehlt.")
+                first_name = (mapped.get("first_name") or "").strip()
+                last_name = (mapped.get("last_name") or "").strip()
+                if not email or not birth_date or not first_name or not last_name:
+                    skipped_rows.append(f"Zeile {row_index}: Pflichtfeld fehlt (E-Mail, Vorname, Nachname oder Geburtsdatum).")
                     continue
 
                 user, created = User.objects.get_or_create(
                     email=email,
                     defaults={
-                        "first_name": mapped.get("first_name", ""),
-                        "last_name": mapped.get("last_name", ""),
+                        "first_name": first_name,
+                        "last_name": last_name,
                         "role": User.ROLE_MEMBER,
                         "social_club": request.user.social_club,
                     },
@@ -691,7 +781,7 @@ def import_members_csv(request):
                 else:
                     changed_fields = []
                     for field_name in ("first_name", "last_name"):
-                        new_value = mapped.get(field_name, "").strip()
+                        new_value = (mapped.get(field_name) or "").strip()
                         if new_value and getattr(user, field_name) != new_value:
                             setattr(user, field_name, new_value)
                             changed_fields.append(field_name)
@@ -710,30 +800,29 @@ def import_members_csv(request):
                     },
                 )
                 profile.birth_date = birth_date
-                profile.desired_join_date = _parse_import_date(mapped.get("desired_join_date", "")) or profile.desired_join_date
-                profile.street_address = mapped.get("street_address", profile.street_address).strip()
+                street_value = mapped.get("street_address", "").strip()
+                street_number_value = mapped.get("street_address_number", "").strip()
+                if street_value and street_number_value:
+                    profile.street_address = f"{street_value} {street_number_value}".strip()
+                elif street_value:
+                    profile.street_address = street_value
+                elif street_number_value and profile.street_address:
+                    profile.street_address = f"{profile.street_address} {street_number_value}".strip()
+                profile.desired_join_date = profile.desired_join_date or timezone.localdate()
                 profile.postal_code = mapped.get("postal_code", profile.postal_code).strip()
                 profile.city = mapped.get("city", profile.city).strip()
                 profile.phone = mapped.get("phone", profile.phone).strip()
                 profile.bank_name = mapped.get("bank_name", profile.bank_name).strip()
                 profile.account_holder_name = profile.account_holder_name or user.full_name or user.email
-                profile.privacy_accepted = _parse_import_bool(mapped.get("privacy_accepted", "")) or profile.privacy_accepted
-                profile.direct_debit_accepted = _parse_import_bool(mapped.get("direct_debit_accepted", "")) or profile.direct_debit_accepted
-                profile.no_other_csc_membership = _parse_import_bool(mapped.get("no_other_csc_membership", "")) or profile.no_other_csc_membership
-                profile.german_residence_confirmed = _parse_import_bool(mapped.get("german_residence_confirmed", "")) or profile.german_residence_confirmed
-                profile.minimum_age_confirmed = _parse_import_bool(mapped.get("minimum_age_confirmed", "")) or profile.minimum_age_confirmed
                 profile.id_document_confirmed = _parse_import_bool(mapped.get("id_document_confirmed", "")) or profile.id_document_confirmed
-                profile.important_newsletter_opt_in = _parse_import_bool(mapped.get("important_newsletter_opt_in", "")) or profile.important_newsletter_opt_in
-                profile.optional_newsletter_opt_in = _parse_import_bool(mapped.get("optional_newsletter_opt_in", "")) or profile.optional_newsletter_opt_in
+                profile.important_newsletter_opt_in = True
+                profile.optional_newsletter_opt_in = True
                 profile.is_verified = False
                 profile.status = target_status
-                if mapped.get("member_number", "").isdigit():
-                    desired_number = int(mapped["member_number"])
-                    conflict = Profile.objects.exclude(pk=profile.pk).filter(member_number=desired_number).exists()
-                    if not conflict:
-                        profile.member_number = desired_number
-                profile.registration_completed_at = None
+                profile.registration_completed_at = timezone.now()
                 profile.save()
+                if not profile.member_number:
+                    profile.allocate_member_number()
 
                 iban = mapped.get("iban", "").replace(" ", "").upper()
                 bic = mapped.get("bic", "").replace(" ", "").upper()
@@ -809,6 +898,7 @@ def import_members_csv(request):
             "suggested_mappings": suggested_mappings,
             "preview_rows": preview_rows,
             "import_result": import_result,
+            "required_import_fields": REQUIRED_IMPORT_FIELD_LABELS.values(),
         },
     )
 
@@ -816,7 +906,7 @@ def import_members_csv(request):
 @board_required(_is_board)
 def member_action(request, profile_id: int):
     profile = get_object_or_404(Profile.objects.select_related("user"), id=profile_id)
-    if not request.user.is_superuser and request.user.social_club_id and profile.user.social_club_id != request.user.social_club_id:
+    if not is_overadmin(request.user) and request.user.social_club_id and profile.user.social_club_id != request.user.social_club_id:
         messages.error(request, "Aktion nicht erlaubt: anderes Social-Club-Mandat.")
         return redirect("members:directory")
     action = request.POST.get("action")

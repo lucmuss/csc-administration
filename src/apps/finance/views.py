@@ -10,6 +10,7 @@ from django.urls import reverse
 from django.utils import timezone
 
 from apps.accounts.models import User
+from apps.core.club import resolve_active_social_club
 from apps.members.models import Profile
 from apps.orders.models import OrderItem
 
@@ -31,12 +32,14 @@ from .services import (
 )
 
 
-def _statistics_items_queryset(selected_year: str):
+def _statistics_items_queryset(selected_year: str, *, social_club=None):
     items = (
         OrderItem.objects.select_related("strain", "order")
         .filter(order__status="completed")
         .order_by("order__updated_at", "id")
     )
+    if social_club is not None:
+        items = items.filter(order__member__social_club=social_club)
     if selected_year.isdigit():
         items = items.filter(order__updated_at__year=int(selected_year))
     return items
@@ -56,7 +59,6 @@ def _build_statistics_payload(items):
                 "label": month_start.strftime("%m.%Y"),
                 "flower_grams": 0,
                 "cuttings": 0,
-                "edibles": 0,
                 "accessories": 0,
                 "merch": 0,
                 "revenue": 0,
@@ -73,12 +75,13 @@ def _build_statistics_payload(items):
             row["cuttings"] += quantity
             cutting_products[item.strain.name]["quantity"] += quantity
             cutting_products[item.strain.name]["revenue"] += revenue
-        elif item.strain.product_type == item.strain.PRODUCT_TYPE_EDIBLE:
-            row["edibles"] += quantity
         elif item.strain.product_type == item.strain.PRODUCT_TYPE_ACCESSORY:
             row["accessories"] += quantity
         elif item.strain.product_type == item.strain.PRODUCT_TYPE_MERCH:
             row["merch"] += quantity
+        elif item.strain.product_type == item.strain.PRODUCT_TYPE_EDIBLE:
+            # Historische Edible-Eintraege werden als Stueckartikel im Bereich Zubehoer mitgefuehrt.
+            row["accessories"] += quantity
 
         product_entry = product_totals[item.strain.name]
         product_entry["quantity"] += quantity
@@ -90,7 +93,7 @@ def _build_statistics_payload(items):
     flower_max = max((row["flower_grams"] for row in monthly.values()), default=0) or 1
     unit_max = max(
         (
-            max(row["cuttings"], row["edibles"], row["accessories"], row["merch"])
+            max(row["cuttings"], row["accessories"], row["merch"])
             for row in monthly.values()
         ),
         default=0,
@@ -99,7 +102,6 @@ def _build_statistics_payload(items):
         row["month_start"] = month_start
         row["flower_width"] = max((row["flower_grams"] / flower_max) * 100, 6) if row["flower_grams"] else 0
         row["cuttings_width"] = max((row["cuttings"] / unit_max) * 100, 6) if row["cuttings"] else 0
-        row["edibles_width"] = max((row["edibles"] / unit_max) * 100, 6) if row["edibles"] else 0
         row["accessories_width"] = max((row["accessories"] / unit_max) * 100, 6) if row["accessories"] else 0
         row["merch_width"] = max((row["merch"] / unit_max) * 100, 6) if row["merch"] else 0
         month_rows.append(row)
@@ -137,7 +139,7 @@ def _build_statistics_payload(items):
         "months": len(month_rows),
         "flower_grams_total": round(sum(row["flower_grams"] for row in month_rows), 2),
         "units_total": round(
-            sum(row["cuttings"] + row["edibles"] + row["accessories"] + row["merch"] for row in month_rows), 2
+            sum(row["cuttings"] + row["accessories"] + row["merch"] for row in month_rows), 2
         ),
         "revenue_total": round(sum(row["revenue"] for row in month_rows), 2),
         "cuttings_total": round(sum(row["cuttings"] for row in month_rows), 2),
@@ -467,6 +469,18 @@ def archive(request):
         raise Http404
 
     if request.method == "POST":
+        action = (request.POST.get("action") or "").strip()
+        if action == "delete":
+            invoice = get_object_or_404(UploadedInvoice, pk=request.POST.get("invoice_id"))
+            title = invoice.title or f"#{invoice.pk}"
+            invoice.delete()
+            messages.warning(request, f"Rechnung {title} wurde aus dem Archiv geloescht.")
+            next_query = (request.POST.get("next_query") or "").strip()
+            target = reverse("finance:archive")
+            if next_query:
+                target = f"{target}?{next_query}"
+            return redirect(target)
+
         form = UploadedInvoiceForm(request.POST, request.FILES, current_user=request.user)
         if form.is_valid():
             uploaded_invoice = form.save(commit=False)
@@ -489,12 +503,18 @@ def archive(request):
     invoices = UploadedInvoice.objects.select_related("assigned_to", "created_by").all()
     direction = request.GET.get("direction", "").strip()
     payment_status = request.GET.get("payment_status", "").strip()
+    allowed_payment_filters = {
+        UploadedInvoice.PAYMENT_OPEN,
+        UploadedInvoice.PAYMENT_PAID,
+    }
     year = request.GET.get("year", "").strip()
     month = request.GET.get("month", "").strip()
     if direction:
         invoices = invoices.filter(direction=direction)
-    if payment_status:
+    if payment_status in allowed_payment_filters:
         invoices = invoices.filter(payment_status=payment_status)
+    else:
+        payment_status = ""
     if year.isdigit():
         invoices = invoices.filter(issue_date__year=int(year))
     if month.isdigit():
@@ -525,19 +545,20 @@ def statistics(request):
         raise Http404
 
     selected_year = request.GET.get("year", "").strip()
-    items = _statistics_items_queryset(selected_year)
+    active_social_club = resolve_active_social_club(request)
+    items = _statistics_items_queryset(selected_year, social_club=active_social_club)
     payload = _build_statistics_payload(items)
-    all_years = (
-        OrderItem.objects.filter(order__status="completed")
-        .dates("order__updated_at", "year", order="DESC")
-    )
+    all_year_items = _statistics_items_queryset("", social_club=active_social_club)
+    all_years = all_year_items.dates("order__updated_at", "year", order="DESC")
     available_years = [entry.year for entry in all_years]
     comparison = None
     comparison_year = None
     effective_year = int(selected_year) if selected_year.isdigit() else (available_years[0] if available_years else None)
     if effective_year:
         comparison_year = effective_year - 1
-        previous_payload = _build_statistics_payload(_statistics_items_queryset(str(comparison_year)))
+        previous_payload = _build_statistics_payload(
+            _statistics_items_queryset(str(comparison_year), social_club=active_social_club)
+        )
 
         def _delta(current_value, previous_value):
             if not previous_value:
@@ -564,14 +585,13 @@ def statistics(request):
         writer.writerow(["Stueckartikel gesamt", payload["summary"]["units_total"]])
         writer.writerow(["Umsatz gesamt (EUR)", payload["summary"]["revenue_total"]])
         writer.writerow([])
-        writer.writerow(["Monat", "Blueten (g)", "Stecklinge", "Edibles", "Rauchzubehoer", "Werbegeschenke", "Umsatz (EUR)"])
+        writer.writerow(["Monat", "Blueten (g)", "Stecklinge", "Rauchzubehoer", "Werbegeschenke", "Umsatz (EUR)"])
         for row in payload["month_rows"]:
             writer.writerow(
                 [
                     row["label"],
                     row["flower_grams"],
                     row["cuttings"],
-                    row["edibles"],
                     row["accessories"],
                     row["merch"],
                     row["revenue"],
@@ -592,6 +612,7 @@ def statistics(request):
             "selected_year": selected_year,
             "comparison": comparison,
             "effective_year": effective_year,
+            "active_social_club": active_social_club,
         },
     )
 
@@ -630,3 +651,20 @@ def archive_detail(request, pk: int):
             "form": form,
         },
     )
+
+
+@login_required
+def archive_delete(request, pk: int):
+    if request.user.role not in {User.ROLE_STAFF, User.ROLE_BOARD}:
+        raise Http404
+    if request.method != "POST":
+        return redirect("finance:archive")
+    invoice = get_object_or_404(UploadedInvoice, pk=pk)
+    title = invoice.title or f"#{invoice.pk}"
+    invoice.delete()
+    messages.warning(request, f"Rechnung {title} wurde aus dem Archiv geloescht.")
+    next_query = (request.POST.get("next_query") or "").strip()
+    target = reverse("finance:archive")
+    if next_query:
+        target = f"{target}?{next_query}"
+    return redirect(target)

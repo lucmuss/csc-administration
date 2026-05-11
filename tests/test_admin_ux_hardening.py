@@ -263,6 +263,24 @@ def test_integrations_page_shows_help_for_tokens_and_reachability(client, admin_
 
 
 @pytest.mark.django_db
+def test_mass_email_markdown_preview_renders_with_current_user_variables(client, admin_user):
+    client.force_login(admin_user)
+
+    response = client.post(
+        reverse("messaging:api_render_email_markdown"),
+        data={"content": "Hallo {{ first_name }} {{ last_name }} ({{ email }}) #{{ member_number }}"},
+    )
+
+    assert response.status_code == 200
+    payload = response.json()
+    assert payload["success"] is True
+    assert "Ada" in payload["rendered_markdown"]
+    assert "Admin" in payload["rendered_markdown"]
+    assert "admin-ux@example.com" in payload["rendered_markdown"]
+    assert "100099" in payload["rendered_markdown"]
+
+
+@pytest.mark.django_db
 def test_staff_member_detail_hides_bank_panel_for_foreign_profile(client, staff_user, member_user):
     client.force_login(staff_user)
 

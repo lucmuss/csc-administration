@@ -202,3 +202,30 @@ def test_terms_page_is_accessible(client):
 
     assert response.status_code == 200
     assert "Nutzungsbedingungen" in response.content.decode("utf-8")
+
+
+@pytest.mark.django_db
+def test_password_change_allows_login_with_new_password(client, member_user):
+    client.force_login(member_user)
+
+    change_response = client.post(
+        reverse("accounts:password_change"),
+        data={
+            "old_password": "StrongPass123!",
+            "new_password1": "NeuesPasswort123!",
+            "new_password2": "NeuesPasswort123!",
+        },
+        follow=True,
+    )
+    assert change_response.status_code == 200
+    assert "Passwort wurde erfolgreich aktualisiert" in change_response.content.decode("utf-8")
+
+    logout_response = client.post(reverse("accounts:logout"), follow=True)
+    assert logout_response.status_code == 200
+
+    login_response = client.post(
+        reverse("accounts:login"),
+        data={"username": member_user.email, "password": "NeuesPasswort123!"},
+    )
+    assert login_response.status_code == 302
+    assert login_response.url == reverse("core:dashboard")

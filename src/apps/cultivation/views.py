@@ -27,6 +27,28 @@ from .forms import (
 )
 from apps.inventory.models import InventoryItem, InventoryLocation, Strain
 from apps.members.models import Profile
+from apps.core.club import resolve_active_social_club
+from apps.core.permissions import is_overadmin
+
+
+def _active_club(request):
+    club = resolve_active_social_club(request)
+    if club:
+        return club
+    if is_overadmin(request.user):
+        return None
+    return getattr(request.user, "social_club", None)
+
+
+def _cultivation_strains_queryset(request):
+    queryset = Strain.objects.filter(
+        is_active=True,
+        product_type__in=[Strain.PRODUCT_TYPE_FLOWER, Strain.PRODUCT_TYPE_CUTTING],
+    )
+    club = _active_club(request)
+    if club:
+        queryset = queryset.filter(social_club=club)
+    return queryset.order_by("name")
 
 
 # ==================== DASHBOARD ====================
@@ -37,13 +59,21 @@ def cultivation_dashboard(request):
     """Cultivation Dashboard mit Übersicht"""
     from datetime import date, timedelta
     
+    club = _active_club(request)
+
     # Aktive Grow Cycles
     active_cycles = GrowCycle.objects.filter(
         status__in=[GrowCycle.STATUS_PLANNED, GrowCycle.STATUS_ACTIVE]
-    ).order_by("expected_harvest_date")
+    )
+    if club:
+        active_cycles = active_cycles.filter(plants__strain__social_club=club).distinct()
+    active_cycles = active_cycles.order_by("expected_harvest_date")
     
     # Pflanzen-Statistiken
-    plant_stats = Plant.objects.aggregate(
+    plants_scope = Plant.objects.all()
+    if club:
+        plants_scope = plants_scope.filter(strain__social_club=club)
+    plant_stats = plants_scope.aggregate(
         total=Count("id"),
         growing=Count("id", filter=Q(status__in=[
             Plant.STATUS_GROWING, Plant.STATUS_VEGETATIVE, Plant.STATUS_FLOWERING
@@ -54,9 +84,12 @@ def cultivation_dashboard(request):
     )
     
     # Ertrags-Statistiken
-    yield_stats = HarvestBatch.objects.filter(
+    yield_scope = HarvestBatch.objects.filter(
         assigned_to_inventory=True
-    ).aggregate(
+    )
+    if club:
+        yield_scope = yield_scope.filter(plants__strain__social_club=club).distinct()
+    yield_stats = yield_scope.aggregate(
         total_dried=Sum("total_weight_dried"),
         total_batches=Count("id")
     )
@@ -65,13 +98,26 @@ def cultivation_dashboard(request):
     upcoming_harvests = GrowCycle.objects.filter(
         status=GrowCycle.STATUS_ACTIVE,
         expected_harvest_date__lte=date.today() + timedelta(days=30)
-    ).order_by("expected_harvest_date")[:5]
+    )
+    if club:
+        upcoming_harvests = upcoming_harvests.filter(plants__strain__social_club=club).distinct()
+    upcoming_harvests = upcoming_harvests.order_by("expected_harvest_date")[:5]
     
     # Aktive Batches in Trocknung/Aushärtung
     active_batches = HarvestBatch.objects.filter(
         assigned_to_inventory=False,
         curing_end_date__isnull=True
-    ).order_by("-harvest_date")[:5]
+    )
+    if club:
+        active_batches = active_batches.filter(plants__strain__social_club=club).distinct()
+    active_batches = active_batches.order_by("-harvest_date")[:5]
+
+    active_strains = (
+        plants_scope.filter(status__in=[Plant.STATUS_GROWING, Plant.STATUS_VEGETATIVE, Plant.STATUS_FLOWERING])
+        .values("strain__name")
+        .annotate(plant_count=Count("id"), cycle_count=Count("grow_cycle", distinct=True))
+        .order_by("-plant_count", "strain__name")
+    )[:8]
     
     context = {
         "active_cycles": active_cycles,
@@ -79,6 +125,8 @@ def cultivation_dashboard(request):
         "yield_stats": yield_stats,
         "upcoming_harvests": upcoming_harvests,
         "active_batches": active_batches,
+        "active_strains": active_strains,
+        "active_social_club": club,
     }
     return render(request, "cultivation/dashboard.html", context)
 
@@ -215,7 +263,10 @@ def grow_cycle_update_status(request, pk):
 @permission_required("cultivation.view_plant", raise_exception=True)
 def plant_list(request):
     """Liste aller Pflanzen"""
-    plants = Plant.objects.select_related("strain", "grow_cycle").all()
+    plants = Plant.objects.select_related("strain", "grow_cycle")
+    club = _active_club(request)
+    if club:
+        plants = plants.filter(strain__social_club=club)
     
     # Filter
     status_filter = request.GET.get("status")
@@ -236,7 +287,7 @@ def plant_list(request):
     context = {
         "plants": plants_page,
         "status_choices": Plant.STATUS_CHOICES,
-        "strains": Strain.objects.all(),
+        "strains": _cultivation_strains_queryset(request),
         "cycles": GrowCycle.objects.all(),
     }
     return render(request, "cultivation/plant_list.html", context)
@@ -254,6 +305,7 @@ def plant_create(request):
     
     if request.method == "POST":
         form = PlantForm(request.POST)
+        form.fields["strain"].queryset = _cultivation_strains_queryset(request)
         if form.is_valid():
             plant = form.save(commit=False)
             plant.created_by = request.user
@@ -262,6 +314,7 @@ def plant_create(request):
             return redirect("cultivation:plant_detail", pk=plant.pk)
     else:
         form = PlantForm(initial=initial)
+        form.fields["strain"].queryset = _cultivation_strains_queryset(request)
     
     return render(request, "cultivation/plant_form.html", {
         "form": form,
@@ -297,15 +350,21 @@ def plant_detail(request, pk):
 def plant_edit(request, pk):
     """Pflanze bearbeiten"""
     plant = get_object_or_404(Plant, pk=pk)
+    club = _active_club(request)
+    if club and plant.strain.social_club_id != club.id:
+        messages.error(request, "Diese Pflanze gehoert zu einem anderen Social Club.")
+        return redirect("cultivation:plant_list")
     
     if request.method == "POST":
         form = PlantForm(request.POST, instance=plant)
+        form.fields["strain"].queryset = _cultivation_strains_queryset(request)
         if form.is_valid():
             form.save()
             messages.success(request, f"Pflanze '{plant}' wurde aktualisiert.")
             return redirect("cultivation:plant_detail", pk=plant.pk)
     else:
         form = PlantForm(instance=plant)
+        form.fields["strain"].queryset = _cultivation_strains_queryset(request)
     
     return render(request, "cultivation/plant_form.html", {
         "form": form,

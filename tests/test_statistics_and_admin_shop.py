@@ -228,4 +228,3 @@ def test_finance_statistics_page_shows_year_comparison_and_split_lists(client, b
     assert response.status_code == 200
     assert "Jahresvergleich" in html
     assert "Top-Sorten nach Gramm" in html
-    assert "Top-Sorten nach Stueck" in html

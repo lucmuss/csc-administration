@@ -29,7 +29,7 @@
                     <span class="font-medium">{{ batch.total_weight_dried|floatformat:0 }}g</span>
                 </div>
                 <div class="flex justify-between">
-                    <span class="text-gray-600">Qualität:</span>
+                    <span class="text-gray-600">Qualitaet:</span>
                     <span class="font-medium">{{ batch.get_quality_grade_display }}</span>
                 </div>
                 <div class="flex justify-between">
@@ -47,7 +47,7 @@
                 <div class="mb-6">
                     <label class="block text-sm font-medium text-gray-700 mb-2">Inventar-Standort</label>
                     <select name="location" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500" required>
-                        <option value="">Standort auswählen...</option>
+                        <option value="">Standort auswaehlen...</option>
                         {% for location in locations %}
                         <option value="{{ location.pk }}">{{ location.name }} ({{ location.get_type_display }})</option>
                         {% endfor %}
@@ -56,8 +56,8 @@
                 
                 <div class="bg-yellow-50 border border-yellow-200 rounded-lg p-4 mb-6">
                     <p class="text-sm text-yellow-700">
-                        <strong>Hinweis:</strong> Nach der Zuweisung wird das Cannabis dem Inventar hinzugefügt 
-                        und ist für die Distribution verfügbar. Dieser Vorgang kann nicht rückgängig gemacht werden.
+                        <strong>Hinweis:</strong> Nach der Zuweisung wird das Cannabis dem Inventar hinzugefuegt 
+                        und ist fuer die Distribution verfuegbar. Dieser Vorgang kann nicht rueckgaengig gemacht werden.
                     </p>
                 </div>
                 

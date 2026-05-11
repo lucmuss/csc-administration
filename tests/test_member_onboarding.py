@@ -179,7 +179,8 @@ def test_onboarding_form_saves_profile_and_mandate(client, member_user):
         reverse("members:onboarding"),
         data={
             "desired_join_date": desired_join_date,
-            "street_address": "Karl-Liebknecht-Strasse 9",
+            "street_address": "Karl-Liebknecht-Strasse",
+            "street_address_number": "9",
             "postal_code": "04107",
             "city": "Leipzig",
             "phone": "+4915112345678",
@@ -203,7 +204,7 @@ def test_onboarding_form_saves_profile_and_mandate(client, member_user):
     member_user.profile.engagement.refresh_from_db()
     mandate = SepaMandate.objects.get(profile=member_user.profile)
     assert response.status_code == 302
-    assert response.url == reverse("core:dashboard")
+    assert response.url == reverse("members:verification")
     assert member_user.profile.street_address == "Karl-Liebknecht-Strasse 9"
     assert member_user.profile.bank_name == "ING"
     assert member_user.profile.account_holder_name == "Max Mustermann"
@@ -257,7 +258,8 @@ def test_onboarding_form_allows_board_without_membership_documents(client):
         reverse("members:onboarding"),
         data={
             "desired_join_date": desired_join_date,
-            "street_address": "Karl-Liebknecht-Strasse 9",
+            "street_address": "Karl-Liebknecht-Strasse",
+            "street_address_number": "9",
             "postal_code": "04107",
             "city": "Leipzig",
             "phone": "+4915112345678",
@@ -279,7 +281,7 @@ def test_onboarding_form_allows_board_without_membership_documents(client):
 
     profile.refresh_from_db()
     assert response.status_code == 302
-    assert response.url == reverse("core:dashboard")
+    assert response.url == reverse("members:verification")
     assert profile.onboarding_complete is True
     assert SepaMandate.objects.filter(profile=profile, is_active=True).exists()
     assert len(mail.outbox) == 0
@@ -393,7 +395,7 @@ def test_onboarding_form_defaults_join_date_to_first_day_of_next_month(member_us
     member_user.profile.save(update_fields=["desired_join_date", "updated_at"])
     onboarding_form = MemberOnboardingForm(profile=member_user.profile)
 
-    assert onboarding_form.fields["desired_join_date"].initial.day == 1
+    assert onboarding_form.fields["desired_join_date"].initial == timezone.localdate()
 
 
 @pytest.mark.django_db
@@ -425,6 +427,7 @@ def test_profile_edit_updates_member_and_messaging_preferences(client, member_us
     member_user.profile.id_document_confirmed = True
     member_user.profile.important_newsletter_opt_in = True
     member_user.profile.registration_completed_at = member_user.profile.created_at
+    member_user.profile.email_verified_at = timezone.now()
     member_user.profile.save()
     client.force_login(member_user)
 

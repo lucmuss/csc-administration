@@ -16,12 +16,12 @@
           <h2>Kontext speichern</h2>
         </div>
       </div>
-      <form method="post" action="{% url 'core:social_club_switch' %}" class="form-stack">
+      <form method="post" action="{% url 'core:social_club_switch' %}" class="form-stack" data-social-club-filter>
         {% csrf_token %}
         <input type="hidden" name="next" value="{% url 'core:public_preferences' %}">
         <div class="field">
           <label for="preferences-state">Bundesland</label>
-          <select id="preferences-state" name="federal_state" class="form-input form-select">
+          <select id="preferences-state" name="federal_state" class="form-input form-select" data-federal-state-select>
             <option value="">Bundesland auswaehlen</option>
             {% for code, label in federal_state_options %}
               <option value="{{ code }}" {% if active_federal_state == code %}selected{% endif %}>{{ label }}</option>
@@ -30,9 +30,9 @@
         </div>
         <div class="field">
           <label for="preferences-club">Social Club</label>
-          <select id="preferences-club" name="social_club_id" class="form-input form-select">
+          <select id="preferences-club" name="social_club_id" class="form-input form-select" data-social-club-select>
             {% for club in club_options %}
-              <option value="{{ club.id }}" {% if active_social_club and active_social_club.id == club.id %}selected{% endif %}>{{ club.name }} ({{ club.city }})</option>
+              <option value="{{ club.id }}" data-state="{{ club.federal_state|default:'' }}" {% if active_social_club and active_social_club.id == club.id %}selected{% endif %}>{{ club.name }} ({{ club.city }})</option>
             {% endfor %}
           </select>
         </div>

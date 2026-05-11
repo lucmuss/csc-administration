@@ -2,7 +2,7 @@ from datetime import date
 from decimal import Decimal
 
 import pytest
-from django.urls import reverse
+from django.urls import NoReverseMatch, reverse
 from django.utils import timezone
 
 
@@ -164,3 +164,90 @@ def test_shift_create_and_detail_are_available_in_app(client, board_user):
     assert "Tresorcheck" in detail_response.content.decode()
     assert calendar_response.status_code == 200
     assert reverse("participation:shift_detail", args=[shift.id]) in calendar_response.content.decode()
+
+
+@pytest.mark.django_db
+def test_inventory_discrepancy_report_route_removed():
+    with pytest.raises(NoReverseMatch):
+        reverse("inventory:discrepancy_report")
+
+
+@pytest.mark.django_db
+def test_inventory_pages_are_scoped_to_active_social_club(client, board_user):
+    from apps.core.models import SocialClub
+    from apps.inventory.models import InventoryItem, InventoryLocation, Strain
+
+    club_a = SocialClub.objects.create(
+        name="CSC Scope A",
+        email="scope-a@example.com",
+        street_address="A",
+        postal_code="04109",
+        city="Leipzig",
+        phone="+491111111",
+        is_approved=True,
+        is_active=True,
+    )
+    club_b = SocialClub.objects.create(
+        name="CSC Scope B",
+        email="scope-b@example.com",
+        street_address="B",
+        postal_code="04109",
+        city="Leipzig",
+        phone="+492222222",
+        is_approved=True,
+        is_active=True,
+    )
+    board_user.social_club = club_a
+    board_user.save(update_fields=["social_club"])
+
+    strain_a = Strain.objects.create(
+        social_club=club_a,
+        name="Club A Bluete",
+        product_type=Strain.PRODUCT_TYPE_FLOWER,
+        thc=Decimal("18.00"),
+        cbd=Decimal("0.20"),
+        price=Decimal("8.00"),
+        stock=Decimal("10.00"),
+    )
+    strain_b = Strain.objects.create(
+        social_club=club_b,
+        name="Club B Bluete",
+        product_type=Strain.PRODUCT_TYPE_FLOWER,
+        thc=Decimal("19.00"),
+        cbd=Decimal("0.25"),
+        price=Decimal("9.00"),
+        stock=Decimal("11.00"),
+    )
+    location = InventoryLocation.objects.create(name="Scope Regal", type=InventoryLocation.TYPE_SHELF, capacity=Decimal("100.00"))
+    InventoryItem.objects.create(strain=strain_a, location=location, quantity=Decimal("10.00"))
+    InventoryItem.objects.create(strain=strain_b, location=location, quantity=Decimal("10.00"))
+
+    client.force_login(board_user)
+
+    list_response = client.get(reverse("inventory:strain_list"))
+    count_response = client.get(reverse("inventory:inventory_count_form"))
+    list_html = list_response.content.decode()
+    count_html = count_response.content.decode()
+
+    assert list_response.status_code == 200
+    assert count_response.status_code == 200
+    assert "Club A Bluete" in list_html
+    assert "Club B Bluete" not in list_html
+    assert "Club A Bluete" in count_html
+    assert "Club B Bluete" not in count_html
+
+
+@pytest.mark.django_db
+def test_participation_admin_hours_rows_are_color_coded(client, board_user):
+    from apps.participation.models import WorkHours
+
+    WorkHours.objects.create(profile=board_user.profile, date=timezone.localdate(), hours=Decimal("2.0"), approved=True)
+    WorkHours.objects.create(profile=board_user.profile, date=timezone.localdate(), hours=Decimal("1.0"), approved=False)
+    client.force_login(board_user)
+
+    response = client.get(reverse("participation:admin_hours"))
+    html = response.content.decode()
+
+    assert response.status_code == 200
+    assert "table-row-status--completed" in html
+    assert "table-row-status--reserved" in html

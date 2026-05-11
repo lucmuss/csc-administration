@@ -1,10 +1,14 @@
 # messaging/views.py
+import markdown
+
 from django.shortcuts import render, get_object_or_404, redirect
 from django.contrib.auth.decorators import login_required, permission_required
 from django.contrib import messages
 from django.conf import settings
 from django.db import transaction, models
 from django.http import JsonResponse, HttpResponse
+from django.template import Context as DjangoContext
+from django.template import Template
 from django.views.decorators.http import require_POST
 from django.core.paginator import Paginator
 from django.utils import timezone
@@ -872,6 +876,39 @@ def api_render_sms_template(request):
         })
     except SmsTemplate.DoesNotExist:
         return JsonResponse({"success": False, "error": "Template nicht gefunden"})
+
+
+@login_required
+@permission_required("messaging.add_massemail", raise_exception=True)
+@require_POST
+def api_render_email_markdown(request):
+    """API: Rendert Markdown-Vorschau fuer Massen-E-Mails mit aktuellem Benutzerkontext."""
+    raw_content = request.POST.get("content", "")
+    profile = getattr(request.user, "profile", None)
+    first_name = (getattr(request.user, "first_name", "") or "").strip() or "Mitglied"
+    last_name = (getattr(request.user, "last_name", "") or "").strip() or "Demo"
+    email = (getattr(request.user, "email", "") or "").strip()
+    member_number = str(getattr(profile, "member_number", "") or "")
+    context = {
+        "first_name": first_name,
+        "last_name": last_name,
+        "email": email,
+        "member_number": member_number,
+    }
+
+    try:
+        rendered_markdown = Template(raw_content).render(DjangoContext(context))
+    except Exception:
+        rendered_markdown = raw_content
+    rendered_html = markdown.markdown(rendered_markdown, extensions=["extra", "nl2br"]) if rendered_markdown.strip() else ""
+
+    return JsonResponse(
+        {
+            "success": True,
+            "rendered_markdown": rendered_markdown,
+            "rendered_html": rendered_html,
+        }
+    )
 
 
 # ==================== TRACKING ====================

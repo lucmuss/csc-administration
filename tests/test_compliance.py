@@ -120,14 +120,11 @@ def test_annual_report_generation_aggregates_orders_and_suspicious_cases(member_
 
 
 @pytest.mark.django_db
-def test_annual_report_csv_export_downloads(client, board_user):
+def test_annual_report_page_has_no_csv_export(client, board_user):
     client.force_login(board_user)
 
-    response = client.get(reverse("compliance:annual_report"), {"year": timezone.localdate().year, "format": "csv"})
+    response = client.get(reverse("compliance:annual_report"), {"year": timezone.localdate().year})
 
     assert response.status_code == 200
-    assert response["Content-Type"].startswith("text/csv")
-    assert "attachment;" in response["Content-Disposition"]
-    content = response.content.decode("utf-8")
-    assert "Kennzahl,Wert" in content
-    assert "Monat,Abgaben,Gesamtmenge (g)" in content
+    html = response.content.decode("utf-8")
+    assert "CSV herunterladen" not in html

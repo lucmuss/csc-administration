@@ -20,6 +20,7 @@ def test_social_club_registration_creates_pending_admin(client):
             "postal_code": "04109",
                 "city": "Leipzig",
                 "federal_state": "SN",
+                "register_entry": "VR 12345",
                 "minimum_age": "21",
                 "max_verified_members": "500",
                 "phone": "+4917000000",
@@ -30,6 +31,19 @@ def test_social_club_registration_creates_pending_admin(client):
     assert response.status_code == 200
     club = SocialClub.objects.get(name="CSC Test Leipzig")
     assert club.is_approved is False
+    assert club.registration_email_verification_code
+
+    response = client.post(
+        reverse("core:social_club_register"),
+        data={
+            "step": "verify_club",
+            "verification_code": club.registration_email_verification_code,
+        },
+        follow=True,
+    )
+    assert response.status_code == 200
+    club.refresh_from_db()
+    assert club.registration_email_verified_at is not None
 
     response = client.post(
         reverse("core:social_club_register"),

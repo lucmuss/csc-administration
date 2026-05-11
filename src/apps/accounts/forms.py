@@ -9,6 +9,7 @@ from apps.core.club import (
     ACTIVE_SOCIAL_CLUB_SESSION_KEY,
 )
 from apps.core.models import SocialClub
+from apps.core.permissions import is_overadmin
 
 
 def _apply_form_control(widget: forms.Widget) -> None:
@@ -84,7 +85,7 @@ class EmailAuthenticationForm(AuthenticationForm):
         cleaned = super().clean()
         user = self.get_user()
         selected_club = cleaned.get("social_club") if "social_club" in self.fields else None
-        if user and selected_club and not user.is_superuser and user.social_club_id != selected_club.id:
+        if user and selected_club and not is_overadmin(user) and user.social_club_id != selected_club.id:
             raise forms.ValidationError("Dieses Konto gehoert nicht zum ausgewaehlten Social Club.")
         return cleaned
 

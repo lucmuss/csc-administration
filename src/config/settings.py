@@ -315,6 +315,30 @@ CLUB_RETENTION_NOTICE = _env_first(
     ),
 )
 CLUB_EXTERNAL_SERVICES = _env_csv("CLUB_EXTERNAL_SERVICES")
+OVERADMIN_EMAILS = {item.lower() for item in _env_csv("OVERADMIN_EMAILS")}
+CLUB_REGISTRATION_EMAIL_VERIFICATION_REQUIRED = _env_bool(
+    "CLUB_REGISTRATION_EMAIL_VERIFICATION_REQUIRED",
+    default=True,
+)
+CLUB_REGISTRATION_REMINDER_DAYS = tuple(
+    int(item)
+    for item in _env_csv("CLUB_REGISTRATION_REMINDER_DAYS")
+    if item.isdigit()
+) or (7, 14)
+IBAN_API_VALIDATION_ENABLED = _env_bool(
+    "IBAN_API_VALIDATION_ENABLED",
+    default=not RUNNING_PYTEST,
+)
+IBAN_API_VALIDATION_ENDPOINT = _env_first(
+    "IBAN_API_VALIDATION_ENDPOINT",
+    default="https://openiban.com/validate/{iban}?getBIC=true&validateBankCode=true",
+)
+MEMBER_EMAIL_VERIFICATION_REQUIRED = _env_bool(
+    "MEMBER_EMAIL_VERIFICATION_REQUIRED",
+    default=True,
+)
+OPENROUTER_OCR_MODEL = _env_first("OPENROUTER_OCR_MODEL", default="")
+VERIFICATION_DOCUMENT_RETENTION_DAYS = int(_env_first("VERIFICATION_DOCUMENT_RETENTION_DAYS", default="30"))
 LOGIN_RATE_LIMIT_ATTEMPTS = int(_env_first("LOGIN_RATE_LIMIT_ATTEMPTS", default="5"))
 LOGIN_RATE_LIMIT_WINDOW_SECONDS = int(_env_first("LOGIN_RATE_LIMIT_WINDOW_SECONDS", default="900"))
 HEALTH_ALLOWED_IPS = _env_csv("HEALTH_ALLOWED_IPS") or ["127.0.0.1", "::1", "localhost"]

@@ -37,7 +37,8 @@ def test_member_can_submit_verification_documents(client, member_user, settings,
     settings.MEDIA_ROOT = tmp_path
     member_user.profile.is_verified = False
     member_user.profile.status = Profile.STATUS_PENDING
-    member_user.profile.save(update_fields=["is_verified", "status", "updated_at"])
+    member_user.profile.email_verified_at = timezone.now()
+    member_user.profile.save(update_fields=["is_verified", "status", "email_verified_at", "updated_at"])
 
     client.force_login(member_user)
     response = client.post(
@@ -80,7 +81,8 @@ def test_board_can_approve_verification_submission(client, member_user, settings
 
     member_user.profile.is_verified = False
     member_user.profile.status = Profile.STATUS_PENDING
-    member_user.profile.save(update_fields=["is_verified", "status", "updated_at"])
+    member_user.profile.email_verified_at = timezone.now()
+    member_user.profile.save(update_fields=["is_verified", "status", "email_verified_at", "updated_at"])
     VerificationSubmission.objects.create(
         profile=member_user.profile,
         status=VerificationSubmission.STATUS_SUBMITTED,
@@ -164,6 +166,7 @@ def test_admission_fee_created_once_on_verification_approval(client, settings, t
         id_document_confirmed=True,
         important_newsletter_opt_in=True,
         registration_completed_at=timezone.now(),
+        email_verified_at=timezone.now(),
         monthly_counter_key=timezone.localdate().strftime("%Y-%m"),
     )
     member_profile.sepa_mandates.create(
@@ -255,6 +258,7 @@ def test_board_cannot_approve_verification_when_club_capacity_reached(client, se
         birth_date=date(1992, 1, 1),
         status=Profile.STATUS_PENDING,
         is_verified=False,
+        email_verified_at=timezone.now(),
         monthly_counter_key=timezone.localdate().strftime("%Y-%m"),
     )
     VerificationSubmission.objects.create(

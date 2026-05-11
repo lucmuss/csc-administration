@@ -1,0 +1,4 @@
+<p>Hallo {{ user.first_name|default:user.email }},</p>
+<p>bitte bestaetige deine E-Mail-Adresse mit diesem Code:</p>
+<p><strong style="font-size:1.4rem;letter-spacing:.1em;">{{ code }}</strong></p>
+<p><a href="{{ verification_url }}">Code jetzt eingeben</a></p>

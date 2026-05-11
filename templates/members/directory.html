@@ -111,7 +111,11 @@
                 <td>
                   <div class="table-meta">
                     {% if is_member_directory %}
-                      Verifiziert: {{ profile.is_verified|yesno:"Ja,Nein" }}
+                      {% if profile.is_verified %}
+                        Verifiziert: <strong aria-label="Verifiziert">✓</strong>
+                      {% else %}
+                        Verifiziert: <strong aria-label="Nicht verifiziert">-</strong>
+                      {% endif %}
                     {% else %}
                       Rolle: {{ profile.user.get_role_display }}<br>
                       Verifizierung: {% if profile.verification_submission %}{{ profile.verification_submission.get_status_display }}{% else %}Nicht gestartet{% endif %}<br>

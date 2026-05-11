@@ -1,5 +1,7 @@
 from datetime import date, timedelta
+import json
 import re
+from urllib.request import Request, urlopen
 
 from django import forms
 from django.conf import settings
@@ -23,6 +25,19 @@ NAME_RE = re.compile(r"^[A-Za-zÄÖÜäöüß][A-Za-zÄÖÜäöüß' -]{2,149}$"
 POSTAL_CODE_RE = re.compile(r"^\d{5}$")
 BIC_RE = re.compile(r"^[A-Z]{6}[A-Z0-9]{2}([A-Z0-9]{3})?$")
 IBAN_RE = re.compile(r"^[A-Z]{2}[0-9A-Z]{13,32}$")
+PHONE_CODE_CHOICES = [
+    ("+49", "Deutschland (+49)"),
+    ("+43", "Oesterreich (+43)"),
+    ("+41", "Schweiz (+41)"),
+    ("+31", "Niederlande (+31)"),
+    ("+32", "Belgien (+32)"),
+    ("+33", "Frankreich (+33)"),
+    ("+34", "Spanien (+34)"),
+    ("+39", "Italien (+39)"),
+    ("+44", "Vereinigtes Koenigreich (+44)"),
+    ("+48", "Polen (+48)"),
+    ("+1", "USA/Kanada (+1)"),
+]
 
 
 def _validate_person_name(value: str, label: str) -> str:
@@ -77,6 +92,33 @@ def _validate_iban(value: str) -> str:
     return cleaned
 
 
+def _normalize_bank_name(value: str) -> str:
+    return re.sub(r"[^a-zA-Z0-9]", "", (value or "").lower())
+
+
+def _lookup_iban_bank_data(iban: str) -> dict[str, str]:
+    if not getattr(settings, "IBAN_API_VALIDATION_ENABLED", False):
+        return {}
+    endpoint = str(getattr(settings, "IBAN_API_VALIDATION_ENDPOINT", "") or "").strip()
+    if not endpoint:
+        return {}
+    request_url = endpoint.format(iban=iban)
+    request = Request(request_url, headers={"User-Agent": "CSC-IBAN-Validation/1.0"})
+    try:
+        with urlopen(request, timeout=5) as response:
+            payload = json.loads(response.read().decode("utf-8"))
+    except Exception:
+        # Kein Hard-Fail bei externer API-Stoerung: lokale IBAN/BIC-Checks bleiben aktiv.
+        return {}
+    if payload.get("valid") is False:
+        raise forms.ValidationError("Die IBAN wurde von der Bank-API als ungueltig zurueckgemeldet.")
+    bank_data = payload.get("bankData") or payload.get("bank_data") or {}
+    return {
+        "bic": str(bank_data.get("bic", "") or "").strip().upper(),
+        "bank_name": str(bank_data.get("name", "") or "").strip(),
+    }
+
+
 def _validate_bank_name(value: str) -> str:
     cleaned = " ".join(value.split()).strip()
     if len(cleaned) < 2:
@@ -100,10 +142,21 @@ def _apply_form_control(widget: forms.Widget) -> None:
 
 
 def _default_join_date() -> date:
-    today = timezone.localdate()
-    if today.month == 12:
-        return date(today.year + 1, 1, 1)
-    return date(today.year, today.month + 1, 1)
+    return timezone.localdate()
+
+
+def _split_phone_number(value: str) -> tuple[str, str]:
+    normalized = (value or "").strip().replace(" ", "")
+    if not normalized:
+        return "+49", ""
+    for code, _label in PHONE_CODE_CHOICES:
+        if normalized.startswith(code):
+            return code, normalized[len(code):]
+    if normalized.startswith("+"):
+        digits = "+" + "".join(ch for ch in normalized if ch.isdigit())
+        if len(digits) > 1:
+            return digits, ""
+    return "+49", normalized
 
 
 class MemberRegistrationForm(forms.Form):
@@ -253,9 +306,16 @@ class MemberOnboardingForm(forms.Form):
         label="Aufnahmedatum",
         help_text="Das frueheste Eintrittsdatum muss heute oder in der Zukunft liegen.",
     )
-    street_address = forms.CharField(max_length=255, label="Strasse, Hausnummer")
+    street_address = forms.CharField(max_length=255, label="Strasse")
+    street_address_number = forms.CharField(max_length=20, label="Hausnummer")
     postal_code = forms.CharField(max_length=10, label="Postleitzahl")
     city = forms.CharField(max_length=120, label="Stadt")
+    phone_country_code = forms.ChoiceField(
+        choices=PHONE_CODE_CHOICES,
+        label="Laendervorwahl",
+        initial="+49",
+        required=False,
+    )
     phone = forms.CharField(max_length=32, label="Telefonnummer")
     iban = forms.CharField(max_length=34, label="IBAN")
     bic = forms.CharField(max_length=11, label="BIC")
@@ -279,16 +339,24 @@ class MemberOnboardingForm(forms.Form):
         required=False,
         widget=forms.Textarea(attrs={"rows": 4}),
     )
-
     def __init__(self, *args, profile: Profile, **kwargs):
         self.profile = profile
+        self._iban_api_data = {}
         super().__init__(*args, **kwargs)
         active_mandate = profile.sepa_mandate or SepaMandate.objects.filter(profile=profile, is_active=True).first()
         self.fields["desired_join_date"].initial = profile.desired_join_date or _default_join_date()
-        self.fields["street_address"].initial = profile.street_address
+        address = (profile.street_address or "").strip()
+        match = re.match(r"^(?P<street>.*\D)\s+(?P<number>\d+[A-Za-z0-9\-\/]*)$", address)
+        if match:
+            self.fields["street_address"].initial = match.group("street").strip()
+            self.fields["street_address_number"].initial = match.group("number").strip()
+        else:
+            self.fields["street_address"].initial = address
         self.fields["postal_code"].initial = profile.postal_code
         self.fields["city"].initial = profile.city
-        self.fields["phone"].initial = profile.phone
+        code, local_number = _split_phone_number(profile.phone)
+        self.fields["phone_country_code"].initial = code
+        self.fields["phone"].initial = local_number or profile.phone
         self.fields["bank_name"].initial = profile.bank_name
         self.fields["account_holder_name"].initial = profile.account_holder_name or profile.user.full_name
         self.fields["privacy_accepted"].initial = profile.privacy_accepted
@@ -303,8 +371,13 @@ class MemberOnboardingForm(forms.Form):
         if active_mandate:
             self.fields["iban"].initial = active_mandate.iban
             self.fields["bic"].initial = active_mandate.bic
-        self.fields["phone"].widget.attrs.setdefault("autocomplete", "tel")
+        self.fields["phone_country_code"].widget.attrs.setdefault("autocomplete", "tel-country-code")
+        self.fields["phone"].widget.attrs.setdefault("autocomplete", "tel-national")
+        self.fields["phone"].widget.attrs.setdefault("inputmode", "tel")
+        self.fields["phone"].widget.attrs.setdefault("placeholder", "15112345678")
         self.fields["street_address"].widget.attrs.setdefault("autocomplete", "street-address")
+        self.fields["street_address_number"].widget.attrs.setdefault("autocomplete", "address-line2")
+        self.fields["street_address_number"].widget.attrs.setdefault("placeholder", "12a")
         self.fields["postal_code"].widget.attrs.setdefault("autocomplete", "postal-code")
         self.fields["city"].widget.attrs.setdefault("autocomplete", "address-level2")
         self.fields["iban"].widget.attrs.setdefault("placeholder", "DE...")
@@ -324,21 +397,77 @@ class MemberOnboardingForm(forms.Form):
     def clean_postal_code(self):
         return _validate_postal_code(self.cleaned_data["postal_code"])
 
+    def clean_street_address_number(self):
+        value = (self.cleaned_data.get("street_address_number") or "").strip()
+        if not value:
+            street_value = (self.cleaned_data.get("street_address") or "").strip()
+            match = re.match(r"^(?P<street>.*\D)\s+(?P<number>\d+[A-Za-z0-9\-\/]*)$", street_value)
+            if match:
+                self.cleaned_data["street_address"] = match.group("street").strip()
+                value = match.group("number").strip()
+        if not value:
+            raise forms.ValidationError("Bitte eine Hausnummer eingeben.")
+        if not re.fullmatch(r"^\d{1,5}[A-Za-z]?[A-Za-z0-9\-\/]*$", value):
+            raise forms.ValidationError("Bitte eine gueltige Hausnummer eingeben.")
+        return value
+
     def clean_phone(self):
         phone = self.cleaned_data["phone"].strip().replace(" ", "")
-        allowed = set("+0123456789")
-        if not phone or any(char not in allowed for char in phone):
-            raise forms.ValidationError("Bitte nur Zahlen und optional ein Pluszeichen verwenden.")
+        if not phone:
+            raise forms.ValidationError("Bitte eine Telefonnummer eingeben.")
+        if phone.startswith("+"):
+            allowed = set("+0123456789")
+            if any(char not in allowed for char in phone):
+                raise forms.ValidationError("Bitte nur Zahlen und optional ein Pluszeichen verwenden.")
+            return phone
+        if not phone.isdigit():
+            raise forms.ValidationError("Bitte nur Zahlen eingeben.")
+        if len(phone) < 6:
+            raise forms.ValidationError("Die Telefonnummer ist zu kurz.")
         return phone
 
+    def clean_phone_country_code(self):
+        code = (self.cleaned_data.get("phone_country_code") or "").strip()
+        if not code:
+            return "+49"
+        if not code.startswith("+") or not code[1:].isdigit():
+            raise forms.ValidationError("Bitte eine gueltige Laendervorwahl auswaehlen.")
+        return code
+
+    def clean(self):
+        cleaned_data = super().clean()
+        phone = (cleaned_data.get("phone") or "").strip().replace(" ", "")
+        if phone and not phone.startswith("+"):
+            cleaned_data["phone"] = f"{cleaned_data.get('phone_country_code', '+49')}{phone}"
+        street = (cleaned_data.get("street_address") or "").strip()
+        number = (cleaned_data.get("street_address_number") or "").strip()
+        if street and number:
+            cleaned_data["street_address"] = f"{street} {number}"
+        return cleaned_data
+
     def clean_iban(self):
-        return _validate_iban(self.cleaned_data["iban"])
+        iban = _validate_iban(self.cleaned_data["iban"])
+        self._iban_api_data = _lookup_iban_bank_data(iban)
+        return iban
 
     def clean_bic(self):
-        return _validate_bic(self.cleaned_data["bic"])
+        bic = _validate_bic(self.cleaned_data["bic"])
+        expected_bic = self._iban_api_data.get("bic", "")
+        if expected_bic and bic != expected_bic:
+            raise forms.ValidationError(f"BIC passt nicht zur IBAN. Erwartet: {expected_bic}")
+        return bic
 
     def clean_bank_name(self):
-        return _validate_bank_name(self.cleaned_data["bank_name"])
+        bank_name = _validate_bank_name(self.cleaned_data["bank_name"])
+        expected_name = self._iban_api_data.get("bank_name", "")
+        if expected_name:
+            expected_norm = _normalize_bank_name(expected_name)
+            provided_norm = _normalize_bank_name(bank_name)
+            if expected_norm and provided_norm and expected_norm not in provided_norm and provided_norm not in expected_norm:
+                raise forms.ValidationError(
+                    f"Bankname passt nicht zur IBAN-API. Erwartet z. B.: {expected_name}"
+                )
+        return bank_name
 
     def clean_account_holder_name(self):
         return _validate_person_name(self.cleaned_data["account_holder_name"], "Kontoinhaber")
@@ -417,8 +546,15 @@ class MemberProfileEditForm(forms.Form):
     first_name = forms.CharField(max_length=150, label="Vorname")
     last_name = forms.CharField(max_length=150, label="Nachname")
     email = forms.EmailField(label="E-Mail")
+    phone_country_code = forms.ChoiceField(
+        choices=PHONE_CODE_CHOICES,
+        label="Laendervorwahl",
+        initial="+49",
+        required=False,
+    )
     phone = forms.CharField(max_length=32, label="Telefonnummer")
-    street_address = forms.CharField(max_length=255, label="Strasse, Hausnummer", required=False)
+    street_address = forms.CharField(max_length=255, label="Strasse", required=False)
+    street_address_number = forms.CharField(max_length=20, label="Hausnummer", required=False)
     postal_code = forms.CharField(max_length=10, label="Postleitzahl", required=False)
     city = forms.CharField(max_length=120, label="Stadt", required=False)
     bank_name = forms.CharField(max_length=150, label="Kreditinstitut")
@@ -446,13 +582,22 @@ class MemberProfileEditForm(forms.Form):
 
     def __init__(self, *args, profile: Profile, **kwargs):
         self.profile = profile
+        self._iban_api_data = {}
         super().__init__(*args, **kwargs)
         mandate = profile.sepa_mandate or SepaMandate.objects.filter(profile=profile, is_active=True).first()
         self.fields["first_name"].initial = profile.user.first_name
         self.fields["last_name"].initial = profile.user.last_name
         self.fields["email"].initial = profile.user.email
-        self.fields["phone"].initial = profile.phone
-        self.fields["street_address"].initial = profile.street_address
+        code, local_number = _split_phone_number(profile.phone)
+        self.fields["phone_country_code"].initial = code
+        self.fields["phone"].initial = local_number or profile.phone
+        address = (profile.street_address or "").strip()
+        match = re.match(r"^(?P<street>.*\D)\s+(?P<number>\d+[A-Za-z0-9\-\/]*)$", address)
+        if match:
+            self.fields["street_address"].initial = match.group("street").strip()
+            self.fields["street_address_number"].initial = match.group("number").strip()
+        else:
+            self.fields["street_address"].initial = address
         self.fields["postal_code"].initial = profile.postal_code
         self.fields["city"].initial = profile.city
         self.fields["bank_name"].initial = profile.bank_name
@@ -465,8 +610,12 @@ class MemberProfileEditForm(forms.Form):
             self.fields["iban"].initial = mandate.iban
             self.fields["bic"].initial = mandate.bic
         self.fields["email"].widget.attrs.update({"autocomplete": "email", "inputmode": "email"})
-        self.fields["phone"].widget.attrs.setdefault("autocomplete", "tel")
+        self.fields["phone_country_code"].widget.attrs.setdefault("autocomplete", "tel-country-code")
+        self.fields["phone"].widget.attrs.setdefault("autocomplete", "tel-national")
+        self.fields["phone"].widget.attrs.setdefault("inputmode", "tel")
+        self.fields["phone"].widget.attrs.setdefault("placeholder", "15112345678")
         self.fields["street_address"].widget.attrs.setdefault("autocomplete", "street-address")
+        self.fields["street_address_number"].widget.attrs.setdefault("autocomplete", "address-line2")
         self.fields["postal_code"].widget.attrs.setdefault("autocomplete", "postal-code")
         self.fields["city"].widget.attrs.setdefault("autocomplete", "address-level2")
         for field in self.fields.values():
@@ -490,21 +639,69 @@ class MemberProfileEditForm(forms.Form):
             return postal_code
         return _validate_postal_code(postal_code)
 
+    def clean_street_address_number(self):
+        value = (self.cleaned_data.get("street_address_number") or "").strip()
+        if value and not re.fullmatch(r"^\d{1,5}[A-Za-z]?[A-Za-z0-9\-\/]*$", value):
+            raise forms.ValidationError("Bitte eine gueltige Hausnummer eingeben.")
+        return value
+
     def clean_phone(self):
         phone = self.cleaned_data["phone"].strip().replace(" ", "")
-        allowed = set("+0123456789")
-        if not phone or any(char not in allowed for char in phone):
-            raise forms.ValidationError("Bitte nur Zahlen und optional ein Pluszeichen verwenden.")
+        if not phone:
+            raise forms.ValidationError("Bitte eine Telefonnummer eingeben.")
+        if phone.startswith("+"):
+            allowed = set("+0123456789")
+            if any(char not in allowed for char in phone):
+                raise forms.ValidationError("Bitte nur Zahlen und optional ein Pluszeichen verwenden.")
+            return phone
+        if not phone.isdigit():
+            raise forms.ValidationError("Bitte nur Zahlen eingeben.")
+        if len(phone) < 6:
+            raise forms.ValidationError("Die Telefonnummer ist zu kurz.")
         return phone
 
+    def clean_phone_country_code(self):
+        code = (self.cleaned_data.get("phone_country_code") or "").strip()
+        if not code:
+            return "+49"
+        if not code.startswith("+") or not code[1:].isdigit():
+            raise forms.ValidationError("Bitte eine gueltige Laendervorwahl auswaehlen.")
+        return code
+
+    def clean(self):
+        cleaned_data = super().clean()
+        phone = (cleaned_data.get("phone") or "").strip().replace(" ", "")
+        if phone and not phone.startswith("+"):
+            cleaned_data["phone"] = f"{cleaned_data.get('phone_country_code', '+49')}{phone}"
+        street = (cleaned_data.get("street_address") or "").strip()
+        number = (cleaned_data.get("street_address_number") or "").strip()
+        if street and number:
+            cleaned_data["street_address"] = f"{street} {number}"
+        return cleaned_data
+
     def clean_iban(self):
-        return _validate_iban(self.cleaned_data["iban"])
+        iban = _validate_iban(self.cleaned_data["iban"])
+        self._iban_api_data = _lookup_iban_bank_data(iban)
+        return iban
 
     def clean_bic(self):
-        return _validate_bic(self.cleaned_data["bic"])
+        bic = _validate_bic(self.cleaned_data["bic"])
+        expected_bic = self._iban_api_data.get("bic", "")
+        if expected_bic and bic != expected_bic:
+            raise forms.ValidationError(f"BIC passt nicht zur IBAN. Erwartet: {expected_bic}")
+        return bic
 
     def clean_bank_name(self):
-        return _validate_bank_name(self.cleaned_data["bank_name"])
+        bank_name = _validate_bank_name(self.cleaned_data["bank_name"])
+        expected_name = self._iban_api_data.get("bank_name", "")
+        if expected_name:
+            expected_norm = _normalize_bank_name(expected_name)
+            provided_norm = _normalize_bank_name(bank_name)
+            if expected_norm and provided_norm and expected_norm not in provided_norm and provided_norm not in expected_norm:
+                raise forms.ValidationError(
+                    f"Bankname passt nicht zur IBAN-API. Erwartet z. B.: {expected_name}"
+                )
+        return bank_name
 
     def clean_account_holder_name(self):
         return _validate_person_name(self.cleaned_data["account_holder_name"], "Kontoinhaber")
@@ -576,16 +773,12 @@ class VerificationSubmissionForm(forms.ModelForm):
         fields = [
             "id_front_image",
             "id_back_image",
-            "membership_application_document",
-            "sepa_mandate_document",
         ]
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.fields["id_front_image"].required = True
         self.fields["id_back_image"].required = True
-        self.fields["membership_application_document"].required = False
-        self.fields["sepa_mandate_document"].required = False
         for field in self.fields.values():
             _apply_form_control(field.widget)
 
@@ -605,14 +798,4 @@ class VerificationSubmissionForm(forms.ModelForm):
         self._validate_upload_size(upload, "Rueckseite")
         if upload and not (upload.content_type or "").startswith("image/"):
             raise ValidationError("Bitte eine Bilddatei fuer die Rueckseite hochladen.")
-        return upload
-
-    def clean_membership_application_document(self):
-        upload = self.cleaned_data.get("membership_application_document")
-        self._validate_upload_size(upload, "Aufnahmeantrag")
-        return upload
-
-    def clean_sepa_mandate_document(self):
-        upload = self.cleaned_data.get("sepa_mandate_document")
-        self._validate_upload_size(upload, "SEPA-Lastschriftmandat")
         return upload

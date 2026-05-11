@@ -29,15 +29,22 @@
                 </label>
                 {{ form.content }}
                 <p class="mt-1 text-sm text-gray-500">
-                    Unterstützt Markdown. Verfügbare Variablen: <code>&#123;&#123; first_name &#125;&#125;</code>, 
+                    Unterstuetzt Markdown. Verfuegbare Variablen: <code>&#123;&#123; first_name &#125;&#125;</code>, 
                     <code>&#123;&#123; last_name &#125;&#125;</code>, <code>&#123;&#123; email &#125;&#125;</code>, <code>&#123;&#123; member_number &#125;&#125;</code>
                 </p>
                 {% if form.content.errors %}
                 <p class="mt-1 text-sm text-red-600">{{ form.content.errors.0 }}</p>
                 {% endif %}
             </div>
+            <div id="markdown-preview-panel" data-preview-url="{% url 'messaging:api_render_email_markdown' %}" class="rounded-lg border border-blue-200 bg-blue-50 p-4">
+                <h2 class="text-sm font-semibold text-blue-900 mb-2">Markdown-Vorschau</h2>
+                <p class="text-xs text-blue-700 mb-3">Variablen werden mit dem aktuellen Benutzerkonto ersetzt.</p>
+                <div id="markdown-preview" class="prose prose-sm max-w-none text-gray-800">
+                    <p class="text-gray-500">Vorschau wird geladen...</p>
+                </div>
+            </div>
 
-            <!-- Empfänger -->
+            <!-- Empfaenger -->
             <div>
                 <label class="block text-sm font-medium text-gray-700 mb-2">
                     {{ form.recipient_type.label }}
@@ -65,13 +72,13 @@
                 {% endif %}
             </div>
 
-            <!-- Individuelle Empfänger -->
+            <!-- Individuelle Empfaenger -->
             <div id="individual-select" class="{% if form.recipient_type.value != 'individual' %}hidden{% endif %}">
                 <label for="{{ form.individual_recipients.id_for_label }}" class="block text-sm font-medium text-gray-700 mb-2">
                     {{ form.individual_recipients.label }}
                 </label>
                 {{ form.individual_recipients }}
-                <p class="text-sm text-gray-500 mt-1">Halte Ctrl/Cmd gedrückt für Mehrfachauswahl</p>
+                <p class="text-sm text-gray-500 mt-1">Halte Ctrl/Cmd gedrueckt fuer Mehrfachauswahl</p>
                 {% if form.individual_recipients.errors %}
                 <p class="mt-1 text-sm text-red-600">{{ form.individual_recipients.errors.0 }}</p>
                 {% endif %}
@@ -92,18 +99,59 @@
 </div>
 
 <script>
-// Zeige/verstecke Empfänger-Auswahl basierend auf Radio-Buttons
-document.querySelectorAll('input[name="recipient_type"]').forEach(radio => {
-    radio.addEventListener('change', function() {
-        document.getElementById('group-select').classList.add('hidden');
-        document.getElementById('individual-select').classList.add('hidden');
-        
-        if (this.value === 'group') {
-            document.getElementById('group-select').classList.remove('hidden');
-        } else if (this.value === 'individual') {
-            document.getElementById('individual-select').classList.remove('hidden');
-        }
+document.addEventListener('DOMContentLoaded', () => {
+    // Zeige/verstecke Empfaenger-Auswahl basierend auf Radio-Buttons
+    document.querySelectorAll('input[name="recipient_type"]').forEach((radio) => {
+        radio.addEventListener('change', function() {
+            document.getElementById('group-select').classList.add('hidden');
+            document.getElementById('individual-select').classList.add('hidden');
+
+            if (this.value === 'group') {
+                document.getElementById('group-select').classList.remove('hidden');
+            } else if (this.value === 'individual') {
+                document.getElementById('individual-select').classList.remove('hidden');
+            }
+        });
     });
+
+    const contentField = document.getElementById('{{ form.content.id_for_label }}');
+    const previewPanel = document.getElementById('markdown-preview-panel');
+    const previewTarget = document.getElementById('markdown-preview');
+    const csrfToken = document.querySelector('input[name="csrfmiddlewaretoken"]')?.value || '';
+    if (!contentField || !previewPanel || !previewTarget) return;
+
+    const previewUrl = previewPanel.dataset.previewUrl;
+    let debounceTimer = null;
+
+    const renderPreview = async () => {
+        const payload = new URLSearchParams({ content: contentField.value || '' });
+        try {
+            const response = await fetch(previewUrl, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/x-www-form-urlencoded; charset=UTF-8',
+                    'X-CSRFToken': csrfToken,
+                },
+                body: payload.toString(),
+            });
+            const data = await response.json();
+            if (!response.ok || !data.success) {
+                previewTarget.innerHTML = '<p class="text-red-600">Vorschau konnte nicht gerendert werden.</p>';
+                return;
+            }
+            previewTarget.innerHTML = data.rendered_html || '<p class="text-gray-500">Keine Inhalte vorhanden.</p>';
+        } catch (error) {
+            previewTarget.innerHTML = '<p class="text-red-600">Vorschau konnte nicht geladen werden.</p>';
+        }
+    };
+
+    const schedulePreview = () => {
+        clearTimeout(debounceTimer);
+        debounceTimer = setTimeout(renderPreview, 220);
+    };
+
+    contentField.addEventListener('input', schedulePreview);
+    renderPreview();
 });
 </script>
 {% endblock %}

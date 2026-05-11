@@ -44,6 +44,12 @@ class StrainForm(forms.ModelForm):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.fields["image"].required = False
+        self.fields["product_type"].choices = [
+            (Strain.PRODUCT_TYPE_FLOWER, "Bluete"),
+            (Strain.PRODUCT_TYPE_CUTTING, "Steckling"),
+            (Strain.PRODUCT_TYPE_ACCESSORY, "Rauchzubehoer"),
+            (Strain.PRODUCT_TYPE_MERCH, "Werbegeschenk"),
+        ]
         for name, field in self.fields.items():
             widget = field.widget
             if isinstance(widget, forms.CheckboxInput):
@@ -53,7 +59,40 @@ class StrainForm(forms.ModelForm):
             widget.attrs["class"] = control_class
             if name in {"thc", "cbd", "cbg", "cbn", "cbc", "cbv", "price", "stock"}:
                 widget.attrs.setdefault("step", "0.01")
-        self.fields["stock"].help_text = "Blueten werden in Gramm, Stecklinge und Edibles in Stueck gefuehrt."
+            if name in {"thc", "cbd", "cbg", "cbn", "cbc", "cbv"}:
+                widget.attrs.setdefault("min", "0")
+                widget.attrs.setdefault("max", "30")
+                widget.attrs.setdefault("inputmode", "decimal")
+        self.fields["stock"].help_text = "Blueten werden in Gramm, Stecklinge, Zubehoer und Werbeartikel in Stueck gefuehrt."
+
+    def _validate_cannabinoid_percentage(self, field_name: str, label: str, allow_blank: bool) -> Decimal | None:
+        value = self.cleaned_data.get(field_name)
+        if value in (None, ""):
+            if allow_blank:
+                return None
+            raise forms.ValidationError(f"{label} ist erforderlich.")
+        value = Decimal(value)
+        if value < Decimal("0") or value > Decimal("30"):
+            raise forms.ValidationError(f"{label} darf nur zwischen 0 und 30 Prozent liegen.")
+        return value
+
+    def clean_thc(self):
+        return self._validate_cannabinoid_percentage("thc", "THC", allow_blank=False)
+
+    def clean_cbd(self):
+        return self._validate_cannabinoid_percentage("cbd", "CBD", allow_blank=False)
+
+    def clean_cbg(self):
+        return self._validate_cannabinoid_percentage("cbg", "CBG", allow_blank=True)
+
+    def clean_cbn(self):
+        return self._validate_cannabinoid_percentage("cbn", "CBN", allow_blank=True)
+
+    def clean_cbc(self):
+        return self._validate_cannabinoid_percentage("cbc", "CBC", allow_blank=True)
+
+    def clean_cbv(self):
+        return self._validate_cannabinoid_percentage("cbv", "CBV", allow_blank=True)
 
 
 class InventoryLocationForm(forms.ModelForm):

@@ -163,12 +163,10 @@ class MeetingResolution(models.Model):
 class BoardTask(models.Model):
     STATUS_TODO = "todo"
     STATUS_IN_PROGRESS = "in_progress"
-    STATUS_BLOCKED = "blocked"
     STATUS_DONE = "done"
     STATUS_CHOICES = [
         (STATUS_TODO, "Offen"),
         (STATUS_IN_PROGRESS, "In Arbeit"),
-        (STATUS_BLOCKED, "Blockiert"),
         (STATUS_DONE, "Erledigt"),
     ]
 

@@ -7,6 +7,9 @@
         <p class="eyebrow">Verwaltung</p>
         <h1>Ausgaben und Produktbewegungen im Monatsverlauf.</h1>
         <p class="lede">Die Uebersicht zeigt abgeschlossene Ausgaben nach Monat, Produktart und stark nachgefragten Sorten beziehungsweise Artikeln.</p>
+        {% if active_social_club %}
+          <p class="field-hint">Aktiver Social Club: {{ active_social_club.name }}</p>
+        {% endif %}
       </div>
       <div class="hero-actions">
         <a href="{% url 'finance:dashboard' %}" class="btn-ghost">Finanzdashboard</a>
@@ -24,17 +27,12 @@
       <article class="kpi-card kpi-card--sand">
         <span class="kpi-card__label">Stueckartikel gesamt</span>
         <strong class="kpi-card__value">{{ summary.units_total }}</strong>
-        <small class="kpi-card__detail">Stecklinge, Edibles, Zubehoer, Werbegeschenke</small>
+        <small class="kpi-card__detail">Stecklinge, Zubehoer, Werbegeschenke</small>
       </article>
       <article class="kpi-card kpi-card--ink">
         <span class="kpi-card__label">Umsatz aus Ausgaben</span>
         <strong class="kpi-card__value">{{ summary.revenue_total }} EUR</strong>
         <small class="kpi-card__detail">nur abgeschlossene Bestellungen</small>
-      </article>
-      <article class="kpi-card kpi-card--sand">
-        <span class="kpi-card__label">Stecklinge gesamt</span>
-        <strong class="kpi-card__value">{{ summary.cuttings_total }}</strong>
-        <small class="kpi-card__detail">als eigene Verlaufsspur ausgewertet</small>
       </article>
     </section>
 
@@ -130,11 +128,6 @@
                     <div class="progress"><span class="progress-bar-blue" style="width: {{ row.cuttings_width }}%"></span></div>
                   </div>
                   <div>
-                    <span>Edibles</span>
-                    <strong>{{ row.edibles|floatformat:0 }} Stk.</strong>
-                    <div class="progress"><span class="progress-bar-red" style="width: {{ row.edibles_width }}%"></span></div>
-                  </div>
-                  <div>
                     <span>Rauchzubehoer</span>
                     <strong>{{ row.accessories|floatformat:0 }} Stk.</strong>
                     <div class="progress"><span class="progress-bar-blue" style="width: {{ row.accessories_width }}%"></span></div>
@@ -205,30 +198,6 @@
         {% endif %}
       </article>
 
-      <article class="panel">
-        <div class="panel__header">
-          <div>
-            <p class="panel__eyebrow">Stecklinge</p>
-            <h2>Top-Sorten nach Stueck</h2>
-          </div>
-        </div>
-        {% if cutting_rows %}
-          <ul class="stack-list">
-            {% for product in cutting_rows %}
-              <li class="stack-list__item" style="display:block">
-                <div>
-                  <strong>{{ product.name }}</strong>
-                  <small>{{ product.revenue|floatformat:2 }} EUR</small>
-                </div>
-                <div class="progress"><span class="progress-bar-blue" style="width: {{ product.width }}%"></span></div>
-                <small>{{ product.quantity|floatformat:2 }} {{ product.unit }}</small>
-              </li>
-            {% endfor %}
-          </ul>
-        {% else %}
-          <p class="empty-copy">Noch keine Stecklingsbewegungen vorhanden.</p>
-        {% endif %}
-      </article>
     </section>
   </section>
 {% endblock %}

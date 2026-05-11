@@ -80,6 +80,9 @@ class Profile(models.Model):
     )
     is_locked_for_orders = models.BooleanField(default=False)
     verification_reminder_sent_at = models.DateTimeField(null=True, blank=True)
+    email_verification_code = models.CharField(max_length=12, blank=True)
+    email_verification_sent_at = models.DateTimeField(null=True, blank=True)
+    email_verified_at = models.DateTimeField(null=True, blank=True)
 
     daily_used = models.DecimalField(max_digits=6, decimal_places=2, default=Decimal("0.00"))
     monthly_used = models.DecimalField(max_digits=6, decimal_places=2, default=Decimal("0.00"))
@@ -207,6 +210,10 @@ class Profile(models.Model):
         self.registration_completed_at = timezone.now()
         self.save(update_fields=["registration_completed_at", "updated_at"])
 
+    @property
+    def is_email_verified(self) -> bool:
+        return bool(self.email_verified_at)
+
 
 def verification_upload_path(instance, filename: str) -> str:
     return f"verification/{instance.profile.user_id}/{filename}"
@@ -242,6 +249,14 @@ class VerificationSubmission(models.Model):
         related_name="approved_member_verifications",
     )
     admin_notes = models.TextField(blank=True)
+    ai_checked_at = models.DateTimeField(null=True, blank=True)
+    ai_name_match_score = models.DecimalField(max_digits=5, decimal_places=2, null=True, blank=True)
+    ai_birth_date_match_score = models.DecimalField(max_digits=5, decimal_places=2, null=True, blank=True)
+    ai_document_type_confidence = models.DecimalField(max_digits=5, decimal_places=2, null=True, blank=True)
+    ai_is_likely_id_document = models.BooleanField(default=False)
+    ai_result_summary = models.TextField(blank=True)
+    ai_result_payload = models.JSONField(default=dict, blank=True)
+    documents_deleted_at = models.DateTimeField(null=True, blank=True)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 
@@ -254,3 +269,33 @@ class VerificationSubmission(models.Model):
     @property
     def has_required_documents(self) -> bool:
         return bool(self.id_front_image and self.id_back_image)
+
+    def purge_sensitive_documents(self) -> bool:
+        changed = False
+        for field_name in (
+            "id_front_image",
+            "id_back_image",
+            "membership_application_document",
+            "sepa_mandate_document",
+        ):
+            field = getattr(self, field_name, None)
+            if field:
+                try:
+                    field.delete(save=False)
+                except Exception:
+                    pass
+                setattr(self, field_name, "")
+                changed = True
+        if changed:
+            self.documents_deleted_at = timezone.now()
+            self.save(
+                update_fields=[
+                    "id_front_image",
+                    "id_back_image",
+                    "membership_application_document",
+                    "sepa_mandate_document",
+                    "documents_deleted_at",
+                    "updated_at",
+                ]
+            )
+        return changed

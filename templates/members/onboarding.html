@@ -58,16 +58,29 @@
                 </div>
                 <div class="field">
                   <label for="{{ form.phone.id_for_label }}">Telefonnummer</label>
-                  {{ form.phone }}
+                  <div class="inline-actions" style="gap:.5rem; align-items:flex-start;">
+                    <div style="min-width: 13rem;">
+                      {{ form.phone_country_code }}
+                    </div>
+                    <div style="flex:1;">
+                      {{ form.phone }}
+                    </div>
+                  </div>
+                  {{ form.phone_country_code.errors }}
                   {{ form.phone.errors }}
                 </div>
               </div>
               <div class="field">
-                <label for="{{ form.street_address.id_for_label }}">Strasse, Hausnummer</label>
+                <label for="{{ form.street_address.id_for_label }}">Strasse</label>
                 {{ form.street_address }}
                 {{ form.street_address.errors }}
               </div>
               <div class="field-grid">
+                <div class="field">
+                  <label for="{{ form.street_address_number.id_for_label }}">Hausnummer</label>
+                  {{ form.street_address_number }}
+                  {{ form.street_address_number.errors }}
+                </div>
                 <div class="field">
                   <label for="{{ form.postal_code.id_for_label }}">Postleitzahl</label>
                   {{ form.postal_code }}
@@ -101,6 +114,12 @@
                   <label for="{{ form.iban.id_for_label }}">IBAN</label>
                   {{ form.iban }}
                   {{ form.iban.errors }}
+                  <small
+                    id="iban-lookup-hint"
+                    class="field-hint"
+                    data-iban-lookup-hint
+                    data-endpoint="{% url 'members:iban_lookup' %}"
+                  >Treffer: 0</small>
                 </div>
                 <div class="field">
                   <label for="{{ form.bic.id_for_label }}">BIC</label>
@@ -160,18 +179,78 @@
             <p class="field-hint">Diese Auswahl steuert die optionale E-Mail-Gruppe fuer Preislisten, Angebote und Verfuegbarkeiten.</p>
           </div>
 
-          <div class="field">
-            <label for="{{ form.application_notes.id_for_label }}">Weitere Hinweise</label>
-            {{ form.application_notes }}
-            {{ form.application_notes.errors }}
-            <div class="inline-actions" style="margin-top:.75rem;">
-              <a href="{% url 'members:verification' %}" class="btn-ghost">Zur Verifizierung (optional)</a>
-            </div>
-          </div>
-
-          <button type="submit" class="btn-primary btn-block">Profil jetzt vervollstaendigen</button>
+          <button type="submit" class="btn-primary btn-block">Zur Verifizierung</button>
         </form>
       </article>
     </section>
   </section>
+{% endblock %}
+{% block extra_js %}
+  <script>
+    (function() {
+      const ibanInput = document.getElementById("{{ form.iban.id_for_label }}");
+      const bicInput = document.getElementById("{{ form.bic.id_for_label }}");
+      const bankInput = document.getElementById("{{ form.bank_name.id_for_label }}");
+      const hint = document.querySelector("[data-iban-lookup-hint]");
+      if (!ibanInput || !hint) return;
+
+      const endpoint = hint.dataset.endpoint;
+      let timer = null;
+
+      function setHint(text) {
+        hint.textContent = text;
+      }
+
+      async function lookupIban(value) {
+        const compact = (value || "").replace(/\s+/g, "").toUpperCase();
+        if (!compact) {
+          setHint("Treffer: 0");
+          return;
+        }
+        if (compact.length < 8) {
+          setHint("Bitte mehr Zeichen eingeben...");
+          return;
+        }
+        try {
+          const response = await fetch(`${endpoint}?iban=${encodeURIComponent(compact)}`, {
+            headers: { "X-Requested-With": "XMLHttpRequest" },
+          });
+          const data = await response.json();
+          if (!response.ok && response.status >= 500) {
+            setHint("IBAN-API aktuell nicht erreichbar.");
+            return;
+          }
+          if (!data.valid) {
+            setHint("Treffer: 0");
+            return;
+          }
+          const count = Number(data.matches || 0);
+          if (count <= 0) {
+            setHint("Treffer: 0");
+            return;
+          }
+          if (data.bank_name && bankInput && !bankInput.value.trim()) {
+            bankInput.value = data.bank_name;
+          }
+          if (data.bic && bicInput && !bicInput.value.trim()) {
+            bicInput.value = data.bic;
+          }
+          const details = [data.bank_name || "", data.bic || ""].filter(Boolean).join(" · ");
+          setHint(details ? `Treffer: ${count} (${details})` : `Treffer: ${count}`);
+        } catch (_error) {
+          setHint("IBAN-Pruefung nicht verfuegbar.");
+        }
+      }
+
+      function triggerLookup() {
+        if (timer) {
+          clearTimeout(timer);
+        }
+        timer = setTimeout(() => lookupIban(ibanInput.value), 350);
+      }
+
+      ibanInput.addEventListener("input", triggerLookup);
+      ibanInput.addEventListener("blur", triggerLookup);
+    })();
+  </script>
 {% endblock %}

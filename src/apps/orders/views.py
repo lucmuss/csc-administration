@@ -15,6 +15,7 @@ from apps.accounts.models import User
 from apps.compliance.models import PreventionInfo
 from apps.core.club import resolve_active_social_club
 from apps.core.authz import staff_or_board_required
+from apps.core.permissions import is_overadmin
 from apps.finance.services import balance_breakdown
 from apps.governance.services import record_audit_event
 from apps.inventory.models import Batch, Strain
@@ -51,8 +52,11 @@ def _member_may_order(user) -> tuple[bool, str]:
 
 
 def _active_club(request):
-    if getattr(request.user, "is_superuser", False):
-        return resolve_active_social_club(request)
+    club = resolve_active_social_club(request)
+    if club:
+        return club
+    if is_overadmin(request.user):
+        return None
     return getattr(request.user, "social_club", None)
 
 
@@ -66,15 +70,15 @@ def shop(request):
     strains = Strain.objects.filter(is_active=True)
     club = _active_club(request)
     if club:
-        strains = strains.filter(Q(social_club=club) | Q(social_club__isnull=True))
+        strains = strains.filter(social_club=club)
     if active_type in {
         Strain.PRODUCT_TYPE_FLOWER,
         Strain.PRODUCT_TYPE_CUTTING,
-        Strain.PRODUCT_TYPE_EDIBLE,
         Strain.PRODUCT_TYPE_ACCESSORY,
         Strain.PRODUCT_TYPE_MERCH,
     }:
         strains = strains.filter(product_type=active_type)
+    strains = strains.exclude(product_type=Strain.PRODUCT_TYPE_EDIBLE)
     strains = strains.order_by("product_type", "name")
     probation_notice = ""
     profile = getattr(request.user, "profile", None)
@@ -117,7 +121,10 @@ def add_to_cart(request):
         messages.error(request, "Ungueltige Menge")
         return redirect("orders:shop")
     club = _active_club(request)
-    if not Strain.objects.filter(id=strain_id, is_active=True).filter(Q(social_club=club) | Q(social_club__isnull=True)).exists():
+    strain_scope = Strain.objects.filter(id=strain_id, is_active=True)
+    if club:
+        strain_scope = strain_scope.filter(social_club=club)
+    if not strain_scope.exists():
         messages.error(request, "Produkt nicht verfuegbar.")
         return redirect("orders:shop")
     strain = Strain.objects.filter(id=strain_id, is_active=True).first()
@@ -155,7 +162,7 @@ def cart(request):
     for strain_id, quantity in raw_cart.items():
         try:
             strain = Strain.objects.get(id=int(strain_id), is_active=True)
-            if club and strain.social_club_id not in {club.id, None}:
+            if club and strain.social_club_id != club.id:
                 continue
             quantity_decimal = Decimal(quantity)
         except Exception:
@@ -191,7 +198,7 @@ def _cart_rows(raw_cart, club):
     for strain_id, quantity in raw_cart.items():
         try:
             strain = Strain.objects.get(id=int(strain_id), is_active=True)
-            if club and strain.social_club_id not in {club.id, None}:
+            if club and strain.social_club_id != club.id:
                 continue
             quantity_decimal = Decimal(quantity)
         except Exception:

@@ -93,6 +93,10 @@ class SocialClub(models.Model):
     whatsapp_url = models.URLField(blank=True)
     is_active = models.BooleanField(default=True)
     is_approved = models.BooleanField(default=False)
+    registration_email_verification_code = models.CharField(max_length=12, blank=True)
+    registration_email_verified_at = models.DateTimeField(null=True, blank=True)
+    registration_reminder_7_sent_at = models.DateTimeField(null=True, blank=True)
+    registration_reminder_14_sent_at = models.DateTimeField(null=True, blank=True)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 

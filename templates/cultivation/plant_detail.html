@@ -76,7 +76,7 @@
                     </div>
                     {% if plant.actual_yield_grams > 0 %}
                     <div>
-                        <label class="block text-sm font-medium text-gray-500">Tatsächlicher Ertrag</label>
+                        <label class="block text-sm font-medium text-gray-500">Tatsaechlicher Ertrag</label>
                         <p class="text-gray-900">{{ plant.actual_yield_grams|floatformat:0 }}g</p>
                     </div>
                     {% endif %}
@@ -86,7 +86,7 @@
             <!-- Status-Update -->
             {% if plant.is_active %}
             <div class="bg-white shadow-md rounded-lg p-6">
-                <h2 class="text-lg font-semibold text-gray-800 mb-4">Status ändern</h2>
+                <h2 class="text-lg font-semibold text-gray-800 mb-4">Status aendern</h2>
                 <form method="post" action="{% url 'cultivation:plant_update_status' plant.pk %}">
                     {% csrf_token %}
                     <div class="space-y-3">
@@ -118,7 +118,7 @@
                 <div class="flex justify-between items-center mb-4">
                     <h2 class="text-lg font-semibold text-gray-800">Pflege-Logs</h2>
                     <a href="{% url 'cultivation:plant_log_create' plant.pk %}" class="bg-green-600 text-white px-3 py-1 rounded-lg text-sm hover:bg-green-700">
-                        + Log hinzufügen
+                        + Log hinzufuegen
                     </a>
                 </div>
                 

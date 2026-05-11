@@ -102,8 +102,9 @@ def test_compliance_dashboard_requires_board(client, member_user):
 
 
 @pytest.mark.django_db
-def test_annual_report_csv_for_board(client, board_user):
+def test_annual_report_for_board_without_csv_export(client, board_user):
     client.force_login(board_user)
-    response = client.get(reverse("compliance:annual_report"), {"year": timezone.localdate().year, "format": "csv"})
+    response = client.get(reverse("compliance:annual_report"), {"year": timezone.localdate().year})
     assert response.status_code == 200
-    assert response["Content-Type"].startswith("text/csv")
+    html = response.content.decode("utf-8")
+    assert "CSV herunterladen" not in html

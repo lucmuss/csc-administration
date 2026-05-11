@@ -150,7 +150,7 @@
       button.addEventListener("click", function () {
         var show = input.type === "password";
         input.type = show ? "text" : "password";
-        button.textContent = show ? "Verbergen" : "Anzeigen";
+        button.classList.toggle("is-visible", show);
         button.setAttribute("aria-label", show ? "Passwort verbergen" : "Passwort anzeigen");
       });
     });
@@ -205,6 +205,56 @@
     });
   }
 
+  function wireSocialClubStateFilter() {
+    document.querySelectorAll("form[data-social-club-filter]").forEach(function (form) {
+      var stateSelect = form.querySelector("[data-federal-state-select]");
+      var clubSelect = form.querySelector("[data-social-club-select]");
+      if (!stateSelect || !clubSelect) {
+        return;
+      }
+
+      var originalOptions = Array.prototype.slice.call(clubSelect.querySelectorAll("option")).map(function (option) {
+        return {
+          value: option.value,
+          label: option.textContent,
+          state: option.getAttribute("data-state") || "",
+          selected: option.selected,
+        };
+      });
+      var selectedValue = clubSelect.value;
+
+      function repopulate() {
+        var selectedState = stateSelect.value || "";
+        var matching = originalOptions.filter(function (item) {
+          return !selectedState || item.state === selectedState;
+        });
+        clubSelect.innerHTML = "";
+        matching.forEach(function (item) {
+          var option = document.createElement("option");
+          option.value = item.value;
+          option.textContent = item.label;
+          option.setAttribute("data-state", item.state);
+          if (item.value === selectedValue) {
+            option.selected = true;
+          }
+          clubSelect.appendChild(option);
+        });
+        if (!clubSelect.value && matching.length > 0) {
+          clubSelect.value = matching[0].value;
+        }
+      }
+
+      stateSelect.addEventListener("change", function () {
+        selectedValue = clubSelect.value;
+        repopulate();
+      });
+      clubSelect.addEventListener("change", function () {
+        selectedValue = clubSelect.value;
+      });
+      repopulate();
+    });
+  }
+
   document.addEventListener("DOMContentLoaded", function () {
     toggleMobileNav();
     handleCookieConsent();
@@ -213,5 +263,6 @@
     wirePasswordToggles();
     wireSubmitFeedback();
     wireClickableRows();
+    wireSocialClubStateFilter();
   });
 })();

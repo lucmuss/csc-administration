@@ -5,7 +5,7 @@
     <div class="page-heading">
       <div>
         <p class="eyebrow">Governance</p>
-        <h1>Vorstandsbetrieb, Nachweise, Ausweise und Integrationen an einem Ort.</h1>
+        <h1>Vorstandsbetrieb, Nachweise und Integrationen an einem Ort.</h1>
       </div>
       <div class="hero-actions">
         <a href="{% url 'governance:meetings' %}#meeting-form" class="btn-ghost">Neue Mitgliederversammlung planen</a>
@@ -92,31 +92,6 @@
         {% endif %}
       </article>
 
-      <article class="panel" id="governance-audit">
-        <div class="panel__header">
-          <div>
-            <p class="panel__eyebrow">Ausweise</p>
-            <h2>Bald ablaufend</h2>
-          </div>
-          <a href="{% url 'governance:cards' %}" class="text-link">Alle Karten</a>
-        </div>
-        {% if expiring_cards %}
-          <ul class="stack-list">
-            {% for card in expiring_cards %}
-              <li class="stack-list__item">
-                <div>
-                  <strong>{{ card.profile.user.full_name }}</strong>
-                  <small>{{ card.card_number }}</small>
-                </div>
-                <span class="status-pill status-pill--sand">{{ card.expires_at|date:"d.m.Y" }}</span>
-              </li>
-            {% endfor %}
-          </ul>
-        {% else %}
-          <p class="empty-copy">Keine Karten laufen in den naechsten 30 Tagen ab.</p>
-        {% endif %}
-      </article>
-
       <article class="panel panel--span-2">
         <div class="panel__header">
           <div>
@@ -143,7 +118,7 @@
         {% endif %}
       </article>
 
-      <article class="panel">
+      <article class="panel" id="governance-audit">
         <div class="panel__header">
           <div>
             <p class="panel__eyebrow">Audit</p>

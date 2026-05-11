@@ -139,7 +139,7 @@ class BoardTaskForm(StyledModelForm):
         self.fields["status"].label = "Status"
         self.fields["due_date"].label = "Faellig am"
         self.fields["owner"].label = "Verantwortlich"
-        self.fields["due_date"].initial = self.fields["due_date"].initial or (timezone.localdate() + timedelta(days=5))
+        self.fields["due_date"].initial = self.fields["due_date"].initial or (timezone.localdate() + timedelta(days=7))
 
 
 class MemberCardIssueForm(forms.Form):

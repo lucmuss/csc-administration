@@ -8,11 +8,11 @@
     <div class="flex justify-between items-center mb-8">
         <div>
             <h1 class="text-3xl font-bold text-gray-800 mb-2">SMS-Vorschau</h1>
-            <p class="text-gray-600">Überprüfen Sie die SMS vor dem Versand</p>
+            <p class="text-gray-600">Ueberpruefen Sie die SMS vor dem Versand</p>
         </div>
         <div class="flex space-x-3">
             <a href="{% url 'messaging:sms_list' %}" class="bg-gray-100 text-gray-700 px-4 py-2 rounded-lg hover:bg-gray-200">
-                Zurück zur Liste
+                Zurueck zur Liste
             </a>
             {% if sms.status == 'draft' %}
             <a href="{% url 'messaging:sms_send' sms.pk %}" class="bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700">
@@ -41,13 +41,13 @@
                 </div>
                 
                 <div>
-                    <label class="block text-sm font-medium text-gray-700">Empfänger-Typ</label>
+                    <label class="block text-sm font-medium text-gray-700">Empfaenger-Typ</label>
                     <p class="mt-1 text-sm text-gray-900">{{ sms.get_recipient_type_display }}</p>
                 </div>
                 
                 {% if sms.recipient_member %}
                 <div>
-                    <label class="block text-sm font-medium text-gray-700">Empfänger</label>
+                    <label class="block text-sm font-medium text-gray-700">Empfaenger</label>
                     <p class="mt-1 text-sm text-gray-900">
                         {{ sms.recipient_member.user.first_name }} {{ sms.recipient_member.user.last_name }}
                     </p>
@@ -55,7 +55,7 @@
                 </div>
                 {% elif sms.recipient_group %}
                 <div>
-                    <label class="block text-sm font-medium text-gray-700">Empfängergruppe</label>
+                    <label class="block text-sm font-medium text-gray-700">Empfaengergruppe</label>
                     <p class="mt-1 text-sm text-gray-900">{{ sms.recipient_group.name }}</p>
                     <p class="text-sm text-gray-500">{{ total_recipients }} Mitglieder</p>
                 </div>
@@ -153,7 +153,7 @@
             <!-- Recipients preview -->
             {% if recipients %}
             <div class="mt-6">
-                <h3 class="text-sm font-medium text-gray-700 mb-2">Empfänger ({{ total_recipients }} gesamt)</h3>
+                <h3 class="text-sm font-medium text-gray-700 mb-2">Empfaenger ({{ total_recipients }} gesamt)</h3>
                 <div class="bg-gray-50 rounded-lg p-4 max-h-40 overflow-y-auto">
                     <ul class="space-y-1">
                         {% for recipient in recipients %}

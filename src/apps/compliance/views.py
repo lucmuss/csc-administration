@@ -67,24 +67,6 @@ def annual_report(request):
             }
         )
 
-    if request.GET.get("format") == "csv":
-        response = HttpResponse(content_type="text/csv; charset=utf-8")
-        response["Content-Disposition"] = f'attachment; filename="cang-jahresmeldung-{selected_year}.csv"'
-        writer = csv.writer(response)
-        writer.writerow(["Berichtsjahr", selected_year])
-        writer.writerow(["Generiert am", report.generated_at.strftime("%d.%m.%Y %H:%M")])
-        writer.writerow([])
-        writer.writerow(["Kennzahl", "Wert"])
-        writer.writerow(["Abgaben", report.total_orders])
-        writer.writerow(["Mitglieder", report.total_members])
-        writer.writerow(["Gesamtmenge (g)", report.total_grams])
-        writer.writerow(["Verdachtsfaelle", report.suspicious_cases])
-        writer.writerow([])
-        writer.writerow(["Monat", "Abgaben", "Gesamtmenge (g)"])
-        for row in monthly_rows:
-            writer.writerow([row["month_display"], row["total_orders"], row["total_grams"]])
-        return response
-
     return render(
         request,
         "compliance/annual_report.html",

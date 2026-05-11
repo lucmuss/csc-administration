@@ -52,7 +52,6 @@ def dashboard(request):
         "upcoming_meetings": BoardMeeting.objects.order_by("scheduled_for")[:6],
         "open_tasks": BoardTask.objects.exclude(status=BoardTask.STATUS_DONE).select_related("owner")[:8],
         "pending_records": OperationalRecord.objects.exclude(status=OperationalRecord.STATUS_EXECUTED)[:8],
-        "expiring_cards": MemberCard.objects.select_related("profile__user").filter(expires_at__lte=timezone.localdate() + timedelta(days=30))[:8],
         "recent_audit_entries": AuditLog.objects.select_related("actor")[:10],
         "integrations": IntegrationEndpoint.objects.filter(enabled=True)[:6],
         "task_counts": {
@@ -257,7 +256,11 @@ def tasks(request):
                 return redirect("governance:tasks")
         elif action == "status":
             task = get_object_or_404(BoardTask, pk=request.POST.get("task_id"))
-            task.status = request.POST.get("status", task.status)
+            next_status = request.POST.get("status", task.status)
+            allowed_statuses = {status for status, _ in BoardTask.STATUS_CHOICES}
+            if next_status not in allowed_statuses:
+                next_status = BoardTask.STATUS_TODO
+            task.status = next_status
             task.save()
             record_audit_event(
                 actor=request.user,
@@ -289,7 +292,7 @@ def tasks(request):
             initial={
                 "status": BoardTask.STATUS_TODO,
                 "owner": request.user,
-                "due_date": timezone.localdate() + timedelta(days=5),
+                "due_date": timezone.localdate() + timedelta(days=7),
             }
         )
 

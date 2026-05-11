@@ -14,6 +14,7 @@ from apps.core.club import (
     resolve_active_social_club,
 )
 from apps.core.models import SocialClub
+from apps.core.permissions import is_overadmin
 
 
 def ga_tracking_id(request):
@@ -73,15 +74,17 @@ def club_info(request):
         and not profile.is_verified
         and profile.onboarding_complete
     )
+    email_verification_pending = bool(
+        getattr(user, "is_authenticated", False)
+        and profile is not None
+        and profile.onboarding_complete
+        and not profile.is_email_verified
+    )
     active_social_club = resolve_active_social_club(request)
     active_federal_state = resolve_active_federal_state(request)
     active_federal_state_label = dict(SocialClub.FEDERAL_STATE_CHOICES).get(active_federal_state, "")
     try:
-        if (
-            getattr(user, "is_authenticated", False)
-            and not getattr(user, "is_superuser", False)
-            and getattr(user, "social_club_id", None)
-        ):
+        if getattr(user, "is_authenticated", False) and not is_overadmin(user) and getattr(user, "social_club_id", None):
             social_club_options = list(
                 SocialClub.objects.filter(
                 id=user.social_club_id,
@@ -95,21 +98,23 @@ def club_info(request):
             )
     except (RuntimeError, OperationalError, ProgrammingError):
         social_club_options = []
+    if active_federal_state:
+        filtered_options = [club for club in social_club_options if club.federal_state == active_federal_state]
+        if filtered_options:
+            social_club_options = filtered_options
     has_saved_club = bool(request.session.get(ACTIVE_SOCIAL_CLUB_SESSION_KEY) or request.COOKIES.get(ACTIVE_SOCIAL_CLUB_COOKIE))
     has_saved_state = bool(request.session.get(ACTIVE_FEDERAL_STATE_SESSION_KEY) or request.COOKIES.get(ACTIVE_FEDERAL_STATE_COOKIE))
+    has_saved_selection = bool(has_saved_club or has_saved_state)
     is_fixed_single_club_member = bool(
         getattr(user, "is_authenticated", False)
-        and not getattr(user, "is_superuser", False)
+        and not is_overadmin(user)
         and getattr(user, "social_club_id", None)
         and len(social_club_options) <= 1
     )
     show_social_club_switcher = bool(
         social_club_options
         and not is_fixed_single_club_member
-        and (
-            getattr(user, "is_superuser", False)
-            or not (has_saved_club and has_saved_state)
-        )
+        and not has_saved_selection
     )
     return {
         **get_club_settings(social_club=active_social_club),
@@ -120,4 +125,7 @@ def club_info(request):
         "federal_state_options": SocialClub.FEDERAL_STATE_CHOICES,
         "social_club_switch_options": social_club_options,
         "show_social_club_switcher": show_social_club_switcher,
+        "is_overadmin": is_overadmin(user),
+        "email_verification_pending": email_verification_pending,
+        "has_saved_social_club_selection": has_saved_selection,
     }

@@ -35,7 +35,7 @@
             </thead>
             <tbody>
               {% for entry in hours %}
-                <tr>
+                <tr class="{% if entry.approved %}table-row-status--completed{% else %}table-row-status--reserved{% endif %}">
                   <td><a href="{% url 'members:detail' entry.profile.id %}" class="text-link">{{ entry.profile.user.email }}</a></td>
                   <td>{{ entry.date|date:'d.m.Y' }}</td>
                   <td>{{ entry.hours }} h</td>

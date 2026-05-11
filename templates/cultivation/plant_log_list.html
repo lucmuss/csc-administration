@@ -1,7 +1,7 @@
 {% extends "base.html" %}
 {% load static %}
 
-{% block title %}Logs für {{ plant }} - CSC Administration{% endblock %}
+{% block title %}Logs fuer {{ plant }} - CSC Administration{% endblock %}
 
 {% block content %}
 <div class="container mx-auto px-4 py-8">
@@ -12,10 +12,10 @@
         </div>
         <div class="flex space-x-3">
             <a href="{% url 'cultivation:plant_detail' plant.pk %}" class="bg-gray-100 text-gray-700 px-4 py-2 rounded-lg hover:bg-gray-200">
-                Zurück zur Pflanze
+                Zurueck zur Pflanze
             </a>
             <a href="{% url 'cultivation:plant_log_create' plant.pk %}" class="bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700">
-                + Log hinzufügen
+                + Log hinzufuegen
             </a>
         </div>
     </div>

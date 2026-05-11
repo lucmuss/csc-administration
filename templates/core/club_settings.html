@@ -18,13 +18,14 @@
       <article class="panel panel--span-2">
         <div class="panel__header">
           <div>
-            <p class="panel__eyebrow">General Information</p>
+            <p class="panel__eyebrow">Allgemeine Informationen</p>
             <h2>Mandantenfaehige Club-Konfiguration</h2>
           </div>
         </div>
         <form method="post" class="form-stack">
           {% csrf_token %}
-          {% for section_title, section_fields in settings_sections %}
+          <input type="hidden" name="settings_scope" value="club_configuration">
+          {% for section_title, section_fields in settings_section_fields %}
             <section class="panel" style="margin-bottom:1rem;">
               <div class="panel__header">
                 <div>
@@ -32,12 +33,12 @@
                   <h2>{{ section_title }}</h2>
                 </div>
               </div>
-              {% for field_name in section_fields %}
+              {% for field in section_fields %}
                 <div class="field">
-                  <label for="{{ form[field_name].id_for_label }}">{{ form[field_name].label }}{% if not form[field_name].field.required %} <small>(optional)</small>{% endif %}</label>
-                  {{ form[field_name] }}
-                  {% if form[field_name].help_text %}<small>{{ form[field_name].help_text }}</small>{% endif %}
-                  {{ form[field_name].errors }}
+                  <label for="{{ field.id_for_label }}">{{ field.label }}{% if not field.field.required %} <small>(optional)</small>{% endif %}</label>
+                  {{ field }}
+                  {% if field.help_text %}<small>{{ field.help_text }}</small>{% endif %}
+                  {{ field.errors }}
                 </div>
               {% endfor %}
             </section>
@@ -45,6 +46,64 @@
           <button type="submit" class="btn-primary">Clubdaten speichern</button>
         </form>
       </article>
+
+      {% if social_club and social_club_form %}
+        <article id="social-club" class="panel panel--span-2">
+          <div class="panel__header">
+            <div>
+              <p class="panel__eyebrow">Social Club</p>
+              <h2>Rechts- und Profildaten von {{ social_club.name }}</h2>
+            </div>
+          </div>
+          <form method="post" enctype="multipart/form-data" class="form-stack">
+            {% csrf_token %}
+            <input type="hidden" name="settings_scope" value="social_club_profile">
+            {% for field in social_club_form %}
+              <div class="field">
+                <label for="{{ field.id_for_label }}">{{ field.label }}</label>
+                {{ field }}
+                {{ field.errors }}
+              </div>
+            {% endfor %}
+            <section class="panel">
+              <div class="panel__header">
+                <div>
+                  <p class="panel__eyebrow">Cannabis-Ausgabe</p>
+                  <h2>Ausgabezeiten verwalten</h2>
+                </div>
+              </div>
+              {{ opening_hour_formset.management_form }}
+              {% if opening_hour_formset.non_form_errors %}
+                <div class="flash flash--error">{{ opening_hour_formset.non_form_errors }}</div>
+              {% endif %}
+              <div class="table-card">
+                <table class="table table--compact" id="opening-hours-table">
+                  <thead>
+                    <tr>
+                      <th>Wochentag</th>
+                      <th>Von</th>
+                      <th>Bis</th>
+                      <th>Loeschen</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {% for row_form in opening_hour_formset %}
+                      <tr class="opening-hour-row">
+                        <td>{{ row_form.id }}{{ row_form.weekday }}{{ row_form.weekday.errors }}</td>
+                        <td>{{ row_form.starts_at }}{{ row_form.starts_at.errors }}</td>
+                        <td>{{ row_form.ends_at }}{{ row_form.ends_at.errors }}</td>
+                        <td>{{ row_form.DELETE }}</td>
+                      </tr>
+                    {% endfor %}
+                  </tbody>
+                </table>
+              </div>
+              <button type="button" id="add-opening-hour-row" class="btn-ghost">Weitere Ausgabezeit</button>
+            </section>
+            <button type="submit" class="btn-primary">Social-Club-Daten speichern</button>
+          </form>
+        </article>
+      {% endif %}
 
       <article class="panel">
         <div class="panel__header">
@@ -67,4 +126,43 @@
       </article>
     </section>
   </section>
+  {% if social_club and opening_hour_formset %}
+    <template id="opening-hour-empty-row">
+      <tr class="opening-hour-row">
+        <td>__WEEKDAY__</td>
+        <td>__STARTS_AT__</td>
+        <td>__ENDS_AT__</td>
+        <td>__DELETE__</td>
+      </tr>
+    </template>
+    <script>
+      (function () {
+        const addButton = document.getElementById("add-opening-hour-row");
+        const tableBody = document.querySelector("#opening-hours-table tbody");
+        const totalForms = document.getElementById("id_opening_hours-TOTAL_FORMS");
+        const emptyTemplate = document.getElementById("opening-hour-empty-row");
+        if (!addButton || !tableBody || !totalForms || !emptyTemplate) {
+          return;
+        }
+        const emptyRowWeekday = `{{ opening_hour_formset.empty_form.weekday.as_widget|escapejs }}`;
+        const emptyRowStartsAt = `{{ opening_hour_formset.empty_form.starts_at.as_widget|escapejs }}`;
+        const emptyRowEndsAt = `{{ opening_hour_formset.empty_form.ends_at.as_widget|escapejs }}`;
+        const emptyRowDelete = `{{ opening_hour_formset.empty_form.DELETE.as_widget|escapejs }}`;
+
+        addButton.addEventListener("click", function () {
+          const currentIndex = Number(totalForms.value);
+          const withPrefix = function (value) {
+            return value.replaceAll("__prefix__", String(currentIndex));
+          };
+          const html = emptyTemplate.innerHTML
+            .replace("__WEEKDAY__", withPrefix(emptyRowWeekday))
+            .replace("__STARTS_AT__", withPrefix(emptyRowStartsAt))
+            .replace("__ENDS_AT__", withPrefix(emptyRowEndsAt))
+            .replace("__DELETE__", withPrefix(emptyRowDelete));
+          tableBody.insertAdjacentHTML("beforeend", html);
+          totalForms.value = String(currentIndex + 1);
+        });
+      })();
+    </script>
+  {% endif %}
 {% endblock %}

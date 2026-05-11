@@ -106,15 +106,16 @@ class BalanceTopUpForm(forms.Form):
 class UploadedInvoiceForm(forms.ModelForm):
     class Meta:
         model = UploadedInvoice
-        fields = ["title", "direction", "document", "payment_status", "assigned_to", "notes"]
-        widgets = {
-            "notes": forms.Textarea(attrs={"rows": 4}),
-        }
+        fields = ["title", "direction", "document", "payment_status", "assigned_to"]
 
     def __init__(self, *args, **kwargs):
         current_user = kwargs.pop("current_user", None)
         super().__init__(*args, **kwargs)
         self.fields["title"].required = False
+        self.fields["payment_status"].choices = [
+            (UploadedInvoice.PAYMENT_OPEN, "Offen"),
+            (UploadedInvoice.PAYMENT_PAID, "Bezahlt"),
+        ]
         self.fields["assigned_to"].queryset = User.objects.filter(role__in=[User.ROLE_STAFF, User.ROLE_BOARD]).order_by(
             "first_name",
             "last_name",
@@ -133,9 +134,27 @@ class UploadedInvoiceForm(forms.ModelForm):
     def clean_document(self):
         document = self.cleaned_data["document"]
         suffix = Path(document.name).suffix.lower()
-        allowed = {".pdf", ".png", ".jpg", ".jpeg", ".webp", ".txt"}
+        allowed = {
+            ".pdf",
+            ".png",
+            ".jpg",
+            ".jpeg",
+            ".webp",
+            ".bmp",
+            ".gif",
+            ".tif",
+            ".tiff",
+            ".heic",
+            ".heif",
+            ".avif",
+            ".txt",
+            ".csv",
+            ".md",
+        }
         if suffix not in allowed:
-            raise forms.ValidationError("Erlaubt sind PDF, JPG, JPEG, PNG, WEBP und TXT.")
+            raise forms.ValidationError(
+                "Erlaubt sind PDF, JPG, JPEG, PNG, WEBP, BMP, GIF, TIFF, HEIC, AVIF, TXT, CSV und MD."
+            )
         return document
 
 
@@ -168,6 +187,10 @@ class UploadedInvoiceUpdateForm(forms.ModelForm):
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
+        self.fields["payment_status"].choices = [
+            (UploadedInvoice.PAYMENT_OPEN, "Offen"),
+            (UploadedInvoice.PAYMENT_PAID, "Bezahlt"),
+        ]
         self.fields["assigned_to"].queryset = User.objects.filter(role__in=[User.ROLE_STAFF, User.ROLE_BOARD]).order_by(
             "first_name",
             "last_name",

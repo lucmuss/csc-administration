@@ -6,11 +6,14 @@
   <section class="page-shell">
     <div class="page-heading">
       <div>
-        <p class="eyebrow">Cultivation</p>
-        <h1>Grow Cycles, Pflanzenstatus und Harvest-Pipeline.</h1>
+        <p class="eyebrow">Anbau</p>
+        <h1>Anbauzyklen, Pflanzenstatus und Ernte-Pipeline.</h1>
+        {% if active_social_club %}
+          <p class="field-hint">Aktiver Social Club: {{ active_social_club.name }}</p>
+        {% endif %}
       </div>
       <div class="hero-actions">
-        <a href="{% url 'cultivation:grow_cycle_create' %}" class="btn-primary">Neuer Grow Cycle</a>
+        <a href="{% url 'cultivation:grow_cycle_create' %}" class="btn-primary">Neuer Anbauzyklus</a>
         <a href="{% url 'cultivation:plant_list' %}" class="btn-ghost">Pflanzenliste</a>
       </div>
     </div>
@@ -29,7 +32,7 @@
       <article class="kpi-card kpi-card--ink">
         <span class="kpi-card__label">Gesamtertrag</span>
         <strong class="kpi-card__value">{{ yield_stats.total_dried|floatformat:0|default:"0" }} g</strong>
-        <small class="kpi-card__detail">{{ yield_stats.total_batches|default:"0" }} zugewiesene Harvest Batches</small>
+        <small class="kpi-card__detail">{{ yield_stats.total_batches|default:"0" }} zugewiesene Ernte-Chargen</small>
       </article>
     </section>
 
@@ -37,7 +40,7 @@
       <article class="panel">
         <div class="panel__header">
           <div>
-            <p class="panel__eyebrow">Grow Cycles</p>
+            <p class="panel__eyebrow">Anbauzyklen</p>
             <h2>Aktive Zyklen</h2>
           </div>
           <a href="{% url 'cultivation:grow_cycle_list' %}" class="text-link">Alle anzeigen</a>
@@ -55,7 +58,7 @@
             {% endfor %}
           </ul>
         {% else %}
-          <p class="empty-copy">Keine aktiven Grow Cycles vorhanden.</p>
+          <p class="empty-copy">Keine aktiven Anbauzyklen vorhanden.</p>
         {% endif %}
       </article>
 
@@ -65,7 +68,7 @@
             <p class="panel__eyebrow">Naechste Ernten</p>
             <h2>Faellige Zyklen in 30 Tagen</h2>
           </div>
-          <a href="{% url 'cultivation:harvest_list' %}" class="text-link">Harvests</a>
+          <a href="{% url 'cultivation:harvest_list' %}" class="text-link">Ernten</a>
         </div>
         {% if upcoming_harvests %}
           <ul class="stack-list">
@@ -84,10 +87,35 @@
         {% endif %}
       </article>
 
+      <article class="panel">
+        <div class="panel__header">
+          <div>
+            <p class="panel__eyebrow">Aktive Sorten</p>
+            <h2>Aktuell im Anbau</h2>
+          </div>
+          <a href="{% url 'inventory:strain_list' %}" class="text-link">Shop-Sorten</a>
+        </div>
+        {% if active_strains %}
+          <ul class="stack-list stack-list--compact">
+            {% for entry in active_strains %}
+              <li class="stack-list__item">
+                <div>
+                  <strong>{{ entry.strain__name }}</strong>
+                  <small>{{ entry.cycle_count }} Zyklen</small>
+                </div>
+                <span class="status-pill status-pill--active">{{ entry.plant_count }} Pflanzen</span>
+              </li>
+            {% endfor %}
+          </ul>
+        {% else %}
+          <p class="empty-copy">Aktuell sind keine Sorten im aktiven Anbau.</p>
+        {% endif %}
+      </article>
+
       <article class="panel panel--span-2">
         <div class="panel__header">
           <div>
-            <p class="panel__eyebrow">Harvest Pipeline</p>
+            <p class="panel__eyebrow">Ernte-Pipeline</p>
             <h2>Aktive Batches ohne Lagerzuweisung</h2>
           </div>
         </div>
@@ -117,7 +145,7 @@
             </table>
           </div>
         {% else %}
-          <p class="empty-copy">Keine aktiven Harvest Batches in Trocknung oder Aushartung.</p>
+          <p class="empty-copy">Keine aktiven Ernte-Chargen in Trocknung oder Aushartung.</p>
         {% endif %}
       </article>
     </section>

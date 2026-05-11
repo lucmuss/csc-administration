@@ -5,7 +5,7 @@
     <div class="page-heading">
       <div>
         <p class="eyebrow">Mitglieder-Cockpit</p>
-        <h1>CSV-Import mit Analyse, Feldzuordnung und finaler Bestätigung.</h1>
+        <h1>CSV-Import mit Analyse, Feldzuordnung und finaler Bestaetigung.</h1>
         <p class="lede">
           Erst Datei pruefen, dann Spalten zuordnen und erst im letzten Schritt verbindlich importieren.
         </p>
@@ -53,8 +53,9 @@
               <span>{{ import_data.preview_rows|length }} Vorschauzeilen</span>
             </div>
             <p class="empty-copy">
-              Nicht benoetigte Spalten koennen auf "Nicht importieren" bleiben. Die E-Mail-Adresse muss zugeordnet sein.
+              Nicht benoetigte Spalten koennen auf "Nicht importieren" bleiben. Pflichtfelder sind im Dropdown mit `*` markiert.
             </p>
+            <p class="field-hint">Pflichtzuordnung: {% for field_label in required_import_fields %}{{ field_label }}{% if not forloop.last %}, {% endif %}{% endfor %}</p>
             {% for item in suggested_mappings %}
               <div class="field">
                 <label for="mapping_{{ forloop.counter0 }}">{{ item.header }}</label>

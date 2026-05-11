@@ -3,6 +3,7 @@ from django.urls import path
 from .views import (
     add_balance,
     archive,
+    archive_delete,
     archive_detail,
     balance,
     dashboard,
@@ -28,6 +29,7 @@ urlpatterns = [
     path("balance/", balance, name="balance"),
     path("members/<int:member_id>/add-balance/", add_balance, name="add_balance"),
     path("archive/", archive, name="archive"),
+    path("archive/<int:pk>/delete/", archive_delete, name="archive_delete"),
     path("archive/<int:pk>/", archive_detail, name="archive_detail"),
     path("statistics/", statistics, name="statistics"),
     path("mandate/new/", mandate_create, name="mandate_create"),

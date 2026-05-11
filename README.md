@@ -249,7 +249,39 @@ Hinweise:
 
 ---
 
-**Letzte Aktualisierung**: 2025-03-01
+## Aktuelle Aenderungen (2026-05-11)
+
+- Finance Archiv:
+  - Loeschen-Button direkt in der Tabellenzeile mit sofortigem Redirect/Refresh.
+  - Tabellenzeilen farblich markiert: `Bezahlt` leicht gruen, `Offen` leicht gelb.
+  - Upload akzeptiert zusaetzliche Dateiformate (`BMP`, `GIF`, `TIFF`, `HEIC`, `AVIF`, `CSV`, `MD`).
+  - Upload-Feld `Notizen` entfernt.
+  - Status-Auswahl auf `Offen` und `Bezahlt` reduziert.
+- Governance:
+  - Dashboard-Kachel `Ausweise / Bald ablaufend` entfernt.
+  - Aufgabenboard als eigener Punkt unter `Verwaltung` in der Navigation.
+  - Task-Status `Blockiert` entfernt (nur `Offen`, `In Arbeit`, `Erledigt`).
+  - Voreinstellung `Faellig am` auf `heute + 7 Tage`.
+  - Kompaktere Task-Karten mit aufklappbaren Details und Overflow-Fixes.
+- Compliance:
+  - CSV-Export im Jahresbericht entfernt (Button + Serverausgabe).
+- Messaging:
+  - Live-Markdown-Vorschau beim Erstellen von Massen-E-Mails.
+  - Variablen werden mit aktuellem Benutzerkontext gerendert (`first_name`, `last_name`, `email`, `member_number`).
+- Inventory / Shop / Participation / PDF:
+  - Abweichungsbericht-Feature entfernt (`/inventory/discrepancies/` inkl. Navigation).
+  - Edibles-Kategorie aus Shop-/Inventar-UI und Kern-Filterpfaden entfernt.
+  - Inventar-Ansichten (`Sorten`, `Inventur`, `Dashboard`) auf aktiven Social Club begrenzt.
+  - Cannabinoid-Felder (`THC/CBD/CBG/CBN/CBC/CBV`) vereinheitlicht, jeweils max. `30%`.
+  - Teilnahme-Stundenliste farblich codiert wie Bestellstatus (gruen/gelb).
+  - PDF-Rechnung: Abschnitt `Leistungsumfang` mit zusaetzlichem vertikalem Abstand.
+- Cultivation:
+  - Dashboard ergaenzt um Uebersicht der aktuell angebauten Sorten.
+  - Pflanzenerfassung/-bearbeitung verwendet aktive, clubbezogene Shop-Sorten (Blueten/Stecklinge).
+
+---
+
+**Letzte Aktualisierung**: 2026-05-11
 
 ---
 

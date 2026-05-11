@@ -27,7 +27,6 @@
           <h2>Aktive Sorten</h2>
         </div>
         <div class="hero-actions">
-          <a href="{% url 'inventory:discrepancy_report' %}" class="text-link">Abweichungsbericht</a>
           {% if can_manage_inventory %}
             <a href="{% url 'inventory:strain_create' %}" class="text-link">Typen, Preise und Bestand pflegen</a>
           {% endif %}
@@ -38,7 +37,8 @@
           <a href="{% url 'inventory:strain_list' %}" class="{% if active_type == 'all' %}btn-primary{% else %}btn-ghost{% endif %}">Alle</a>
           <a href="{% url 'inventory:strain_list' %}?type=flower" class="{% if active_type == 'flower' %}btn-primary{% else %}btn-ghost{% endif %}">Blueten</a>
           <a href="{% url 'inventory:strain_list' %}?type=cutting" class="{% if active_type == 'cutting' %}btn-primary{% else %}btn-ghost{% endif %}">Stecklinge</a>
-          <a href="{% url 'inventory:strain_list' %}?type=edible" class="{% if active_type == 'edible' %}btn-primary{% else %}btn-ghost{% endif %}">Edibles</a>
+          <a href="{% url 'inventory:strain_list' %}?type=accessory" class="{% if active_type == 'accessory' %}btn-primary{% else %}btn-ghost{% endif %}">Rauchzubehoer</a>
+          <a href="{% url 'inventory:strain_list' %}?type=merch" class="{% if active_type == 'merch' %}btn-primary{% else %}btn-ghost{% endif %}">Werbegeschenke</a>
         </div>
         <table class="table">
           <thead>

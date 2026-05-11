@@ -371,7 +371,8 @@ def render_invoice_pdf(invoice: Invoice) -> bytes:
         meta_y -= 6 * mm
 
     pdf.setFont("Helvetica-Bold", 10)
-    table_y = y - 34 * mm
+    # Zwei Zeilen mehr Abstand zwischen Empfaengerblock und Leistungsumfang.
+    table_y = y - 46 * mm
     pdf.drawString(20 * mm, table_y, "Leistungsumfang")
     pdf.setStrokeColor(colors.HexColor("#c7d7cd"))
     pdf.line(20 * mm, table_y - 3 * mm, width - 20 * mm, table_y - 3 * mm)

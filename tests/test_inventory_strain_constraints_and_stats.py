@@ -125,3 +125,25 @@ def test_strain_form_accepts_optional_cannabinoids():
     )
 
     assert form.is_valid(), form.errors
+
+
+@pytest.mark.django_db
+def test_strain_form_limits_cannabinoids_to_30_percent_and_hides_edible_type():
+    form = StrainForm(
+        data={
+            "name": "Too Strong",
+            "product_type": Strain.PRODUCT_TYPE_FLOWER,
+            "card_tone": Strain.CARD_TONE_APRICOT,
+            "thc": "31.0",
+            "cbd": "0.5",
+            "price": "10.00",
+            "stock": "5",
+            "quality_grade": Strain.QUALITY_B,
+            "is_active": "on",
+        }
+    )
+
+    assert form.is_valid() is False
+    assert "thc" in form.errors
+    product_choices = {choice[0] for choice in form.fields["product_type"].choices}
+    assert Strain.PRODUCT_TYPE_EDIBLE not in product_choices

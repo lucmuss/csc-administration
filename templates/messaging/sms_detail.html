@@ -12,7 +12,7 @@
         </div>
         <div class="flex space-x-3">
             <a href="{% url 'messaging:sms_list' %}" class="bg-gray-100 text-gray-700 px-4 py-2 rounded-lg hover:bg-gray-200">
-                Zurück zur Liste
+                Zurueck zur Liste
             </a>
             {% if sms.status == 'draft' %}
             <a href="{% url 'messaging:sms_send' sms.pk %}" class="bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700">
@@ -39,13 +39,13 @@
                 </div>
                 
                 <div>
-                    <label class="block text-sm font-medium text-gray-500">Empfänger-Typ</label>
+                    <label class="block text-sm font-medium text-gray-500">Empfaenger-Typ</label>
                     <p class="mt-1 text-gray-900">{{ sms.get_recipient_type_display }}</p>
                 </div>
                 
                 {% if sms.recipient_member %}
                 <div>
-                    <label class="block text-sm font-medium text-gray-500">Empfänger</label>
+                    <label class="block text-sm font-medium text-gray-500">Empfaenger</label>
                     <p class="mt-1 text-gray-900">
                         {{ sms.recipient_member.user.first_name }} {{ sms.recipient_member.user.last_name }}
                     </p>
@@ -133,7 +133,7 @@
             </a>
             {% endif %}
             <a href="{% url 'messaging:sms_delete' sms.pk %}" class="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700">
-                Löschen
+                Loeschen
             </a>
         </div>
     </div>

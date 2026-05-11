@@ -12,12 +12,15 @@
           <a href="{% url 'members:directory' %}" class="btn-ghost">Zur Mitgliederliste</a>
           <a href="{% url 'orders:admin_list' %}?q={{ profile.user.email }}" class="btn-ghost">Bestellungen</a>
         {% else %}
-          {% if not pending_member_limited_access %}
+          {% if not pending_member_limited_access and not email_verification_pending %}
             <a href="{% url 'orders:shop' %}" class="btn-ghost">Zum Shop</a>
             <a href="{% url 'orders:cart' %}" class="btn-ghost">Warenkorb{% if request.session.cart %} ({{ request.session.cart|length }}){% endif %}</a>
           {% endif %}
           {% if show_profile_edit_callout %}
             <a href="#profilpflege" class="btn-primary">Profil bearbeiten</a>
+          {% endif %}
+          {% if email_verification_pending %}
+            <a href="{% url 'members:verification' %}" class="btn-primary">E-Mail jetzt bestaetigen</a>
           {% endif %}
           {% if profile.is_verified %}
             <a href="{% url 'members:member_card_pdf' %}" class="btn-ghost">Mitgliedsausweis</a>
@@ -35,6 +38,12 @@
         {% endif %}
       </div>
     </div>
+
+    {% if email_verification_pending %}
+      <section class="flash flash--warning">
+        <strong>Hinweis:</strong> E-Mail noch nicht bestaetigt. Profilbearbeitung ist bis zur Code-Bestaetigung gesperrt.
+      </section>
+    {% endif %}
 
     <div class="kpi-grid">
       <article class="kpi-card kpi-card--forest">
@@ -234,7 +243,15 @@
           <div class="field-grid">
             <div class="field">
               <label for="{{ profile_form.phone.id_for_label }}">Telefonnummer</label>
-              {{ profile_form.phone }}
+              <div class="inline-actions" style="gap:.5rem; align-items:flex-start;">
+                <div style="min-width: 13rem;">
+                  {{ profile_form.phone_country_code }}
+                </div>
+                <div style="flex:1;">
+                  {{ profile_form.phone }}
+                </div>
+              </div>
+              {{ profile_form.phone_country_code.errors }}
               {{ profile_form.phone.errors }}
             </div>
             <div class="field">
@@ -243,11 +260,16 @@
             </div>
           </div>
           <div class="field">
-            <label for="{{ profile_form.street_address.id_for_label }}">Strasse, Hausnummer</label>
+            <label for="{{ profile_form.street_address.id_for_label }}">Strasse</label>
             {{ profile_form.street_address }}
             {{ profile_form.street_address.errors }}
           </div>
           <div class="field-grid">
+            <div class="field">
+              <label for="{{ profile_form.street_address_number.id_for_label }}">Hausnummer</label>
+              {{ profile_form.street_address_number }}
+              {{ profile_form.street_address_number.errors }}
+            </div>
             <div class="field">
               <label for="{{ profile_form.postal_code.id_for_label }}">Postleitzahl</label>
               {{ profile_form.postal_code }}

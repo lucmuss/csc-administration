@@ -4,6 +4,7 @@ from django.conf import settings
 from django.db.utils import OperationalError, ProgrammingError
 
 from .models import ClubConfiguration, SocialClub
+from .permissions import is_overadmin
 
 ACTIVE_SOCIAL_CLUB_SESSION_KEY = "active_social_club_id"
 ACTIVE_SOCIAL_CLUB_COOKIE = "active_social_club_id"
@@ -45,7 +46,7 @@ def resolve_active_social_club(request=None):
     if request is None:
         return None
     user = getattr(request, "user", None)
-    if getattr(user, "is_authenticated", False) and not getattr(user, "is_superuser", False) and getattr(user, "social_club_id", None):
+    if getattr(user, "is_authenticated", False) and not is_overadmin(user) and getattr(user, "social_club_id", None):
         return user.social_club
     club_id = request.session.get(ACTIVE_SOCIAL_CLUB_SESSION_KEY) or request.COOKIES.get(ACTIVE_SOCIAL_CLUB_COOKIE)
 

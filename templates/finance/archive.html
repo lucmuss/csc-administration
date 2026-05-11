@@ -45,7 +45,7 @@
             <label for="{{ form.document.id_for_label }}">PDF oder Bilddatei</label>
             {{ form.document }}
             {{ form.document.errors }}
-            <small class="field-hint">Unterstuetzt: PDF, JPG, JPEG, PNG, WEBP und TXT. Fotos werden fuer die KI automatisch normalisiert.</small>
+            <small class="field-hint">Unterstuetzt: PDF, JPG, JPEG, PNG, WEBP, BMP, GIF, TIFF, HEIC, AVIF, TXT, CSV und MD. Fotos werden fuer die KI automatisch normalisiert.</small>
           </div>
           <div class="field-grid">
             <div class="field">
@@ -69,11 +69,6 @@
             <label for="{{ form.assigned_to.id_for_label }}">Bearbeiter</label>
             {{ form.assigned_to }}
             {{ form.assigned_to.errors }}
-          </div>
-          <div class="field">
-            <label for="{{ form.notes.id_for_label }}">Notizen</label>
-            {{ form.notes }}
-            {{ form.notes.errors }}
           </div>
           <button type="submit" class="btn-primary">Hochladen und analysieren</button>
         </form>
@@ -101,7 +96,6 @@
               <option value="">Alle</option>
               <option value="open"{% if filters.payment_status == 'open' %} selected{% endif %}>Offen</option>
               <option value="paid"{% if filters.payment_status == 'paid' %} selected{% endif %}>Bezahlt</option>
-              <option value="cancelled"{% if filters.payment_status == 'cancelled' %} selected{% endif %}>Storniert</option>
             </select>
           </div>
           <div class="field">
@@ -156,7 +150,7 @@
             </thead>
             <tbody>
               {% for invoice in invoices %}
-                <tr>
+                <tr class="{% if invoice.payment_status == 'paid' %}archive-row archive-row--paid{% elif invoice.payment_status == 'open' %}archive-row archive-row--open{% endif %}">
                   <td>
                     <a href="{% url 'finance:archive_detail' invoice.id %}" class="text-link"><strong>{{ invoice.title|default:"Rechnung oeffnen" }}</strong></a>
                     <div class="table-meta">
@@ -192,7 +186,16 @@
                     {% endif %}
                     <div class="table-meta">{{ invoice.created_at|date:"d.m.Y H:i" }}</div>
                   </td>
-                  <td><a href="{% url 'finance:archive_detail' invoice.id %}" class="btn-ghost btn-ghost--small">Oeffnen</a></td>
+                  <td>
+                    <div class="table-actions">
+                      <a href="{% url 'finance:archive_detail' invoice.id %}" class="btn-ghost btn-ghost--small">Oeffnen</a>
+                      <form method="post" action="{% url 'finance:archive_delete' invoice.id %}" onsubmit="return confirm('Soll diese Rechnung wirklich geloescht werden?');">
+                        {% csrf_token %}
+                        <input type="hidden" name="next_query" value="{{ request.GET.urlencode }}">
+                        <button type="submit" class="btn-ghost btn-ghost--small">Loeschen</button>
+                      </form>
+                    </div>
+                  </td>
                 </tr>
               {% empty %}
                 <tr><td colspan="7">Noch keine Rechnungen im Archiv vorhanden.</td></tr>

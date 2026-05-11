@@ -7,7 +7,7 @@
 <div class="container mx-auto px-4 py-8">
     <div class="mb-8">
         <h1 class="text-3xl font-bold text-gray-800 mb-2">SMS-Statistiken</h1>
-        <p class="text-gray-600">Übersicht über SMS-Versand und Kosten</p>
+        <p class="text-gray-600">Uebersicht ueber SMS-Versand und Kosten</p>
     </div>
 
     <!-- Gesamtstatistiken -->
@@ -33,7 +33,7 @@
     <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
         <!-- Monatliche Statistiken -->
         <div class="bg-white shadow-md rounded-lg p-6">
-            <h2 class="text-xl font-semibold text-gray-800 mb-4">Monatliche Übersicht</h2>
+            <h2 class="text-xl font-semibold text-gray-800 mb-4">Monatliche Uebersicht</h2>
             <div class="overflow-x-auto">
                 <table class="min-w-full">
                     <thead class="bg-gray-50">
@@ -106,7 +106,7 @@
                     {{ stat.count }}
                 </p>
                 <p class="text-sm text-gray-600">
-                    {% if stat.status == 'draft' %}Entwürfe
+                    {% if stat.status == 'draft' %}Entwuerfe
                     {% elif stat.status == 'queued' %}In Warteschlange
                     {% elif stat.status == 'sending' %}Wird gesendet
                     {% elif stat.status == 'sent' %}Gesendet

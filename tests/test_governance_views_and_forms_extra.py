@@ -86,6 +86,15 @@ def test_governance_tasks_status_update(client, board_user):
 
 
 @pytest.mark.django_db
+def test_governance_tasks_status_choices_do_not_include_blocked(client, board_user):
+    client.force_login(board_user)
+    response = client.get(reverse("governance:tasks"))
+    assert response.status_code == 200
+    html = response.content.decode("utf-8")
+    assert "Blockiert" not in html
+
+
+@pytest.mark.django_db
 def test_governance_api_export_requires_valid_api_key(client, board_user):
     client.force_login(board_user)
     response = client.get(reverse("governance:api_export", args=["members"]))

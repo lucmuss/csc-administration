@@ -1,0 +1,8 @@
+Hallo {{ club.name }},
+
+bitte bestaetige die E-Mail-Adresse fuer die Vereinsregistrierung mit diesem Code:
+
+{{ code }}
+
+Zur Eingabe:
+{{ registration_url }}

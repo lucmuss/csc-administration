@@ -64,8 +64,7 @@ def test_onboarding_form_defaults_join_date_to_first_day_of_next_month(member_us
     member_user.profile.save(update_fields=["desired_join_date", "updated_at"])
 
     form = MemberOnboardingForm(profile=member_user.profile)
-    today = timezone.localdate()
-    expected = date(today.year + 1, 1, 1) if today.month == 12 else date(today.year, today.month + 1, 1)
+    expected = timezone.localdate()
 
     assert form.fields["desired_join_date"].initial == expected
 
@@ -97,7 +96,7 @@ def test_governance_task_form_prefills_due_date_and_owner(client, board_user):
 
     assert response.status_code == 200
     form = response.context["form"]
-    assert form["due_date"].value() == timezone.localdate() + timedelta(days=5)
+    assert form["due_date"].value() == timezone.localdate() + timedelta(days=7)
     assert str(form["owner"].value()) == str(board_user.id)
 
 

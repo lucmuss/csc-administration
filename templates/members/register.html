@@ -28,6 +28,11 @@
         <div>
           <p class="panel__eyebrow">Registrierung</p>
           <h2>Konto erstellen</h2>
+          {% if has_saved_social_club_selection and active_federal_state_label and active_social_club %}
+            <p class="field-hint" style="margin-top:.5rem;">
+              Hinweis: Konto wird beim Club "{{ active_social_club.name }}" im Bundesland {{ active_federal_state_label }} erstellt.
+            </p>
+          {% endif %}
         </div>
       </div>
       <form method="post" class="form-stack" novalidate data-submit-feedback>
@@ -70,17 +75,18 @@
         </div>
         <div class="field field--password">
           <label for="{{ form.password.id_for_label }}">Passwort{% if form.password.field.required %} *{% endif %}</label>
-          <div class="inline-actions" style="align-items:center; gap:.5rem;">
+          <div class="password-input-wrap">
             {{ form.password }}
             <button
               type="button"
-              class="btn-ghost"
+              class="password-toggle-icon"
               data-password-toggle
               data-password-target="{{ form.password.id_for_label }}"
               aria-controls="{{ form.password.id_for_label }}"
               aria-label="Passwort anzeigen"
             >
-              Anzeigen
+              <span class="password-eye" aria-hidden="true"></span>
+              <span class="sr-only">Passwort anzeigen</span>
             </button>
           </div>
           {{ form.password.errors }}

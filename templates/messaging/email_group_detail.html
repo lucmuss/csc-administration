@@ -19,7 +19,7 @@
             </a>
             <a href="{% url 'messaging:email_group_list' %}" 
                class="bg-gray-300 hover:bg-gray-400 text-gray-800 font-bold py-2 px-4 rounded-lg">
-                Zurück
+                Zurueck
             </a>
         </div>
     </div>
@@ -77,10 +77,10 @@
             </div>
         </div>
 
-        <!-- Mitglieder hinzufügen -->
+        <!-- Mitglieder hinzufuegen -->
         <div class="lg:col-span-1">
             <div class="bg-white shadow-md rounded-lg p-6">
-                <h2 class="text-xl font-semibold text-gray-800 mb-4">Mitglieder hinzufügen</h2>
+                <h2 class="text-xl font-semibold text-gray-800 mb-4">Mitglieder hinzufuegen</h2>
                 
                 {% if available_members %}
                 <form method="post" action="{% url 'messaging:email_group_add_members' group.pk %}">
@@ -94,11 +94,11 @@
                             </option>
                             {% endfor %}
                         </select>
-                        <p class="text-sm text-gray-500 mt-1">Halte Ctrl/Cmd gedrückt für Mehrfachauswahl</p>
+                        <p class="text-sm text-gray-500 mt-1">Halte Ctrl/Cmd gedrueckt fuer Mehrfachauswahl</p>
                     </div>
                     <button type="submit" 
                             class="w-full bg-green-600 hover:bg-green-700 text-white font-bold py-2 px-4 rounded-lg">
-                        Hinzufügen
+                        Hinzufuegen
                     </button>
                 </form>
                 {% else %}

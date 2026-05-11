@@ -231,6 +231,27 @@ def test_archive_list_links_title_to_detail_view(client, board_user):
 
 
 @pytest.mark.django_db
+def test_archive_list_shows_delete_action_and_no_cancelled_filter_option(client, board_user):
+    from apps.finance.models import UploadedInvoice
+
+    invoice = UploadedInvoice.objects.create(
+        title="Delete Action",
+        direction="incoming",
+        payment_status="open",
+        created_by=board_user,
+        document=SimpleUploadedFile("delete-action.txt", b"Rechnung", content_type="text/plain"),
+    )
+    client.force_login(board_user)
+
+    response = client.get(reverse("finance:archive"))
+    html = response.content.decode("utf-8")
+
+    assert response.status_code == 200
+    assert reverse("finance:archive_delete", args=[invoice.id]) in html
+    assert "value=\"cancelled\"" not in html
+
+
+@pytest.mark.django_db
 def test_board_can_delete_invoice_archive_entry_from_detail(client, board_user):
     from apps.finance.models import UploadedInvoice
 

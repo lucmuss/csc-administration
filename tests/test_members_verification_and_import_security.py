@@ -173,6 +173,7 @@ def test_verification_approve_sets_profile_active_and_submission_approved(client
         birth_date=date(1995, 5, 5),
         status=Profile.STATUS_PENDING,
         is_verified=False,
+        email_verified_at=timezone.now(),
         monthly_counter_key=timezone.localdate().strftime("%Y-%m"),
     )
     VerificationSubmission.objects.create(

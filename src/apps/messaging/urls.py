@@ -53,6 +53,7 @@ urlpatterns = [
     # API
     path("api/groups/<int:pk>/members/", views.api_group_members, name="api_group_members"),
     path("api/emails/<uuid:pk>/stats/", views.api_email_stats, name="api_email_stats"),
+    path("api/emails/render-markdown/", views.api_render_email_markdown, name="api_render_email_markdown"),
     path("api/sms/character-count/", views.api_sms_character_count, name="api_sms_character_count"),
     path("api/sms/render-template/", views.api_render_sms_template, name="api_render_sms_template"),
     

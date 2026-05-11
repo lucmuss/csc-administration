@@ -9,7 +9,6 @@
         <p class="lede">Bericht zu Abgaben, Mitgliedern und Monatswerten fuer das ausgewaehlte Berichtsjahr.</p>
       </div>
       <div class="hero-actions">
-        <a href="{% url 'compliance:annual_report' %}?year={{ selected_year }}&format=csv" class="btn-primary btn-compliance">CSV herunterladen</a>
         <button type="button" class="btn-ghost" onclick="window.print()">Druckansicht / PDF</button>
         <a href="{% url 'compliance:dashboard' %}" class="btn-ghost">Zurueck zu Compliance</a>
       </div>

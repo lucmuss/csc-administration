@@ -11,7 +11,6 @@
     <a href="{% url 'orders:shop' %}" class="{% if active_type == 'all' %}btn-primary{% else %}btn-ghost{% endif %}">Alle Produkte</a>
     <a href="{% url 'orders:shop' %}?type=flower" class="{% if active_type == 'flower' %}btn-primary{% else %}btn-ghost{% endif %}">Blueten</a>
     <a href="{% url 'orders:shop' %}?type=cutting" class="{% if active_type == 'cutting' %}btn-primary{% else %}btn-ghost{% endif %}">Stecklinge</a>
-    <a href="{% url 'orders:shop' %}?type=edible" class="{% if active_type == 'edible' %}btn-primary{% else %}btn-ghost{% endif %}">Edibles</a>
     <a href="{% url 'orders:shop' %}?type=accessory" class="{% if active_type == 'accessory' %}btn-primary{% else %}btn-ghost{% endif %}">Rauchzubehoer</a>
     <a href="{% url 'orders:shop' %}?type=merch" class="{% if active_type == 'merch' %}btn-primary{% else %}btn-ghost{% endif %}">Werbegeschenke</a>
   </div>

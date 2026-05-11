@@ -16,6 +16,14 @@ class PublicDocumentForm(forms.ModelForm):
         widgets = {
             "description": forms.Textarea(attrs={"rows": 3}),
         }
+        labels = {
+            "title": "Titel",
+            "category": "Kategorie",
+            "description": "Beschreibung",
+            "file": "Datei",
+            "is_public": "Oeffentlich sichtbar",
+            "display_order": "Sortierreihenfolge",
+        }
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
@@ -142,6 +150,7 @@ class SocialClubRegistrationForm(forms.ModelForm):
             "postal_code",
             "city",
             "federal_state",
+            "register_entry",
             "minimum_age",
             "website",
         ]
@@ -152,9 +161,13 @@ class SocialClubRegistrationForm(forms.ModelForm):
             field.widget.attrs["class"] = (field.widget.attrs.get("class", "") + " form-input").strip()
         self.fields["federal_state"].required = True
         self.fields["federal_state"].widget.attrs["required"] = True
+        self.fields["register_entry"].required = True
+        self.fields["register_entry"].widget.attrs["required"] = True
         self.fields["city"].help_text = "Mindestens 3 Buchstaben."
         self.fields["postal_code"].help_text = "PLZ im DACH-Raum (4-5 Ziffern)."
         self.fields["street_address_number"].help_text = "z. B. 132, 132B, 23."
+        self.fields["register_entry"].label = "Vereins-RV-Nummer"
+        self.fields["register_entry"].help_text = "z. B. VR 12345"
 
     def clean_name(self):
         name = (self.cleaned_data.get("name") or "").strip()
@@ -190,6 +203,12 @@ class SocialClubRegistrationForm(forms.ModelForm):
         if not re.fullmatch(r"^[A-Za-zÄÖÜäöüß\-\s'.]{3,}$", city):
             raise forms.ValidationError("Bitte gib einen gueltigen Ortsnamen ein.")
         return city
+
+    def clean_register_entry(self):
+        register_entry = " ".join((self.cleaned_data.get("register_entry") or "").split()).strip()
+        if len(register_entry) < 3:
+            raise forms.ValidationError("Bitte gib eine gueltige Vereins-RV-Nummer ein.")
+        return register_entry
 
     def clean_federal_state(self):
         federal_state = (self.cleaned_data.get("federal_state") or "").strip()
@@ -303,6 +322,8 @@ class SocialClubSettingsForm(forms.ModelForm):
             if match:
                 self.initial["street_address"] = match.group("street").strip()
                 self.initial["street_address_number"] = match.group("number").strip()
+        self.fields["federal_state"].required = True
+        self.fields["federal_state"].widget.attrs["required"] = True
         for field in self.fields.values():
             suffix = " form-input form-select" if isinstance(field.widget, forms.Select) else " form-input"
             field.widget.attrs["class"] = (field.widget.attrs.get("class", "") + suffix).strip()
@@ -313,6 +334,13 @@ class SocialClubSettingsForm(forms.ModelForm):
         number = (cleaned_data.get("street_address_number") or "").strip()
         cleaned_data["street_address"] = f"{street} {number}".strip() if street else street
         return cleaned_data
+
+    def clean_federal_state(self):
+        federal_state = (self.cleaned_data.get("federal_state") or "").strip()
+        valid_states = {code for code, _label in SocialClub.FEDERAL_STATE_CHOICES}
+        if federal_state not in valid_states:
+            raise forms.ValidationError("Bitte waehle ein gueltiges Bundesland aus.")
+        return federal_state
 
 
 class SocialClubAdminRegistrationForm(forms.Form):

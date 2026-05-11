@@ -1,0 +1,7 @@
+Hallo {{ club.name }},
+
+die Vereinsregistrierung ist noch nicht vollstaendig abgeschlossen.
+Diese Erinnerung wird nach {{ day_marker }} Tagen versendet.
+
+Bitte Registrierung fortsetzen:
+{{ registration_url }}

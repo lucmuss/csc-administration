@@ -5,7 +5,6 @@ from django.contrib.auth.decorators import login_required
 from django.contrib import messages
 from django.core.exceptions import ValidationError
 from django.forms import formset_factory
-from django.db.models import Q
 from django.http import HttpResponse
 from django.shortcuts import redirect
 from django.shortcuts import render
@@ -13,9 +12,10 @@ from django.shortcuts import get_object_or_404
 
 from apps.core.club import resolve_active_social_club
 from apps.core.authz import staff_or_board_required
+from apps.core.permissions import is_overadmin
 
 from .forms import InventoryCountValueField, InventoryLocationForm, StrainForm
-from .models import Batch, InventoryCount, InventoryItem, InventoryLocation, Strain
+from .models import Batch, InventoryItem, InventoryLocation, Strain
 from .services import InventoryCountService
 
 
@@ -24,23 +24,32 @@ def _is_staff_or_board(user) -> bool:
 
 
 def _active_club(request):
-    if getattr(request.user, "is_superuser", False):
-        return resolve_active_social_club(request)
+    club = resolve_active_social_club(request)
+    if club:
+        return club
+    if is_overadmin(request.user):
+        return None
     return getattr(request.user, "social_club", None)
+
+
+def _visible_strains(request, *, include_inactive: bool = False):
+    queryset = Strain.objects.all()
+    if not include_inactive:
+        queryset = queryset.filter(is_active=True)
+    club = _active_club(request)
+    if club:
+        queryset = queryset.filter(social_club=club)
+    return queryset.exclude(product_type=Strain.PRODUCT_TYPE_EDIBLE)
 
 
 @login_required
 def strain_list(request):
     active_type = request.GET.get("type", "all")
     thc_min = request.GET.get("thc_min", "").strip()
-    strains = Strain.objects.filter(is_active=True)
-    club = _active_club(request)
-    if club:
-        strains = strains.filter(Q(social_club=club) | Q(social_club__isnull=True))
+    strains = _visible_strains(request)
     if active_type in {
         Strain.PRODUCT_TYPE_FLOWER,
         Strain.PRODUCT_TYPE_CUTTING,
-        Strain.PRODUCT_TYPE_EDIBLE,
         Strain.PRODUCT_TYPE_ACCESSORY,
         Strain.PRODUCT_TYPE_MERCH,
     }:
@@ -139,6 +148,8 @@ def strain_create(request):
         if form.is_valid():
             strain = form.save(commit=False)
             strain.social_club = _active_club(request)
+            if strain.product_type == Strain.PRODUCT_TYPE_EDIBLE:
+                strain.product_type = Strain.PRODUCT_TYPE_ACCESSORY
             strain.save()
             messages.success(request, f"Produkt {strain.name} wurde angelegt.")
             return redirect("inventory:strain_edit", pk=strain.pk)
@@ -150,6 +161,9 @@ def strain_create(request):
 @login_required
 def strain_detail(request, pk: int):
     strain = get_object_or_404(Strain, pk=pk, is_active=True)
+    if strain.product_type == Strain.PRODUCT_TYPE_EDIBLE:
+        messages.error(request, "Dieses Produkt ist nicht mehr verfuegbar.")
+        return redirect("inventory:strain_list")
     club = _active_club(request)
     if club and strain.social_club_id != club.id:
         messages.error(request, "Dieses Produkt gehoert zu einem anderen Social Club.")
@@ -167,6 +181,9 @@ def strain_detail(request, pk: int):
 @staff_or_board_required(_is_staff_or_board)
 def strain_edit(request, pk: int):
     strain = get_object_or_404(Strain, pk=pk)
+    if strain.product_type == Strain.PRODUCT_TYPE_EDIBLE:
+        messages.error(request, "Dieses Produkt ist nicht mehr bearbeitbar.")
+        return redirect("inventory:strain_list")
     club = _active_club(request)
     if club and strain.social_club_id != club.id:
         messages.error(request, "Dieses Produkt gehoert zu einem anderen Social Club.")
@@ -186,7 +203,10 @@ def strain_edit(request, pk: int):
         data.setdefault("is_active", "on" if strain.is_active else "")
         form = StrainForm(data, request.FILES, instance=strain)
         if form.is_valid():
-            form.save()
+            updated = form.save(commit=False)
+            if updated.product_type == Strain.PRODUCT_TYPE_EDIBLE:
+                updated.product_type = Strain.PRODUCT_TYPE_ACCESSORY
+            updated.save()
             messages.success(request, f"Produkt {strain.name} wurde aktualisiert.")
             return redirect("inventory:strain_edit", pk=strain.pk)
     else:
@@ -196,7 +216,11 @@ def strain_edit(request, pk: int):
 
 @login_required
 def inventory_count_form(request):
-    items = InventoryItem.objects.select_related("strain", "location").all()
+    items = InventoryItem.objects.select_related("strain", "location")
+    club = _active_club(request)
+    if club:
+        items = items.filter(strain__social_club=club)
+    items = items.exclude(strain__product_type=Strain.PRODUCT_TYPE_EDIBLE).order_by("location__name", "strain__name")
 
     if request.method == "POST":
         counted_quantities = {}
@@ -217,17 +241,11 @@ def inventory_count_form(request):
                 counted_quantities=counted_quantities,
             )
             messages.success(request, f"Inventur gespeichert ({count.items_counted} Positionen)")
-            return redirect("inventory:discrepancy_report")
+            return redirect("inventory:inventory_count_form")
         except Exception as exc:
             messages.error(request, str(exc))
 
     return render(request, "inventory/inventory_count_form.html", {"items": items})
-
-
-@login_required
-def discrepancy_report(request):
-    counts = InventoryCount.objects.all()[:20]
-    return render(request, "inventory/discrepancy_report.html", {"counts": counts})
 
 
 @staff_or_board_required(_is_staff_or_board)
@@ -269,7 +287,7 @@ def batch_create(request):
                 return redirect("inventory:batch_detail", pk=batch.pk)
         except (Strain.DoesNotExist, ValidationError, ValueError) as exc:
             context["error"] = str(exc)
-    context["strains"] = Strain.objects.filter(is_active=True).order_by("name")
+    context["strains"] = _visible_strains(request).order_by("name")
     return render(request, "inventory/batch_form.html", context)
 
 
@@ -290,7 +308,11 @@ def batch_delete(request, pk: int):
 
 @login_required
 def dashboard(request):
-    batches = Batch.objects.select_related("strain").order_by("quantity", "-created_at")
+    batches = Batch.objects.select_related("strain").exclude(strain__product_type=Strain.PRODUCT_TYPE_EDIBLE)
+    club = _active_club(request)
+    if club:
+        batches = batches.filter(strain__social_club=club)
+    batches = batches.order_by("quantity", "-created_at")
     low_stock_batches = [batch for batch in batches if batch.quantity <= Decimal("10.00")]
     return render(
         request,

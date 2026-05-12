@@ -15,6 +15,7 @@ RUN pip install --no-cache-dir \
     "psycopg[binary]>=3.2,<3.3" \
     "pypdf>=5.4,<6" \
     "whitenoise>=6.6,<7" \
+    "gunicorn>=22.0,<27" \
     "pytest>=8.3,<9" \
     "pytest-django>=4.11,<5" \
     "markdown>=3.5" \

@@ -205,6 +205,38 @@
     });
   }
 
+  function wireEmailVerifyBanner() {
+    var section = document.querySelector("[data-email-verify-banner]");
+    if (!section) return;
+    var dismissBtn = section.querySelector("[data-email-verify-dismiss]");
+    if (!dismissBtn) return;
+    if (window.sessionStorage.getItem("email_verify_banner_dismissed") === "1") {
+      section.style.display = "none";
+      return;
+    }
+    dismissBtn.addEventListener("click", function () {
+      section.style.display = "none";
+      window.sessionStorage.setItem("email_verify_banner_dismissed", "1");
+    });
+  }
+
+  function wireNavDropdowns() {
+    document.querySelectorAll(".nav-dropdown").forEach(function (details) {
+      document.addEventListener("click", function (event) {
+        if (!details.open) return;
+        if (details.contains(event.target)) return;
+        details.open = false;
+      });
+      document.addEventListener("keydown", function (event) {
+        if (event.key === "Escape" && details.open) {
+          details.open = false;
+          var summary = details.querySelector("summary");
+          if (summary) summary.focus();
+        }
+      });
+    });
+  }
+
   function wireSocialClubStateFilter() {
     document.querySelectorAll("form[data-social-club-filter]").forEach(function (form) {
       var stateSelect = form.querySelector("[data-federal-state-select]");
@@ -257,6 +289,8 @@
 
   document.addEventListener("DOMContentLoaded", function () {
     toggleMobileNav();
+    wireNavDropdowns();
+    wireEmailVerifyBanner();
     handleCookieConsent();
     maybeLoadAnalytics();
     wireGovernanceRecordForm();

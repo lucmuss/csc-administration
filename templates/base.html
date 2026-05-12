@@ -62,7 +62,7 @@
               <a href="{% url 'finance:dashboard' %}" class="nav-link{% if '/finance/' in request.path %} is-active{% endif %}">Finanzen</a>
               <a href="{% url 'participation:admin_hours' %}" class="nav-link{% if '/participation/' in request.path %} is-active{% endif %}">Mitwirkung</a>
               <details class="nav-dropdown{% if '/inventory/' in request.path or '/messaging/' in request.path or '/compliance/' in request.path or '/governance/' in request.path or '/documents/' in request.path or '/finance/archive/' in request.path or '/finance/statistics/' in request.path or '/settings/club/' in request.path %} is-active{% endif %}">
-                <summary class="nav-link">Verwaltung</summary>
+                <summary class="nav-link nav-dropdown__summary">Verwaltung</summary>
                 <div class="nav-dropdown__menu">
                   <a href="{% url 'inventory:strain_list' %}" class="nav-dropdown__item">Inventar</a>
                   <a href="{% url 'messaging:dashboard' %}" class="nav-dropdown__item">Nachrichten</a>
@@ -113,7 +113,10 @@
             </a>
             <form method="post" action="{% url 'accounts:logout' %}" class="topbar__utility hidden md:inline-flex">
               {% csrf_token %}
-              <button type="submit" class="btn-ghost">Abmelden</button>
+              <button type="submit" class="btn-ghost" style="display:inline-flex;align-items:center;gap:.4rem;">
+                <svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
+                Abmelden
+              </button>
             </form>
           {% else %}
             <a href="{% url 'accounts:login' %}" class="btn-ghost topbar__utility hidden md:inline-flex">Anmelden</a>
@@ -169,11 +172,19 @@
     {% endif %}
 
     {% if user.is_authenticated and user.role == 'member' and email_verification_pending %}
-      <section class="container-shell" style="padding-top:.5rem;">
-        <article class="flash flash--warning">
-          <strong>Hinweis:</strong>
-          E-Mail noch nicht bestaetigt. Bitte im Bereich Verifizierung den Code eingeben.
-          <a href="{% url 'members:verification' %}" class="text-link">Jetzt bestaetigen</a>
+      <section class="container-shell" style="padding-top:.5rem;" data-email-verify-banner>
+        <article class="flash flash--warning" style="display:flex; align-items:center; justify-content:space-between; gap:1rem;">
+          <span>
+            <strong>Hinweis:</strong>
+            E-Mail noch nicht bestaetigt. Bitte im Bereich Verifizierung den Code eingeben.
+            <a href="{% url 'members:verification' %}" class="text-link">Jetzt bestaetigen</a>
+          </span>
+          <button
+            type="button"
+            data-email-verify-dismiss
+            aria-label="Hinweis ausblenden"
+            style="background:none; border:none; cursor:pointer; font-size:1.1rem; line-height:1; opacity:0.6; padding:0.2rem 0.4rem; flex-shrink:0;"
+          >&times;</button>
         </article>
       </section>
     {% endif %}

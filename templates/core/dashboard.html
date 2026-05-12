@@ -306,7 +306,7 @@
             <a href="{% url 'orders:shop' %}" class="btn-primary">Zum Bestellbereich</a>
             <a href="{% url 'orders:cart' %}" class="btn-ghost">Warenkorb{% if request.session.cart %} ({{ request.session.cart|length }}){% endif %}</a>
           {% endif %}
-          <a href="{% url 'members:profile' %}" class="btn-ghost">Profil ansehen</a>
+          <a href="{% url 'members:profile' %}" class="text-link" style="font-size:.9rem;">Profil ansehen</a>
         </div>
       </div>
       {% if profile %}

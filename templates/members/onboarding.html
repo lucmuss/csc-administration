@@ -35,16 +35,32 @@
       <article class="panel panel--span-2">
         <div class="panel__header">
           <div>
-            <p class="panel__eyebrow">Pflichtformular</p>
+            <p class="panel__eyebrow">Pflichtformular · 3 Schritte</p>
             <h2>Vollstaendige Aufnahmeangaben</h2>
           </div>
         </div>
+        <nav class="form-steps" aria-label="Fortschritt" style="display:flex; gap:.5rem; margin-bottom:1.25rem; flex-wrap:wrap;">
+          <span class="form-step form-step--active" style="display:flex; align-items:center; gap:.4rem; font-size:.85rem; font-weight:600; color:var(--forest-strong);">
+            <span style="display:inline-flex; align-items:center; justify-content:center; width:1.5rem; height:1.5rem; border-radius:50%; background:var(--forest-strong); color:#fff; font-size:.75rem;">1</span>
+            Stammdaten
+          </span>
+          <span style="color:var(--text-muted); align-self:center;">→</span>
+          <span class="form-step" style="display:flex; align-items:center; gap:.4rem; font-size:.85rem; font-weight:500; color:var(--text-muted);">
+            <span style="display:inline-flex; align-items:center; justify-content:center; width:1.5rem; height:1.5rem; border-radius:50%; background:var(--line); color:var(--text-muted); font-size:.75rem;">2</span>
+            Finanzdaten
+          </span>
+          <span style="color:var(--text-muted); align-self:center;">→</span>
+          <span class="form-step" style="display:flex; align-items:center; gap:.4rem; font-size:.85rem; font-weight:500; color:var(--text-muted);">
+            <span style="display:inline-flex; align-items:center; justify-content:center; width:1.5rem; height:1.5rem; border-radius:50%; background:var(--line); color:var(--text-muted); font-size:.75rem;">3</span>
+            Bestaetigungen
+          </span>
+        </nav>
         <form method="post" class="form-stack">
           {% csrf_token %}
           <div class="panel">
             <div class="panel__header">
               <div>
-                <p class="panel__eyebrow">Stammdaten</p>
+                <p class="panel__eyebrow">Schritt 1 von 3 · Stammdaten</p>
                 <h2>Aufnahme und Kontakt</h2>
               </div>
             </div>
@@ -98,7 +114,7 @@
           <div class="panel">
             <div class="panel__header">
               <div>
-                <p class="panel__eyebrow">Finanzdaten</p>
+                <p class="panel__eyebrow">Schritt 2 von 3 · Finanzdaten</p>
                 <h2>SEPA und Bankverbindung</h2>
               </div>
             </div>
@@ -145,7 +161,7 @@
           <div class="panel">
             <div class="panel__header">
               <div>
-                <p class="panel__eyebrow">Bestaetigungen</p>
+                <p class="panel__eyebrow">Schritt 3 von 3 · Bestaetigungen</p>
                 <h2>Pflichtangaben und Selbstauskunft</h2>
               </div>
             </div>
@@ -195,7 +211,7 @@
             <p class="field-hint">Diese Auswahl steuert die optionale E-Mail-Gruppe fuer Preislisten, Angebote und Verfuegbarkeiten.</p>
           </div>
 
-          <button type="submit" class="btn-primary btn-block">Zur Verifizierung</button>
+          <button type="submit" class="btn-primary btn-block" title="Bitte alle Pflichtfelder ausfuellen und Bestaetigungen setzen">Zur Verifizierung</button>
         </form>
       </article>
     </section>

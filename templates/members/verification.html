@@ -26,7 +26,8 @@
       <ul class="detail-list">
         <li><span>Mitglied</span><strong>{{ profile.user.full_name|default:profile.user.email }}</strong></li>
         <li><span>E-Mail</span><strong>{{ profile.user.email }}</strong></li>
-        <li><span>Verifiziert</span><strong>{{ profile.is_verified|yesno:'Ja,Nein' }}</strong></li>
+        <li><span>ID-Verifizierung</span><strong>{{ profile.is_verified|yesno:'Freigegeben,Ausstehend' }}</strong></li>
+        <li><span>E-Mail-Status</span><strong>{{ profile.is_email_verified|yesno:'Bestaetigt,Noch nicht bestaetigt' }}</strong></li>
         <li><span>Eingereicht am</span><strong>{{ submission.submitted_at|date:'d.m.Y H:i'|default:'-' }}</strong></li>
       </ul>
     </section>

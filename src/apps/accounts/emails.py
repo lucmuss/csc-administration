@@ -106,6 +106,8 @@ def send_registration_received_email(user, request: HttpRequest, *, is_bootstrap
         "is_bootstrap": is_bootstrap,
         "login_url": _absolute_url(request, "accounts:login", "/accounts/login/"),
         "dashboard_url": _absolute_url(request, "core:dashboard", "/"),
+        "verification_url": _absolute_url(request, "members:verification", "/members/verification/"),
+        "onboarding_url": _absolute_url(request, "members:onboarding", "/members/onboarding/"),
     }
     context.update(_club_email_context())
 

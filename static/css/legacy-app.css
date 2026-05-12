@@ -149,10 +149,11 @@ textarea {
 input[type="checkbox"],
 input[type="radio"] {
   width: auto;
-  min-width: 1.05rem;
-  min-height: 1.05rem;
+  min-width: 1.25rem;
+  min-height: 1.25rem;
   padding: 0;
   accent-color: var(--forest);
+  cursor: pointer;
 }
 
 label {
@@ -299,6 +300,24 @@ hr {
 
 .nav-dropdown summary::-webkit-details-marker {
   display: none;
+}
+
+.nav-dropdown__summary::after {
+  content: '';
+  display: inline-block;
+  margin-left: 0.3em;
+  width: 0.55em;
+  height: 0.55em;
+  border-right: 2px solid currentColor;
+  border-bottom: 2px solid currentColor;
+  transform: translateY(-0.1em) rotate(45deg);
+  transition: transform 0.18s ease;
+  vertical-align: middle;
+  opacity: 0.7;
+}
+
+details[open].nav-dropdown .nav-dropdown__summary::after {
+  transform: translateY(0.15em) rotate(-135deg);
 }
 
 .nav-dropdown__menu {
@@ -633,6 +652,7 @@ hr {
   border-radius: var(--radius-lg);
   padding: 1.15rem;
   box-shadow: var(--shadow-sm);
+  cursor: default;
 }
 
 .signal-card {
@@ -1373,6 +1393,13 @@ select.form-input {
   font-weight: 600;
 }
 
+.field:has(.errorlist) .form-input,
+.field:has(.errorlist) select,
+.field:has(.errorlist) textarea {
+  border-color: var(--danger);
+  outline-color: var(--danger);
+}
+
 .helptext {
   display: block;
   margin-top: 0.45rem;
@@ -1948,4 +1975,13 @@ select.form-input {
   .lg\:hidden { display: none !important; }
   .lg\:flex { display: flex !important; }
   .lg\:px-8 { padding-left: 2rem; padding-right: 2rem; }
+}
+
+@media (max-width: 767px) {
+  .btn-ghost--small,
+  .btn-primary--small,
+  .btn-small {
+    min-height: 2.75rem;
+    padding: 0.65rem 1rem;
+  }
 }

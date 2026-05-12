@@ -82,9 +82,9 @@
         </div>
         <button type="submit" class="btn-primary btn-block">Anmelden</button>
       </form>
-      <div class="auth-card__footer">
+      <div class="auth-card__footer" style="flex-direction:column; gap:.5rem;">
         <span>Noch kein Zugang?</span>
-        <a href="{% url 'members:register' %}" class="text-link">Jetzt registrieren</a>
+        <a href="{% url 'members:register' %}" class="btn-ghost btn-block" style="text-align:center;">Jetzt registrieren</a>
       </div>
       <div class="auth-card__footer">
         <span>Neuer Social Club?</span>

@@ -7,9 +7,15 @@ Da dies der erste Account im System ist, wurde dein Zugang direkt als Vorstand e
 Du kannst dich hier anmelden:
 {{ login_url }}
 {% else %}
-Dein Zugang wird nach der internen Verifizierung freigeschaltet.
-Sobald die Freischaltung erfolgt ist, kannst du dich hier anmelden:
-{{ login_url }}
+Naechster Schritt: Vervollstaendige dein Profil und lade deinen Ausweis hoch, damit dein Antrag geprueft werden kann.
+
+Schritt 1 – Profildaten ergaenzen:
+{{ onboarding_url }}
+
+Schritt 2 – Ausweis hochladen und E-Mail bestaetigen:
+{{ verification_url }}
+
+Dein Zugang wird nach erfolgreicher Verifizierung durch den Vorstand freigeschaltet.
 {% endif %}
 
 Viele Gruesse

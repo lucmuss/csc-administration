@@ -227,6 +227,7 @@ class MemberRegistrationForm(forms.Form):
         max_birth_date = timezone.localdate() - timedelta(days=minimum_age * 365)
         self.fields["birth_date"].widget.attrs.setdefault("min", "1920-01-01")
         self.fields["birth_date"].widget.attrs.setdefault("max", max_birth_date.isoformat())
+        self.fields["birth_date"].widget.attrs.setdefault("value", "1990-01-01")
         self.fields["password"].widget.attrs.update({"autocomplete": "new-password", "placeholder": "Passwort"})
         self.fields["email"].error_messages.setdefault("required", "Dieses Feld ist erforderlich.")
         self.fields["first_name"].error_messages.setdefault("required", "Dieses Feld ist erforderlich.")

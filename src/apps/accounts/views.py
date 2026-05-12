@@ -173,6 +173,11 @@ class EmailLoginView(LoginView):
 class UserLogoutView(LogoutView):
     next_page = reverse_lazy("accounts:login")
 
+    def get(self, request, *args, **kwargs):
+        if request.user.is_authenticated:
+            return self.post(request, *args, **kwargs)
+        return redirect(self.next_page)
+
     def post(self, request, *args, **kwargs):
         response = super().post(request, *args, **kwargs)
         add_never_cache_headers(response)

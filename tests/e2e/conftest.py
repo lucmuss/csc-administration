@@ -4,6 +4,7 @@ from datetime import date, timedelta
 from decimal import Decimal
 
 import pytest
+from django.utils import timezone
 
 os.environ.setdefault("USE_SQLITE_FOR_TESTS", "1")
 os.environ.setdefault("DJANGO_SETTINGS_MODULE", "config.settings")
@@ -28,6 +29,7 @@ def member_user(db):
         birth_date=date(1990, 1, 1),
         status=Profile.STATUS_ACTIVE,
         is_verified=True,
+        email_verified_at=timezone.now(),
         member_number=100000,
         balance=Decimal("200.00"),
         monthly_counter_key=date.today().strftime("%Y-%m"),

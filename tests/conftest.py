@@ -28,6 +28,7 @@ def member_user(db):
         birth_date=date(1990, 1, 1),
         status=Profile.STATUS_ACTIVE,
         is_verified=True,
+        email_verified_at=timezone.now(),
         member_number=100000,
         balance=Decimal("200.00"),
         desired_join_date=date(2026, 4, 1),

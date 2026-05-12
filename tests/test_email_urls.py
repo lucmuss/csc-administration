@@ -24,8 +24,9 @@ def test_registration_email_uses_site_url_for_login_link(mailoutbox):
 
     body = mailoutbox[0].body
     html = mailoutbox[0].alternatives[0][0]
-    assert "https://csc.kolibri-kollektiv.eu/accounts/login/" in body
-    assert "https://csc.kolibri-kollektiv.eu/accounts/login/" in html
+    assert "https://csc.kolibri-kollektiv.eu/members/onboarding/" in body
+    assert "https://csc.kolibri-kollektiv.eu/members/verification/" in body
+    assert "https://csc.kolibri-kollektiv.eu/members/onboarding/" in html
     assert mailoutbox[0].from_email == "info@kolibri-kollektiv.eu"
 
 

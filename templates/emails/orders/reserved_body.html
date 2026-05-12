@@ -3,8 +3,8 @@
 <ul>
   <li>Reserviert bis: {{ order.reserved_until|date:"d.m.Y H:i" }}</li>
   <li>Bestellwert: {{ order.total }} EUR</li>
-  <li>Verfuegbares Restguthaben: {{ balance_breakdown.available_balance }} EUR</li>
+  <li>Verfügbares Restguthaben: {{ balance_breakdown.available_balance }} EUR</li>
 </ul>
 <p><a href="{{ order_url }}">Bestelldetails ansehen</a></p>
-<p>Die zugehoerige Rechnung ist dieser E-Mail als PDF angehaengt.</p>
+<p>Die zugehörige Rechnung ist dieser E-Mail als PDF angehängt.</p>
 <p>{{ club_name }}<br>{{ club_contact_address|linebreaksbr }}</p>

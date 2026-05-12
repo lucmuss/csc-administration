@@ -305,7 +305,7 @@ class SocialClubReview(models.Model):
         ordering = ["-updated_at"]
         constraints = [
             models.UniqueConstraint(fields=["social_club", "user"], name="unique_social_club_review_per_user"),
-            models.CheckConstraint(check=models.Q(rating__gte=1) & models.Q(rating__lte=5), name="social_club_review_rating_1_5"),
+            models.CheckConstraint(condition=models.Q(rating__gte=1) & models.Q(rating__lte=5), name="social_club_review_rating_1_5"),
         ]
 
     def __str__(self):

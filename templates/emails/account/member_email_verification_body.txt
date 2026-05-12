@@ -1,6 +1,6 @@
 Hallo {{ user.first_name|default:user.email }},
 
-bitte bestaetige deine E-Mail-Adresse mit diesem Code:
+bitte bestätige deine E-Mail-Adresse mit diesem Code:
 
 {{ code }}
 

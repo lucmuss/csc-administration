@@ -123,7 +123,7 @@ class InventoryCountValueField(forms.DecimalField):
         try:
             normalized = Decimal(parsed)
         except InvalidOperation as exc:
-            raise forms.ValidationError("Bitte eine gueltige ganze Zahl eingeben.") from exc
+            raise forms.ValidationError("Bitte eine gültige ganze Zahl eingeben.") from exc
         if normalized != normalized.to_integral_value():
-            raise forms.ValidationError("Inventurwerte muessen als ganze Zahl erfasst werden.")
+            raise forms.ValidationError("Inventurwerte müssen als ganze Zahl erfasst werden.")
         return normalized

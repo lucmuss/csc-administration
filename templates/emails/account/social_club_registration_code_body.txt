@@ -1,6 +1,6 @@
 Hallo {{ club.name }},
 
-bitte bestaetige die E-Mail-Adresse fuer die Vereinsregistrierung mit diesem Code:
+bitte bestätige die E-Mail-Adresse für die Vereinsregistrierung mit diesem Code:
 
 {{ code }}
 

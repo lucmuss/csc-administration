@@ -1,1 +1,1 @@
-E-Mail-Verifizierung fuer {{ club.name }}
+E-Mail-Verifizierung für {{ club.name }}

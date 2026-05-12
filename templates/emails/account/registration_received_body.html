@@ -4,12 +4,12 @@
   <p>Da dies der erste Account im System ist, wurde dein Zugang direkt als Vorstand eingerichtet.</p>
   <p><a href="{{ login_url }}">Jetzt anmelden</a></p>
 {% else %}
-  <p>Naechster Schritt: Vervollstaendige dein Profil und lade deinen Ausweis hoch, damit dein Antrag geprueft werden kann.</p>
+  <p>Nächster Schritt: Vervollständige dein Profil und lade deinen Ausweis hoch, damit dein Antrag geprüft werden kann.</p>
   <ol>
-    <li><a href="{{ onboarding_url }}">Schritt 1: Profildaten ergaenzen</a></li>
-    <li><a href="{{ verification_url }}">Schritt 2: Ausweis hochladen und E-Mail bestaetigen</a></li>
+    <li><a href="{{ onboarding_url }}">Schritt 1: Profildaten ergänzen</a></li>
+    <li><a href="{{ verification_url }}">Schritt 2: Ausweis hochladen und E-Mail bestätigen</a></li>
   </ol>
   <p>Dein Zugang wird nach erfolgreicher Verifizierung durch den Vorstand freigeschaltet.</p>
 {% endif %}
-<p>Viele Gruesse<br>{{ club_name }}</p>
+<p>Viele Grüße<br>{{ club_name }}</p>
 <p>{{ club_contact_address|linebreaksbr }}</p>

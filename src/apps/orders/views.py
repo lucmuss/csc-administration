@@ -118,14 +118,14 @@ def add_to_cart(request):
         if quantity_decimal <= 0:
             raise ValueError
     except Exception:
-        messages.error(request, "Ungueltige Menge")
+        messages.error(request, "Ungültige Menge")
         return redirect("orders:shop")
     club = _active_club(request)
     strain_scope = Strain.objects.filter(id=strain_id, is_active=True)
     if club:
         strain_scope = strain_scope.filter(social_club=club)
     if not strain_scope.exists():
-        messages.error(request, "Produkt nicht verfuegbar.")
+        messages.error(request, "Produkt nicht verfügbar.")
         return redirect("orders:shop")
     strain = Strain.objects.filter(id=strain_id, is_active=True).first()
     profile = getattr(request.user, "profile", None)
@@ -135,13 +135,16 @@ def add_to_cart(request):
             messages.error(request, reason)
             request.session["cart_limit_error"] = reason
             return redirect(f"{reverse('orders:shop')}?limit=1")
+        if profile.age is not None and profile.age < 21 and strain.thc is not None and strain.thc > 10:
+            messages.error(request, "Produkt nicht verfügbar: THC-Gehalt über 10 % ist für Mitglieder unter 21 Jahren gemäß CanG nicht zulässig.")
+            return redirect("orders:shop")
 
     cart = _load_cart(request)
     existing = Decimal(cart.get(str(strain_id), "0"))
     cart[str(strain_id)] = str(existing + quantity_decimal)
     _save_cart(request, cart)
 
-    messages.success(request, "Zum Warenkorb hinzugefuegt")
+    messages.success(request, "Zum Warenkorb hinzugefügt")
     return redirect("orders:shop")
 
 

@@ -7,17 +7,17 @@ Da dies der erste Account im System ist, wurde dein Zugang direkt als Vorstand e
 Du kannst dich hier anmelden:
 {{ login_url }}
 {% else %}
-Naechster Schritt: Vervollstaendige dein Profil und lade deinen Ausweis hoch, damit dein Antrag geprueft werden kann.
+Nächster Schritt: Vervollständige dein Profil und lade deinen Ausweis hoch, damit dein Antrag geprüft werden kann.
 
-Schritt 1 – Profildaten ergaenzen:
+Schritt 1 – Profildaten ergänzen:
 {{ onboarding_url }}
 
-Schritt 2 – Ausweis hochladen und E-Mail bestaetigen:
+Schritt 2 – Ausweis hochladen und E-Mail bestätigen:
 {{ verification_url }}
 
 Dein Zugang wird nach erfolgreicher Verifizierung durch den Vorstand freigeschaltet.
 {% endif %}
 
-Viele Gruesse
+Viele Grüße
 {{ club_name }}
 {{ club_contact_address }}

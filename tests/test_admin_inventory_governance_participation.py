@@ -111,7 +111,7 @@ def test_inventory_count_rejects_decimal_values(client, board_user):
 
     item.refresh_from_db()
     assert response.status_code == 200
-    assert "Inventurwerte muessen als ganze Zahl erfasst werden." in response.content.decode()
+    assert "Inventurwerte müssen als ganze Zahl erfasst werden." in response.content.decode()
     assert item.quantity == Decimal("10.00")
 
 

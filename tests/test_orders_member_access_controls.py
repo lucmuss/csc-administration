@@ -58,7 +58,7 @@ def test_add_to_cart_rejects_invalid_quantity(client, member_user):
     response = client.post(reverse("orders:add_to_cart"), data={"strain_id": str(strain.id), "quantity": "-2"}, follow=True)
 
     assert response.status_code == 200
-    assert "Ungueltige Menge" in response.content.decode("utf-8")
+    assert "Ungültige Menge" in response.content.decode("utf-8")
 
 
 @pytest.mark.django_db
@@ -104,7 +104,7 @@ def test_add_to_cart_rejects_product_from_other_club_scope(client, member_user):
     )
 
     assert response.status_code == 200
-    assert "Produkt nicht verfuegbar" in response.content.decode("utf-8")
+    assert "Produkt nicht verfügbar" in response.content.decode("utf-8")
 
 
 @pytest.mark.django_db

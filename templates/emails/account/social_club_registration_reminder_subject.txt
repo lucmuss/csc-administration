@@ -1,1 +1,1 @@
-Erinnerung: Vereinsregistrierung fuer {{ club.name }} (Tag {{ day_marker }})
+Erinnerung: Vereinsregistrierung für {{ club.name }} (Tag {{ day_marker }})

@@ -103,4 +103,4 @@ def test_checkout_handles_sqlish_quantity_input_gracefully(client, member_user):
     )
 
     assert response.status_code == 200
-    assert "Ungueltige Menge" in response.content.decode("utf-8")
+    assert "Ungültige Menge" in response.content.decode("utf-8")

@@ -48,5 +48,6 @@ urlpatterns = [
     path("impressum/", RedirectView.as_view(pattern_name="core:imprint", permanent=False)),
     path("impressum.html", RedirectView.as_view(pattern_name="core:imprint", permanent=False)),
     path("health/", health, name="health"),
+    path("healthz/", ready, name="healthz"),
     path("ready/", ready, name="ready"),
 ]

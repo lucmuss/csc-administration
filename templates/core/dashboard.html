@@ -329,17 +329,17 @@
       <article class="kpi-card kpi-card--forest">
         <span class="kpi-card__label">Tageslimit</span>
         <strong class="kpi-card__value">{% if profile %}{{ profile.daily_used }} g{% else %}-{% endif %}</strong>
-        <small class="kpi-card__detail">von 25 g verbraucht</small>
+        <small class="kpi-card__detail">von 25 g erlaubt (täglich)</small>
       </article>
       <article class="kpi-card kpi-card--sand">
         <span class="kpi-card__label">Monatslimit</span>
         <strong class="kpi-card__value">{% if profile %}{{ profile.monthly_used }} g{% else %}-{% endif %}</strong>
-        <small class="kpi-card__detail">von 50 g verbraucht</small>
+        <small class="kpi-card__detail">von {% if profile %}{{ profile.monthly_limit }}{% else %}50{% endif %} g erlaubt (monatlich)</small>
       </article>
-      <article class="kpi-card kpi-card--ink">
+      <article class="kpi-card kpi-card--ink" title="Pflichtstunden sind Arbeitseinsätze für den Verein (z. B. Anbau, Ernte, Veranstaltungen). Die genaue Stundenpflicht ist in der Vereinsordnung geregelt.">
         <span class="kpi-card__label">Pflichtstunden</span>
         <strong class="kpi-card__value">{% if profile %}{{ profile.work_hours_done }} h{% else %}-{% endif %}</strong>
-        <small class="kpi-card__detail">im Profil verbucht</small>
+        <small class="kpi-card__detail">im Profil verbucht · <abbr title="Arbeitseinsätze laut Vereinsordnung">Was sind Pflichtstunden?</abbr></small>
       </article>
     </section>
 

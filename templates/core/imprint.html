@@ -6,7 +6,7 @@
       <p class="eyebrow">Impressum</p>
       <h1>Angaben zum Betreiber dieser Installation.</h1>
       <p>
-        Diese Installation von {{ app_name }} wird fuer den Betrieb eines Cannabis Social Clubs
+        Diese Installation von {{ app_name }} wird für den Betrieb eines Cannabis Social Clubs
         oder eines vergleichbaren Vereinskontexts bereitgestellt.
       </p>
       {% if active_social_club %}
@@ -14,8 +14,8 @@
       {% endif %}
       {% if not legal_setup_complete %}
         <div class="flash flash--warning">
-          <strong>Konfiguration unvollstaendig.</strong>
-          <span>Einige Pflichtangaben fuer diese Instanz sind noch nicht gesetzt. Bitte hinterlege die Vereinsdaten ueber die Umgebungsvariablen der Installation.</span>
+          <strong>Konfiguration unvollständig.</strong>
+          <span>Einige Pflichtangaben für diese Instanz sind noch nicht gesetzt. Bitte hinterlege die Vereinsdaten über die Umgebungsvariablen der Installation.</span>
         </div>
       {% endif %}
 
@@ -51,7 +51,7 @@
         <li>Registergericht: <strong>{{ club_register_court|default:"Bitte konfigurieren" }}</strong></li>
         <li>Steuernummer: <strong>{{ club_tax_number|default:"Bitte konfigurieren" }}</strong></li>
         {% if club_vat_id %}<li>USt-ID / Wirtschafts-ID: <strong>{{ club_vat_id }}</strong></li>{% endif %}
-        {% if club_supervisory_authority %}<li>Aufsichtsbehoerde: <strong>{{ club_supervisory_authority }}</strong></li>{% endif %}
+        {% if club_supervisory_authority %}<li>Aufsichtsbehörde: <strong>{{ club_supervisory_authority }}</strong></li>{% endif %}
       </ul>
 
       {% if club_content_responsible or club_responsible_person %}
@@ -59,16 +59,16 @@
         <ul>
           <li>Inhaltlich verantwortlich: <strong>{{ club_content_responsible|default:club_responsible_person }}</strong></li>
           {% if club_responsible_person %}
-            <li>Verantwortlich gemaess § 18 Abs. 2 MStV: <strong>{{ club_responsible_person }}</strong></li>
+            <li>Verantwortlich gemäß § 18 Abs. 2 MStV: <strong>{{ club_responsible_person }}</strong></li>
           {% endif %}
         </ul>
       {% endif %}
 
       {% if prevention_officer_name or club_prevention_email %}
-        <h2>Praevention</h2>
+        <h2>Prävention</h2>
         <ul>
-          {% if prevention_officer_name %}<li>Praeventionsbeauftragte:r: <strong>{{ prevention_officer_name }}</strong></li>{% endif %}
-          {% if club_prevention_email %}<li>Kontakt Praevention: <a class="text-link" href="mailto:{{ club_prevention_email }}"><strong>{{ club_prevention_email }}</strong></a></li>{% endif %}
+          {% if prevention_officer_name %}<li>Präventionsbeauftragte/r: <strong>{{ prevention_officer_name }}</strong></li>{% endif %}
+          {% if club_prevention_email %}<li>Kontakt Prävention: <a class="text-link" href="mailto:{{ club_prevention_email }}"><strong>{{ club_prevention_email }}</strong></a></li>{% endif %}
         </ul>
       {% endif %}
 
@@ -78,14 +78,14 @@
       {% endif %}
 
       {% if prevention_notice %}
-        <h2>Praevention und Jugendschutz</h2>
+        <h2>Prävention und Jugendschutz</h2>
         <p>{{ prevention_notice|linebreaksbr }}</p>
       {% endif %}
 
       <h2>Hinweis zur Instanz-Konfiguration</h2>
       <p>
-        Die Verwaltungssoftware ist mandantenfaehig fuers Self-Hosting gedacht. Betreiber koennen Name, Anschrift,
-        Kontaktrollen, Registerdaten, Praeventionsangaben und Datenschutzkontakte pro Club ueber die Clubdaten-Seite
+        Die Verwaltungssoftware ist mandantenfähig fürs Self-Hosting gedacht. Betreiber können Name, Anschrift,
+        Kontaktrollen, Registerdaten, Präventionsangaben und Datenschutzkontakte pro Club über die Clubdaten-Seite
         im Verwaltungsbereich oder alternativ per Umgebungsvariablen setzen.
       </p>
     </article>

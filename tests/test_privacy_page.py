@@ -11,4 +11,4 @@ def test_privacy_page_renders_grouped_sections(client):
     assert "Verantwortlicher" in html
     assert "Kontakt und Fachbereiche" in html
     assert "Datenschutzkontakt" in html
-    assert "Praevention" in html
+    assert "Prävention" in html

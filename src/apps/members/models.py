@@ -159,12 +159,18 @@ class Profile(models.Model):
         if changed:
             self.save(update_fields=["daily_used", "monthly_used", "daily_counter_date", "monthly_counter_key", "updated_at"])
 
+    @property
+    def monthly_limit(self) -> Decimal:
+        if self.birth_date and self.age < 21:
+            return Decimal("30.00")
+        return Decimal("50.00")
+
     def can_consume(self, grams: Decimal) -> tuple[bool, str]:
         self.reset_limits_if_due()
         if self.daily_used + grams > Decimal("25.00"):
-            return False, "Tageslimit von 25g ueberschritten"
-        if self.monthly_used + grams > Decimal("50.00"):
-            return False, "Monatslimit von 50g ueberschritten"
+            return False, "Tageslimit von 25g überschritten"
+        if self.monthly_used + grams > self.monthly_limit:
+            return False, f"Monatslimit von {self.monthly_limit}g überschritten"
         return True, "OK"
 
     def consume(self, grams: Decimal) -> None:

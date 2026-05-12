@@ -287,6 +287,17 @@
     });
   }
 
+  function scrollToFirstError() {
+    var firstError = document.querySelector(".errorlist");
+    if (!firstError) return;
+    firstError.scrollIntoView({ behavior: "smooth", block: "center" });
+    var field = firstError.closest(".field");
+    if (field) {
+      var input = field.querySelector("input, select, textarea");
+      if (input) input.focus({ preventScroll: true });
+    }
+  }
+
   document.addEventListener("DOMContentLoaded", function () {
     toggleMobileNav();
     wireNavDropdowns();
@@ -298,5 +309,6 @@
     wireSubmitFeedback();
     wireClickableRows();
     wireSocialClubStateFilter();
+    scrollToFirstError();
   });
 })();

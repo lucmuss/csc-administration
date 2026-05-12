@@ -790,6 +790,12 @@ details[open].nav-dropdown .nav-dropdown__summary::after {
   grid-column: span 2;
 }
 
+.panel--muted {
+  opacity: 0.55;
+  pointer-events: none;
+  user-select: none;
+}
+
 .table-card,
 .table-container {
   overflow-x: auto;

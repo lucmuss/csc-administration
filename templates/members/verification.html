@@ -99,14 +99,16 @@
         </form>
       </section>
 
-      <section class="panel">
+      <section class="panel{% if not submission.id_front_image or not submission.id_back_image %} panel--muted{% endif %}" {% if not submission.id_front_image or not submission.id_back_image %}aria-disabled="true"{% endif %}>
         <div class="panel__header">
           <div>
             <p class="panel__eyebrow">E-Mail-Bestaetigung</p>
             <h2>Schritt 2: E-Mail-Code eingeben</h2>
           </div>
         </div>
-        {% if profile.is_email_verified %}
+        {% if not submission.id_front_image or not submission.id_back_image %}
+          <p class="field-hint">Bitte zuerst Schritt 1 abschliessen und beide Ausweisfotos hochladen.</p>
+        {% elif profile.is_email_verified %}
           <p class="empty-copy">E-Mail-Adresse bestaetigt. Dein Profil ist fuer die Bearbeitung freigeschaltet.</p>
         {% else %}
           <p class="field-hint">E-Mail noch nicht bestaetigt. Bitte Code eingeben oder erneut senden.</p>

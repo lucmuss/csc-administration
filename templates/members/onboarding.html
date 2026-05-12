@@ -84,6 +84,7 @@
                   </div>
                   {{ form.phone_country_code.errors }}
                   {{ form.phone.errors }}
+                  <small class="field-hint">Vorwahl links waehlen, dann Nummer ohne fuehrende 0 eingeben – z. B. 151 12345678</small>
                 </div>
               </div>
               <div class="field">
@@ -249,16 +250,16 @@
           });
           const data = await response.json();
           if (!response.ok && response.status >= 500) {
-            setHint("IBAN-API aktuell nicht erreichbar.");
+            setHint("IBAN-Lookup aktuell nicht erreichbar – Bankdaten bitte manuell pruefen.");
             return;
           }
           if (!data.valid) {
-            setHint("Treffer: 0");
+            setHint("IBAN-Format ungueltig – bitte pruefen.");
             return;
           }
           const count = Number(data.matches || 0);
           if (count <= 0) {
-            setHint("Treffer: 0");
+            setHint("Kein Kreditinstitut gefunden – IBAN pruefen oder Bankdaten manuell eintragen.");
             return;
           }
           if (data.bank_name && bankInput && !bankInput.value.trim()) {
@@ -270,7 +271,7 @@
           const details = [data.bank_name || "", data.bic || ""].filter(Boolean).join(" · ");
           setHint(details ? `Treffer: ${count} (${details})` : `Treffer: ${count}`);
         } catch (_error) {
-          setHint("IBAN-Pruefung nicht verfuegbar.");
+          setHint("IBAN-Lookup nicht erreichbar – Bankdaten bitte manuell pruefen.");
         }
       }
 

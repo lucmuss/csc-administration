@@ -782,6 +782,9 @@ class VerificationSubmissionForm(forms.ModelForm):
         self.fields["id_back_image"].required = True
         for field in self.fields.values():
             _apply_form_control(field.widget)
+        for name in ("id_front_image", "id_back_image"):
+            self.fields[name].widget.attrs.setdefault("accept", "image/*")
+            self.fields[name].widget.attrs.setdefault("capture", "environment")
 
     def _validate_upload_size(self, upload, label: str):
         if upload and upload.size > self.MAX_UPLOAD_SIZE:

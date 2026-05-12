@@ -796,6 +796,22 @@ details[open].nav-dropdown .nav-dropdown__summary::after {
   user-select: none;
 }
 
+input[type="file"].form-input {
+  display: flex;
+  align-items: center;
+  padding: 0.6rem 0.8rem;
+  background: rgba(255,255,255,0.9);
+  border: 2px dashed var(--line);
+  border-radius: var(--radius-md);
+  cursor: pointer;
+  font-size: 0.9rem;
+  color: var(--text-muted);
+}
+input[type="file"].form-input:hover {
+  border-color: var(--forest);
+  color: var(--forest-strong);
+}
+
 .table-card,
 .table-container {
   overflow-x: auto;
